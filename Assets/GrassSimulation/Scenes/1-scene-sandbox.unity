@@ -6056,7 +6056,7 @@ PrefabInstance:
     - target: {fileID: 4022832850403162277, guid: 0afeefcd914de1c449ddb1be39ff9d21,
         type: 3}
       propertyPath: m_Name
-      value: MowerModel
+      value: lawnmower
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -16745,7 +16745,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1042877740}
   m_Layer: 0
-  m_Name: Model
+  m_Name: model
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -17171,7 +17171,7 @@ GameObject:
   - component: {fileID: 1252900792}
   - component: {fileID: 1252900791}
   m_Layer: 0
-  m_Name: CutRange
+  m_Name: lawnmower-range
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -22980,7 +22980,7 @@ GameObject:
   - component: {fileID: 1776663716}
   - component: {fileID: 1776663715}
   m_Layer: 0
-  m_Name: Mower
+  m_Name: prefab-lawnmower
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

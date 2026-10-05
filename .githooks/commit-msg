@@ -1,0 +1,34 @@
+#!/bin/sh
+# Checks the commit subject against docs/conventions/COMMIT-CONVENTIONS.md, Section 2.
+# Enable once per clone: git config core.hooksPath .githooks
+
+msg_file="$1"
+subject=$(grep -v '^#' "$msg_file" | sed -n '1p' | tr -d '\r')
+second=$(grep -v '^#' "$msg_file" | sed -n '2p' | tr -d '\r')
+
+case "$subject" in
+    "Merge "*|"Revert "*|"fixup! "*|"squash! "*|"amend! "*)
+        exit 0
+        ;;
+esac
+
+fail() {
+    printf 'commit-msg: %s\n  subject: %s\n  see docs/conventions/COMMIT-CONVENTIONS.md\n' "$1" "$subject" >&2
+    exit 1
+}
+
+[ -n "$subject" ] || fail "the subject is empty"
+
+length=$(printf '%s' "$subject" | wc -m | tr -d ' ')
+[ "$length" -le 70 ] || fail "the subject has $length characters; the maximum is 70"
+
+printf '%s' "$subject" | grep -Eq '^[A-Z][A-Za-z0-9]*(\.[A-Z][A-Za-z0-9]*)*: [a-z]' \
+    || fail "use '<Topic>: <summary>' with a PascalCase topic and a lowercase imperative verb"
+
+case "$subject" in
+    *.) fail "the subject must not end with a period" ;;
+esac
+
+[ -z "$second" ] || fail "leave one blank line between the subject and the body"
+
+exit 0

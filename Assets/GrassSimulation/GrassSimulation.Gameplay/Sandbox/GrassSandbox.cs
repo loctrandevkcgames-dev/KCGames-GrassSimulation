@@ -8,22 +8,12 @@ namespace GrassSimulation.Gameplay
 {
     public sealed class GrassSandbox : MonoBehaviour
     {
-        private const int CELLS_X = 72;
-        private const int CELLS_Z = 56;
-        private const float CELL_SIZE = 0.25f;
         private const float MIN_SEGMENT = 1e-4f;
         private const float ZONE_FLASH_DECAY = 2f;
         private const float ZONE_MARGIN = 0.3f;
         private const float HUD_LINES_PER_SCREEN = 36f;
         private const float HUD_WIDTH_IN_LINES = 26f;
         private const float HUD_HEIGHT_IN_LINES = 10f;
-
-        private static readonly RectInt s_flowerZone = new(50, 6, 16, 20);
-        private static readonly RectInt s_thickGrassPath = new(8, 32, 56, 5);
-        private static readonly RectInt s_lowBushZone = new(24, 42, 20, 10);
-        private static readonly RectInt s_hardBushZone = new(4, 44, 12, 9);
-        private static readonly RectInt s_protectedBorder = new(50, 37, 16, 16);
-        private static readonly RectInt s_protectedBed = new(52, 39, 12, 12);
 
         [SerializeField]
         private GrassFieldRenderer _field;
@@ -47,6 +37,9 @@ namespace GrassSimulation.Gameplay
         private MachineConfig _machine;
 
         [SerializeField]
+        private LevelDefinition _level;
+
+        [SerializeField]
         private float _cameraShake = 0.12f;
 
         [SerializeField]
@@ -57,15 +50,6 @@ namespace GrassSimulation.Gameplay
 
         [SerializeField]
         private PlantSettings[] _plants = Array.Empty<PlantSettings>();
-
-        [SerializeField]
-        private Vector2 _spawn = new(2f, 2f);
-
-        [SerializeField]
-        private float _spawnClearing = 1f;
-
-        [SerializeField]
-        private int _seed = 4;
 
         [SerializeField]
         private bool _pauseOnLevelUp;
@@ -97,6 +81,8 @@ namespace GrassSimulation.Gameplay
         private GrassCutter _cutter;
         private MowerGrowth _growth;
         private MaterialPropertyBlock _zoneProperties;
+        private RectInt _protectedBed;
+        private bool _hasProtectedBed;
         private Vector3 _previousBlade;
         private Vector3 _cameraFocus;
         private float _cutRadius;
@@ -117,18 +103,19 @@ namespace GrassSimulation.Gameplay
 
         private void Start()
         {
-            _grid = new FieldGrid(CELLS_X, CELLS_Z, CELL_SIZE);
+            _grid = _level.CreateGrid();
             _feedback = new FieldFeedback(_grid.Count);
             _cutter = new GrassCutter(_grid, _feedback, _plants);
             _growth = new MowerGrowth(_machine);
             _zoneProperties = new MaterialPropertyBlock();
 
+            _hasProtectedBed = _level.TryGetProtectedBed(out _protectedBed);
+
             IndexClippingColors();
-            CreateLayout();
             ClearPropCells();
             PlaceProtectedZone();
 
-            _field.Build(_grid, _plants, _seed);
+            _field.Build(_grid, _plants, _level.Seed);
             _mower.Bounds = _grid.Bounds;
 
             ResetRun();
@@ -316,18 +303,6 @@ namespace GrassSimulation.Gameplay
             }
         }
 
-        private void CreateLayout()
-        {
-            _grid.Fill(new RectInt(0, 0, CELLS_X, CELLS_Z), PlantKind.Grass);
-            _grid.Fill(s_flowerZone, PlantKind.HarvestFlower);
-            _grid.Fill(s_thickGrassPath, PlantKind.ThickGrass);
-            _grid.Fill(s_lowBushZone, PlantKind.LowBush);
-            _grid.Fill(s_hardBushZone, PlantKind.HardBush);
-            _grid.Fill(s_protectedBorder, PlantKind.None);
-            _grid.Fill(s_protectedBed, PlantKind.ProtectedFlower);
-            _grid.ClearCircle(_spawn, _spawnClearing);
-        }
-
         private void PlaceProtectedZone()
         {
             if (_protectedZone.IsInvalid())
@@ -335,8 +310,16 @@ namespace GrassSimulation.Gameplay
                 return;
             }
 
-            var min = _grid.Origin + new Vector2(s_protectedBed.xMin, s_protectedBed.yMin) * CELL_SIZE;
-            var size = new Vector2(s_protectedBed.width, s_protectedBed.height) * CELL_SIZE;
+            _protectedZone.gameObject.SetActive(_hasProtectedBed);
+
+            if (_hasProtectedBed == false)
+            {
+                return;
+            }
+
+            var cellSize = _grid.CellSize;
+            var min = _grid.Origin + new Vector2(_protectedBed.xMin, _protectedBed.yMin) * cellSize;
+            var size = new Vector2(_protectedBed.width, _protectedBed.height) * cellSize;
             var center = min + size * 0.5f;
             var zone = _protectedZone.transform;
 
@@ -361,7 +344,7 @@ namespace GrassSimulation.Gameplay
             _lastProtectedTouch = float.NegativeInfinity;
             _cutRadius = _growth.Stats.CutRadius;
 
-            var spawn = _grid.ToWorld(_spawn);
+            var spawn = _grid.ToWorld(_level.Spawn);
             _mower.ResetTo(spawn);
             _previousBlade = spawn;
             _cameraFocus = spawn;
@@ -484,14 +467,20 @@ namespace GrassSimulation.Gameplay
         private void UpdateBlade()
         {
             var blade = _mower.transform.position;
-            var bladeXZ = _grid.ToLocal(blade);
-            var bedMin = new Vector2(s_protectedBed.xMin, s_protectedBed.yMin) * CELL_SIZE;
-            var bedMax = new Vector2(s_protectedBed.xMax, s_protectedBed.yMax) * CELL_SIZE;
-            var nearest = Vector2.Max(bedMin, Vector2.Min(bladeXZ, bedMax));
-            var gap = Vector2.Distance(bladeXZ, nearest) - _cutRadius;
-            var warning = 1f - Mathf.Clamp01(gap / _warningDistance);
+            var warning = _hasProtectedBed ? ProtectedWarning(blade) : 0f;
 
             _field.SetBlade(blade, _cutRadius, warning);
+        }
+
+        private float ProtectedWarning(Vector3 blade)
+        {
+            var cellSize = _grid.CellSize;
+            var bladeXZ = _grid.ToLocal(blade);
+            var bedMin = new Vector2(_protectedBed.xMin, _protectedBed.yMin) * cellSize;
+            var bedMax = new Vector2(_protectedBed.xMax, _protectedBed.yMax) * cellSize;
+            var nearest = Vector2.Max(bedMin, Vector2.Min(bladeXZ, bedMax));
+            var gap = Vector2.Distance(bladeXZ, nearest) - _cutRadius;
+            return 1f - Mathf.Clamp01(gap / _warningDistance);
         }
 
         private void UpdateProtectedZone()

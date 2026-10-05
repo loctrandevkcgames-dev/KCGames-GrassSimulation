@@ -230,6 +230,7 @@ MonoBehaviour:
   _clippings: {fileID: 799609463}
   _props: {fileID: 1161807234}
   _machine: {fileID: 11400000, guid: ebc40e11f7bfca245aa82bc9c2f13402, type: 2}
+  _level: {fileID: 11400000, guid: a851e689ef1bf9c42bd71a23f4049fcc, type: 2}
   _cameraShake: 0.12
   _clippingsPerCell: 3
   _petalsPerFlower: 2
@@ -324,9 +325,6 @@ MonoBehaviour:
     <HasHead>k__BackingField: 1
     <HeadColor>k__BackingField: {r: 1, g: 1, b: 1, a: 1}
     <HeadRadius>k__BackingField: 0.11
-  _spawn: {x: 2, y: 2}
-  _spawnClearing: 1
-  _seed: 4
   _pauseOnLevelUp: 0
   _warningDistance: 0.5
   _protectedCooldown: 1

@@ -21,6 +21,12 @@
       "dependencies": {},
       "url": "https://package.openupm.com"
     },
+    "com.kyrylokuzyk.primetween": {
+      "version": "file:../Packages/com.kyrylokuzyk.primetween.tgz",
+      "depth": 0,
+      "source": "local-tarball",
+      "dependencies": {}
+    },
     "com.laicasaane.bakingsheet": {
       "version": "6.3.1-pre.7",
       "depth": 0,

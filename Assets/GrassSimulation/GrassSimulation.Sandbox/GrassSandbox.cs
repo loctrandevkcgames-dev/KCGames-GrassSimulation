@@ -1,11 +1,15 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
+using EncosyTower.Common;
 using EncosyTower.PubSub;
 using EncosyTower.UnityExtensions;
+using GrassSimulation.Gameplay;
+using GrassSimulation.Progression;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-namespace GrassSimulation.Gameplay
+namespace GrassSimulation.Sandbox
 {
     public sealed class GrassSandbox : MonoBehaviour
     {
@@ -14,7 +18,7 @@ namespace GrassSimulation.Gameplay
         private const float ZONE_MARGIN = 0.3f;
         private const float HUD_LINES_PER_SCREEN = 36f;
         private const float HUD_WIDTH_IN_LINES = 26f;
-        private const float HUD_HEIGHT_IN_LINES = 16f;
+        private const float HUD_HEIGHT_IN_LINES = 19f;
 
         [SerializeField]
         private GrassFieldRenderer _field;
@@ -39,9 +43,6 @@ namespace GrassSimulation.Gameplay
 
         [SerializeField]
         private LevelCatalog _catalog;
-
-        [SerializeField]
-        private int _startLevel;
 
         [SerializeField]
         private float _cameraShake = 0.12f;
@@ -72,12 +73,17 @@ namespace GrassSimulation.Gameplay
 
         private readonly Color[] _clippingColorByKind = new Color[PlantKindExtensions.Length];
         private readonly List<int> _harvestedCells = new();
+        private readonly List<ISubscription> _subscriptions = new();
 
         private LevelDefinition _level;
         private FieldGrid _grid;
         private FieldFeedback _feedback;
         private GrassCutter _cutter;
         private LevelSession _session;
+        private ProgressionService _progression;
+        private LevelSettlementHandler _settlementHandler;
+        private Result<LevelSettlement, SettleError> _lastSettlement;
+        private bool _hasLastSettlement;
         private MaterialPropertyBlock _zoneProperties;
         private RectInt _protectedBed;
         private bool _hasProtectedBed;
@@ -94,6 +100,9 @@ namespace GrassSimulation.Gameplay
         private bool _wasPauseHeld;
         private bool _wasFirstUpgradeHeld;
         private bool _wasSecondUpgradeHeld;
+        private bool _wasReloadHeld;
+        private bool _wasRetryHeld;
+        private bool _wasWipeHeld;
         private GUIStyle _hudStyle;
 
         private static bool IsNewPress(bool isHeld, ref bool wasHeld)
@@ -108,7 +117,34 @@ namespace GrassSimulation.Gameplay
             _zoneProperties = new MaterialPropertyBlock();
 
             IndexClippingColors();
-            LoadLevel(_startLevel);
+
+            var directory = Path.Combine(Application.persistentDataPath, "Progress");
+
+            _progression = new ProgressionService(new FileProgressStore(directory));
+            _progression.Initialize();
+
+            _settlementHandler = new LevelSettlementHandler(
+                  _progression
+                , GlobalMessenger.Subscriber.Scope<GameplayScope>()
+                , GlobalMessenger.Publisher.Scope<ProgressionScope>()
+            );
+
+            var settledSubscriber = GlobalMessenger.Subscriber.Scope<ProgressionScope>();
+            _subscriptions.Add(LevelSettledMsg.Subscribe(in settledSubscriber, OnLevelSettled));
+
+            LoadLevel(_progression.FindFirstIncomplete(_catalog));
+        }
+
+        private void OnDestroy()
+        {
+            _subscriptions.Unsubscribe();
+            _settlementHandler?.Dispose();
+        }
+
+        private void OnLevelSettled(LevelSettledMsg message)
+        {
+            _lastSettlement = message.Outcome;
+            _hasLastSettlement = true;
         }
 
         private void LoadLevel(int index)
@@ -218,8 +254,44 @@ namespace GrassSimulation.Gameplay
                 HudLine($"<color=yellow>LEVEL UP x{growth.PendingUpgrades}: {UpgradeChoicesText()}</color>");
             }
 
+            HudProgression();
             HudLine(HintText());
+            HudLine("F5: reload progress   F6: retry save   Shift+Del: wipe");
             GUILayout.EndArea();
+        }
+
+        private void HudProgression()
+        {
+            var state = _session.State;
+
+            if (state != LevelState.Playing && state != LevelState.UpgradeChoice)
+            {
+                var level = _level.Id;
+                HudLine($"Coins {_progression.Coins}   Best {_progression.GetBestStars(level)} stars");
+            }
+
+            if (_progression.IsReadOnly)
+            {
+                HudLine($"<color=#ff8080>Progress is read-only: {_progression.LoadFailure.ToMessage()}</color>");
+            }
+
+            if (_settlementHandler.HasPending)
+            {
+                var detail = _hasLastSettlement && _lastSettlement.TryGetError(out var error)
+                    ? $"{error.ToMessage()} "
+                    : string.Empty;
+
+                HudLine($"<color=#ff8080>Save failed: {detail}(F6 retry)</color>");
+                return;
+            }
+
+            if (state != LevelState.Playing && state != LevelState.UpgradeChoice
+                && _hasLastSettlement && _lastSettlement.TryGetValue(out var settlement)
+            )
+            {
+                var best = settlement.IsNewBest ? "   new best" : string.Empty;
+                HudLine($"+{settlement.CoinsGranted} coins{best}");
+            }
         }
 
         private string StateText()
@@ -400,6 +472,7 @@ namespace GrassSimulation.Gameplay
             _grid.ResetProgress();
             _feedback.Clear();
             _session.Reset();
+            _hasLastSettlement = false;
             _zoneFlash = 0f;
             _cutRadius = _session.Growth.Stats.CutRadius;
 
@@ -446,6 +519,29 @@ namespace GrassSimulation.Gameplay
             var pausePressed = IsNewPress(isPauseHeld, ref _wasPauseHeld);
             var firstPressed = IsNewPress(isFirstUpgradeHeld, ref _wasFirstUpgradeHeld);
             var secondPressed = IsNewPress(isSecondUpgradeHeld, ref _wasSecondUpgradeHeld);
+            var reloadPressed = IsNewPress(keyboard.f5Key.isPressed, ref _wasReloadHeld);
+            var retryPressed = IsNewPress(keyboard.f6Key.isPressed, ref _wasRetryHeld);
+            var isShiftHeld = keyboard.leftShiftKey.isPressed || keyboard.rightShiftKey.isPressed;
+            var wipePressed = IsNewPress(isShiftHeld && keyboard.deleteKey.isPressed, ref _wasWipeHeld);
+
+            if (wipePressed)
+            {
+                WipeProgress();
+                return;
+            }
+
+            if (reloadPressed)
+            {
+                _progression.Reload();
+                _hasLastSettlement = false;
+                return;
+            }
+
+            if (retryPressed)
+            {
+                _settlementHandler.RetryPending();
+                return;
+            }
 
             if (resetPressed)
             {
@@ -483,6 +579,20 @@ namespace GrassSimulation.Gameplay
             {
                 _session.TryChooseUpgrade(1);
             }
+        }
+
+        private void WipeProgress()
+        {
+            var wiped = _progression.Wipe();
+
+            if (wiped.TryGetFailure(out var failure))
+            {
+                ThrowHelper.LogError_WipeFailed(failure);
+                return;
+            }
+
+            _settlementHandler.ClearPending();
+            LoadLevel(_progression.FindFirstIncomplete(_catalog));
         }
 
         private void TryAdvanceLevel()

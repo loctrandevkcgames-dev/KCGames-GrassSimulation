@@ -157,7 +157,6 @@ MonoBehaviour:
   _props: {fileID: 1161807234}
   _machine: {fileID: 11400000, guid: ebc40e11f7bfca245aa82bc9c2f13402, type: 2}
   _catalog: {fileID: 11400000, guid: a17d35073a536bc41b91ad47a7736194, type: 2}
-  _startLevel: 0
   _cameraShake: 0.12
   _clippingsPerCell: 3
   _petalsPerFlower: 2

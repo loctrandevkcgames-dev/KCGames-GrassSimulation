@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace GrassSimulation.Gameplay
 {
-    internal static class GrassFieldShaderIds
+    public static class GrassFieldShaderIds
     {
         public static readonly int CellState = Shader.PropertyToID("_GrassCellState");
         public static readonly int FieldParams = Shader.PropertyToID("_GrassFieldParams");

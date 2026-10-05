@@ -1,0 +1,20 @@
+{
+    "name": "GrassSimulation.Sandbox",
+    "rootNamespace": "GrassSimulation.Sandbox",
+    "references": [
+        "EncosyTower.Core",
+        "EncosyTower.PubSub",
+        "GrassSimulation.Gameplay",
+        "GrassSimulation.Progression",
+        "Unity.InputSystem"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -41,6 +41,25 @@ namespace GrassSimulation.Gameplay
             }
         }
 
+        public int RemainingMainQuota
+        {
+            get
+            {
+                var remaining = 0;
+                var count = _quotas.Length;
+
+                for (var i = 0; i < count; i++)
+                {
+                    if (_quotas[i].IsBonus == false)
+                    {
+                        remaining += _quotas[i].Amount - GetQuotaProgress(i);
+                    }
+                }
+
+                return remaining;
+            }
+        }
+
         public bool AreBonusQuotasMet
         {
             get

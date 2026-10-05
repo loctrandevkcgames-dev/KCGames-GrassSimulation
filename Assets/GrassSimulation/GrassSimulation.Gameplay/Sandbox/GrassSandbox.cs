@@ -221,9 +221,9 @@ namespace GrassSimulation.Gameplay
             var state = _session.IsPaused ? "Paused" : _session.State.ToStringFast();
             var result = _session.Result;
 
-            return result.Outcome == LevelOutcome.None
-                ? $"<b>{state}</b>"
-                : $"<b>{state}</b> ({result.Outcome.ToStringFast()}, {result.Stars} stars)";
+            return result.IsFinished
+                ? $"<b>{state}</b> ({result.Outcome.ToLabel()})"
+                : $"<b>{state}</b>";
         }
 
         private string ProtectedHitsText()

@@ -134,19 +134,19 @@ namespace GrassSimulation.Gameplay
 
             if (hasTooManyHits)
             {
-                Finish(LevelOutcome.TooManyProtectedHits);
+                Finish(new LevelOutcome.TooManyProtectedHits(Protection.Hits, _level.ProtectedHitLimit));
                 return;
             }
 
             if (Objectives.IsComplete)
             {
-                Finish(LevelOutcome.Success);
+                Finish(new LevelOutcome.Success(CountStars()));
                 return;
             }
 
             if (RemainingTime <= 0f)
             {
-                Finish(LevelOutcome.TimeUp);
+                Finish(new LevelOutcome.TimeUp(Objectives.RemainingMainQuota));
                 return;
             }
 
@@ -184,11 +184,10 @@ namespace GrassSimulation.Gameplay
 
         private void Finish(LevelOutcome outcome)
         {
-            var isSuccess = outcome == LevelOutcome.Success;
-            var stars = isSuccess ? CountStars() : 0;
+            var isSuccess = outcome.IsSuccess;
 
             State = isSuccess ? LevelState.Success : LevelState.Failure;
-            Result = new LevelResult(outcome, stars, RemainingTime, Protection.Hits);
+            Result = new LevelResult(outcome, RemainingTime, Protection.Hits);
         }
 
         private int CountStars()

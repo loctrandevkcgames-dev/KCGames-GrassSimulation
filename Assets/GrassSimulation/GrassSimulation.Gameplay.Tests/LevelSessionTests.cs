@@ -42,8 +42,36 @@ public sealed class LevelSessionTests
         session.EndTick(1f);
 
         Assert.That(session.State, Is.EqualTo(LevelState.Success));
-        Assert.That(session.Result.Outcome, Is.EqualTo(LevelOutcome.Success));
+        Assert.That(session.Result.Outcome.IsSuccess, Is.True);
+        Assert.That(session.Result.TryGetStars(out var stars), Is.True);
+        Assert.That(stars, Is.EqualTo(2));
         Assert.That(session.RemainingTime, Is.Zero);
+    }
+
+    [Test]
+    public void RemainingMainQuota_ClampsOverHarvestAndIgnoresBonus()
+    {
+        var session = CreateStartedSession(
+            timeLimit: 10f,
+            failOnProtectedHits: false,
+            Quota(PlantKind.Grass, 3),
+            Quota(PlantKind.HarvestFlower, 4),
+            Quota(PlantKind.LowBush, 2, isBonus: true)
+        );
+
+        for (var i = 0; i < 5; i++)
+        {
+            session.RecordHarvest(PlantKind.Grass, xp: 0);
+        }
+
+        session.RecordHarvest(PlantKind.HarvestFlower, xp: 0);
+
+        Assert.That(session.Objectives.RemainingMainQuota, Is.EqualTo(3));
+
+        session.EndTick(10f);
+
+        Assert.That(session.Result.Outcome.TryGetValue(out LevelOutcome.TimeUp timeUp), Is.True);
+        Assert.That(timeUp.RemainingQuota, Is.EqualTo(3));
     }
 
     [Test]
@@ -55,7 +83,8 @@ public sealed class LevelSessionTests
         session.EndTick(1f);
 
         Assert.That(session.State, Is.EqualTo(LevelState.Failure));
-        Assert.That(session.Result.Outcome, Is.EqualTo(LevelOutcome.TimeUp));
+        Assert.That(session.Result.Outcome.TryGetValue(out LevelOutcome.TimeUp timeUp), Is.True);
+        Assert.That(timeUp.RemainingQuota, Is.EqualTo(1));
     }
 
     [Test]
@@ -121,7 +150,9 @@ public sealed class LevelSessionTests
         TouchProtectedTimes(session, 4);
 
         Assert.That(session.State, Is.EqualTo(LevelState.Failure));
-        Assert.That(session.Result.Outcome, Is.EqualTo(LevelOutcome.TooManyProtectedHits));
+        Assert.That(session.Result.Outcome.TryGetValue(out LevelOutcome.TooManyProtectedHits failure), Is.True);
+        Assert.That(failure.Hits, Is.EqualTo(session.Protection.Hits));
+        Assert.That(failure.Limit, Is.EqualTo(session.ProtectedHitLimit));
     }
 
     [Test]
@@ -149,7 +180,8 @@ public sealed class LevelSessionTests
         session.RecordHarvest(PlantKind.Grass, xp: 1);
         session.EndTick(1f);
 
-        Assert.That(session.Result.Stars, Is.EqualTo(3));
+        Assert.That(session.Result.TryGetStars(out var stars), Is.True);
+        Assert.That(stars, Is.EqualTo(3));
     }
 
     [Test]
@@ -163,7 +195,8 @@ public sealed class LevelSessionTests
         session.EndTick(0.5f);
 
         Assert.That(session.State, Is.EqualTo(LevelState.Success));
-        Assert.That(session.Result.Stars, Is.EqualTo(1));
+        Assert.That(session.Result.TryGetStars(out var stars), Is.True);
+        Assert.That(stars, Is.EqualTo(1));
     }
 
     [Test]
@@ -198,7 +231,7 @@ public sealed class LevelSessionTests
 
         Assert.That(session.State, Is.EqualTo(LevelState.Preview));
         Assert.That(session.RemainingTime, Is.EqualTo(10f));
-        Assert.That(session.Result.Outcome, Is.EqualTo(LevelOutcome.None));
+        Assert.That(session.Result.IsFinished, Is.False);
         Assert.That(session.Objectives.GetHarvested(PlantKind.Grass), Is.Zero);
     }
 

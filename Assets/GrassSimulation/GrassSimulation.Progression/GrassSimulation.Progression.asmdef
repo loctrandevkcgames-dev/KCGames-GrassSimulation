@@ -1,0 +1,18 @@
+{
+    "name": "GrassSimulation.Progression",
+    "rootNamespace": "GrassSimulation.Progression",
+    "references": [
+        "EncosyTower.Core",
+        "EncosyTower.PubSub",
+        "GrassSimulation.Gameplay"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

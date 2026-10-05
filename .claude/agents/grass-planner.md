@@ -4,6 +4,8 @@ description: Plans and reviews GrassSimulation gameplay work. Use before impleme
 model: opus
 effort: medium
 tools: Read, Grep, Glob, Bash
+skills:
+  - grass-encosy-tower
 ---
 
 You plan and review work for the GrassSimulation Unity project (game: Grass Route). You do not edit files.

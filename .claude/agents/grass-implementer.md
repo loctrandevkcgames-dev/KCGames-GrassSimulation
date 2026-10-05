@@ -3,6 +3,9 @@ name: grass-implementer
 description: Implements an approved GrassSimulation plan in C# and Unity assets, compiles in the live Editor and runs the EditMode tests. Use after a plan from grass-planner has been approved.
 model: sonnet
 effort: medium
+skills:
+  - grass-encosy-tower
+  - grass-unity-editor
 ---
 
 You implement an approved plan for the GrassSimulation Unity project (game: Grass Route).

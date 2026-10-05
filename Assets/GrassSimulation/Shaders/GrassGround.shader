@@ -13,6 +13,18 @@ Shader "GrassSimulation/Ground"
         _NoiseScale ("Variation Scale (1/m)", Float) = 0.6
         _NoiseStrength ("Variation Strength", Range(0, 0.5)) = 0.12
 
+        [Header(Soil Pattern)]
+        _BlotchColor ("Blotch Tint (A = amount)", Color) = (0.78, 0.66, 0.6, 0.5)
+        _BlotchScale ("Blotch Scale (1/m)", Float) = 0.9
+        _BlotchCoverage ("Blotch Coverage", Range(0, 1)) = 0.45
+        _PebbleColor ("Pebble Color (A = amount)", Color) = (0.8, 0.68, 0.56, 1)
+        _PebbleScale ("Pebble Grid (1/m)", Float) = 3
+        _PebbleDensity ("Pebble Density", Range(0, 1)) = 0.35
+        _PebbleSize ("Pebble Size (cell)", Range(0.05, 0.45)) = 0.2
+        _SpeckColor ("Speck Tint (A = amount)", Color) = (0.62, 0.48, 0.38, 0.6)
+        _SpeckScale ("Speck Grid (1/m)", Float) = 14
+        _SpeckDensity ("Speck Density", Range(0, 1)) = 0.25
+
         [Header(Cut Trail)]
         _CutEdge ("Cut Edge Threshold", Range(0.05, 0.95)) = 0.5
         _CutEdgeSoftness ("Cut Edge Softness", Range(0.01, 0.5)) = 0.2
@@ -57,6 +69,16 @@ Shader "GrassSimulation/Ground"
             half4 _UncutColor;
             float _NoiseScale;
             half _NoiseStrength;
+            half4 _BlotchColor;
+            float _BlotchScale;
+            half _BlotchCoverage;
+            half4 _PebbleColor;
+            float _PebbleScale;
+            half _PebbleDensity;
+            half _PebbleSize;
+            half4 _SpeckColor;
+            float _SpeckScale;
+            half _SpeckDensity;
             half _CutEdge;
             half _CutEdgeSoftness;
             half _CutEdgeDarkening;
@@ -108,6 +130,67 @@ Shader "GrassSimulation/Ground"
                 UNITY_VERTEX_OUTPUT_STEREO
             };
 
+            // Cartoon soil: two-tone blotches, scattered pebbles lit from the top of the screen with a small drop
+            // shadow, and fine specks. Everything is procedural in world space, so chunks tile seamlessly.
+            void NearestPebble(float2 coord, out float2 offset, out float id)
+            {
+                float2 cell = floor(coord);
+                float2 local = frac(coord);
+                float best = 8.0;
+                offset = 0.0;
+                id = 0.0;
+
+                for (int y = -1; y <= 1; y++)
+                {
+                    for (int x = -1; x <= 1; x++)
+                    {
+                        float2 neighbour = cell + float2(x, y);
+                        float2 jitter = float2(GrassHash21(neighbour), GrassHash21(neighbour + 17.3));
+                        float2 delta = local - (float2(x, y) + 0.2 + 0.6 * jitter);
+                        float distanceSq = dot(delta, delta);
+
+                        if (distanceSq < best)
+                        {
+                            best = distanceSq;
+                            offset = delta;
+                            id = GrassHash21(neighbour + 41.7);
+                        }
+                    }
+                }
+            }
+
+            half3 ApplySoilPattern(half3 albedo, float2 positionXZ)
+            {
+                half blotchNoise = (half)GrassValueNoise(positionXZ * _BlotchScale + 13.1);
+                half blotch = smoothstep(_BlotchCoverage - 0.03h, _BlotchCoverage + 0.03h, blotchNoise);
+                albedo = lerp(albedo, albedo * _BlotchColor.rgb, blotch * _BlotchColor.a);
+
+                float2 offset;
+                float id;
+                NearestPebble(positionXZ * _PebbleScale, offset, id);
+                half exists = step(id, _PebbleDensity);
+                half size = _PebbleSize * (0.6h + 0.8h * (half)frac(id * 7.13));
+                half aa = (half)max(fwidth(positionXZ.x * _PebbleScale), 1e-3);
+
+                float2 shadowOffset = offset + float2(-0.25, 0.35) * size;
+                half shadow = (1.0h - smoothstep(size - aa, size + aa, (half)length(shadowOffset))) * exists;
+                albedo *= 1.0h - shadow * 0.35h;
+
+                half pebble = (1.0h - smoothstep(size - aa, size + aa, (half)length(offset))) * exists;
+                half topLight = saturate(0.5h + (half)(offset.y - offset.x * 0.5) / size * 0.8h);
+                half rim = smoothstep(size * 0.55h, size, (half)length(offset));
+                half3 pebbleColor = _PebbleColor.rgb * lerp(0.62h, 1.15h, topLight) * (1.0h - rim * 0.18h);
+                albedo = lerp(albedo, pebbleColor, pebble * _PebbleColor.a);
+
+                float2 speckCell = floor(positionXZ * _SpeckScale);
+                float2 speckJitter = float2(GrassHash21(speckCell + 9.1), GrassHash21(speckCell + 23.9)) - 0.5;
+                float2 speckLocal = frac(positionXZ * _SpeckScale) - 0.5 - speckJitter * 0.6;
+                half speckOn = step(GrassHash21(speckCell + 3.7), _SpeckDensity);
+                half speck = (1.0h - smoothstep(0.12h, 0.2h, (half)length(speckLocal))) * speckOn * (1.0h - pebble);
+                albedo = lerp(albedo, albedo * _SpeckColor.rgb, speck * _SpeckColor.a);
+                return albedo;
+            }
+
             GroundVaryings GroundVertex(GroundAttributes input)
             {
                 GroundVaryings output = (GroundVaryings)0;
@@ -145,6 +228,7 @@ Shader "GrassSimulation/Ground"
                 float2 baseUV = positionXZ / max(_BaseMapWorldSize, 1e-3) * _BaseMap_ST.xy + _BaseMap_ST.zw;
                 albedo *= SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, baseUV).rgb;
                 albedo *= 1.0h + ((half)GrassValueNoise(positionXZ * _NoiseScale) - 0.5h) * 2.0h * _NoiseStrength;
+                albedo = ApplySoilPattern(albedo, positionXZ);
 
                 half3 normalWS = NormalizeNormalPerPixel(input.normalWS);
                 Light mainLight = GetMainLight(TransformWorldToShadowCoord(input.positionWS));

@@ -1146,6 +1146,15 @@ Same rules, with one change: serialized fields come first, because Unity seriali
   public bool TryAdd<T>(T instance) { ... }
   ```
 
+- When callers must act on why an operation failed, return `EncosyTower.Common.Result<TValue, TError>` or
+  `Success<TFailure>` instead, with a typed error (prefer a `[PolyEnumStruct]` whose cases carry the failure data).
+  Name these methods without the `Try` prefix. Keep `Option<T>` / `TryXxx` when the only outcome is found or not found.
+
+  ```csharp
+  public Result<LevelSettlement, SettleError> Settle(LevelId level, in LevelResult result) { ... }
+  public Success<SaveError> Save(ProgressSave save) { ... }
+  ```
+
 - Custom attributes always declare `[AttributeUsage(...)]` and validate their constructor arguments.
 - Unity-serialized structs use `[Serializable]` with `[field: SerializeField]` on auto-properties, not public fields:
 
@@ -1929,7 +1938,8 @@ Types & APIs:
 - [ ] Data records use positional declarations and explicit `record class`/`record struct`; bodies have concrete
       reasons. Check approved conversions for member-shape and constructor-order changes.
 - [ ] No public API changes for style alone.
-- [ ] Failures return `Option<T>` or `bool TryXxx(...)`, never `null`, never throw for expected failures.
+- [ ] Failures return `Option<T>` or `bool TryXxx(...)`, or `Result<TValue, TError>` / `Success<TFailure>` when callers need
+      the reason; never `null`, never throw for expected failures.
 
 Errors, performance & the rest:
 

@@ -1,7 +1,10 @@
 {
     "name": "GrassSimulation.Gameplay",
     "rootNamespace": "GrassSimulation.Gameplay",
-    "references": [],
+    "references": [
+        "EncosyTower.Core",
+        "Unity.InputSystem"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

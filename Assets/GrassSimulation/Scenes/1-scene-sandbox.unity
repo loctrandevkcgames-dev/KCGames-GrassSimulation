@@ -151,9 +151,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: GrassSimulation.Gameplay::GrassSimulation.Gameplay.GrassSandbox
   _field: {fileID: 130738386}
   _mower: {fileID: 1776663715}
+  _mowerAnimator: {fileID: 1776663717}
   _camera: {fileID: 1581607472}
   _protectedZone: {fileID: 425614669}
   _clippings: {fileID: 799609463}
+  _tireTracks: {fileID: 1227451575}
   _props: {fileID: 1161807234}
   _machine: {fileID: 11400000, guid: ebc40e11f7bfca245aa82bc9c2f13402, type: 2}
   _catalog: {fileID: 11400000, guid: a17d35073a536bc41b91ad47a7736194, type: 2}
@@ -283,6 +285,12 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!4 &148273524 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2384971909027784696, guid: 0afeefcd914de1c449ddb1be39ff9d21,
+    type: 3}
+  m_PrefabInstance: {fileID: 564875576}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &387600424
 GameObject:
   m_ObjectHideFlags: 0
@@ -15547,6 +15555,12 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 941560778}
   m_PrefabAsset: {fileID: 0}
+--- !u!4 &1039893422 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 7823198621819339807, guid: 0afeefcd914de1c449ddb1be39ff9d21,
+    type: 3}
+  m_PrefabInstance: {fileID: 564875576}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1042877739
 GameObject:
   m_ObjectHideFlags: 0
@@ -15718,6 +15732,124 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1227451574
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1227451578}
+  - component: {fileID: 1227451577}
+  - component: {fileID: 1227451576}
+  - component: {fileID: 1227451575}
+  m_Layer: 0
+  m_Name: TireTracks
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1227451575
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1227451574}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f1e500b9a0f5d34428be9f7ebcbf0168, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GrassSimulation.Gameplay::GrassSimulation.Gameplay.TireTrackRenderer
+  _wheels:
+  - {fileID: 1237575888}
+  - {fileID: 148273524}
+  _width: 0.14
+  _height: 0.015
+  _minSegmentLength: 0.12
+  _maxSegmentLength: 1.5
+  _lifetime: 8
+  _maxSegments: 2048
+--- !u!23 &1227451576
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1227451574}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 0
+  m_ReflectionProbeUsage: 0
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: eaa67c465b164c24eb1d51ca90456363, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &1227451577
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1227451574}
+  m_Mesh: {fileID: 0}
+--- !u!4 &1227451578
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1227451574}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!4 &1237575888 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 3071838377442272652, guid: 0afeefcd914de1c449ddb1be39ff9d21,
+    type: 3}
+  m_PrefabInstance: {fileID: 564875576}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1252900789
 GameObject:
   m_ObjectHideFlags: 0
@@ -21094,6 +21226,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1776663716}
   - component: {fileID: 1776663715}
+  - component: {fileID: 1776663717}
   m_Layer: 0
   m_Name: prefab-lawnmower
   m_TagString: Untagged
@@ -21135,6 +21268,51 @@ Transform:
   - {fileID: 1252900790}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1776663717
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1776663714}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 39dd9ce7a2d661145a0c73a718550587, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GrassSimulation.Gameplay::GrassSimulation.Gameplay.LawnMowerAnimator
+  _body: {fileID: 564875577}
+  _bag: {fileID: 1039893422}
+  _idleShake: 0.004
+  _driveShake: 0.01
+  _cutShake: 0.02
+  _shakeFrequency: 30
+  _shakeDegrees: 1.5
+  _bobHeight: 0.025
+  _bobFrequency: 10
+  _pitchPerAcceleration: 0.6
+  _rollPerAcceleration: 0.5
+  _maxTiltDegrees: 9
+  _tiltStiffness: 140
+  _tiltDamping: 12
+  _cutPerCell: 0.25
+  _cutDecay: 2.5
+  _bagInflate: 0.18
+  _startShake: 0.035
+  _startDecay: 2.5
+  _startPopImpulse: 2.5
+  _tierPopImpulse: 7
+  _scaleStiffness: 220
+  _scaleDamping: 9
+  _hitWobbleImpulse: 420
+  _wobbleStiffness: 260
+  _wobbleDamping: 7
+  _hopHeight: 0.35
+  _hopPeriod: 0.9
+  _sputterDuration: 1.2
+  _sputterShake: 0.04
+  _sputterFrequency: 9
+  _slumpPitch: 9
+  _slumpRoll: 4
 --- !u!1001 &1893202914
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -21295,6 +21473,7 @@ SceneRoots:
   - {fileID: 130738387}
   - {fileID: 726382358}
   - {fileID: 799609466}
+  - {fileID: 1227451578}
   - {fileID: 639239192}
   - {fileID: 387600428}
   - {fileID: 1161807235}

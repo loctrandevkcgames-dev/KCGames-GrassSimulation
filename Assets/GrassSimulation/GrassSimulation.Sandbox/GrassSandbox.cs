@@ -27,6 +27,9 @@ namespace GrassSimulation.Sandbox
         private LawnMowerController _mower;
 
         [SerializeField]
+        private LawnMowerAnimator _mowerAnimator;
+
+        [SerializeField]
         private Camera _camera;
 
         [SerializeField]
@@ -34,6 +37,9 @@ namespace GrassSimulation.Sandbox
 
         [SerializeField]
         private GrassClippingsEmitter _clippings;
+
+        [SerializeField]
+        private TireTrackRenderer _tireTracks;
 
         [SerializeField]
         private CuttablePropController _props;
@@ -129,6 +135,8 @@ namespace GrassSimulation.Sandbox
                 , GlobalMessenger.Publisher.Scope<ProgressionScope>()
             );
 
+            BindMowerAnimator();
+
             var settledSubscriber = GlobalMessenger.Subscriber.Scope<ProgressionScope>();
             _subscriptions.Add(LevelSettledMsg.Subscribe(in settledSubscriber, OnLevelSettled));
 
@@ -184,6 +192,7 @@ namespace GrassSimulation.Sandbox
                 _mower.MaxSpeed = stats.Speed;
                 _mower.Step(deltaTime, _camera);
                 PushMowerOutOfProps();
+                StepTireTracks(deltaTime);
 
                 var radiusDelta = _machine.CutRadiusTweenSpeed * deltaTime;
                 _cutRadius = Mathf.MoveTowards(_cutRadius, stats.CutRadius, radiusDelta);
@@ -195,6 +204,7 @@ namespace GrassSimulation.Sandbox
             }
 
             _session.EndTick(deltaTime);
+            AnimateMower();
             DecayFeedback(deltaTime);
             WriteCellStates();
             UpdateBlade();
@@ -398,6 +408,69 @@ namespace GrassSimulation.Sandbox
             mowerTransform.position = _props.PushOut(mowerTransform.position, _machine.BodyRadius);
         }
 
+        private void BindMowerAnimator()
+        {
+            if (_mowerAnimator.IsValid())
+            {
+                _mowerAnimator.Bind(GlobalMessenger.Subscriber.Scope<GameplayScope>());
+            }
+        }
+
+        private void AnimateMower()
+        {
+            if (_mowerAnimator.IsValid())
+            {
+                _mowerAnimator.State = ToMowerAnimationState();
+            }
+        }
+
+        private MowerAnimationState ToMowerAnimationState()
+        {
+            if (_session.IsPaused)
+            {
+                return MowerAnimationState.Parked;
+            }
+
+            return _session.State switch {
+                LevelState.Playing or LevelState.UpgradeChoice or LevelState.Cleanup => MowerAnimationState.Running,
+                LevelState.Success => MowerAnimationState.Celebrating,
+                LevelState.Failure => MowerAnimationState.Stalled,
+                _ => MowerAnimationState.Parked,
+            };
+        }
+
+        private void NotifyMowerCut(int cells)
+        {
+            if (cells > 0 && _mowerAnimator.IsValid())
+            {
+                _mowerAnimator.NotifyCut(cells);
+            }
+        }
+
+        private void ResetMowerAnimator()
+        {
+            if (_mowerAnimator.IsValid())
+            {
+                _mowerAnimator.ResetPose();
+            }
+        }
+
+        private void StepTireTracks(float deltaTime)
+        {
+            if (_tireTracks.IsValid())
+            {
+                _tireTracks.Step(deltaTime);
+            }
+        }
+
+        private void ClearTireTracks()
+        {
+            if (_tireTracks.IsValid())
+            {
+                _tireTracks.Clear();
+            }
+        }
+
         private void CutProps(Vector3 blade, float cuttingPower, float deltaTime)
         {
             if (_props.IsInvalid())
@@ -478,6 +551,8 @@ namespace GrassSimulation.Sandbox
 
             var spawn = _grid.ToWorld(_level.Spawn);
             _mower.ResetTo(spawn);
+            ClearTireTracks();
+            ResetMowerAnimator();
             _previousBlade = spawn;
             _cameraFocus = spawn;
 
@@ -649,6 +724,8 @@ namespace GrassSimulation.Sandbox
                 _session.RecordHarvest(plant.Kind, plant.Xp);
                 EmitClippings(index, plant);
             }
+
+            NotifyMowerCut(harvestedCount);
 
             _harvestedCells.Clear();
 

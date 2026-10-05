@@ -7,16 +7,19 @@ public sealed class LevelSessionTests
     private const int CUTTABLE_CELLS = 100;
 
     private TestAssets _assets;
+    private MessageRecorder _messages;
 
     [SetUp]
     public void SetUp()
     {
         _assets = new TestAssets();
+        _messages = new MessageRecorder();
     }
 
     [TearDown]
     public void TearDown()
     {
+        _messages.Dispose();
         _assets.Dispose();
     }
 
@@ -250,7 +253,7 @@ public sealed class LevelSessionTests
     private LevelSession CreateSession(float timeLimit, bool failOnProtectedHits, params QuotaSettings[] quotas)
     {
         var level = _assets.CreateLevel(timeLimit, failOnProtectedHits, quotas);
-        return new LevelSession(level, _assets.CreateMachine(), CUTTABLE_CELLS);
+        return new LevelSession(level, _assets.CreateMachine(), CUTTABLE_CELLS, _messages.Publisher);
     }
 
     private LevelSession CreateStartedSession(float timeLimit, bool failOnProtectedHits, params QuotaSettings[] quotas)

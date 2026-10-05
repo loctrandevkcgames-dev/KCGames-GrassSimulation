@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using EncosyTower.PubSub;
 using EncosyTower.UnityExtensions;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -122,7 +123,12 @@ namespace GrassSimulation.Gameplay
             ClearPropCells();
             PlaceProtectedZone();
 
-            _session = new LevelSession(_level, _machine, _cutter.CountCuttableCells());
+            _session = new LevelSession(
+                  _level
+                , _machine
+                , _cutter.CountCuttableCells()
+                , GlobalMessenger.Publisher.Scope<GameplayScope>()
+            );
             _field.Build(_grid, _plants, _level.Seed);
             _mower.Bounds = _grid.Bounds;
 

@@ -3,6 +3,7 @@
     "rootNamespace": "GrassSimulation.Gameplay",
     "references": [
         "EncosyTower.Core",
+        "EncosyTower.PubSub",
         "Unity.InputSystem"
     ],
     "includePlatforms": [],

@@ -1,3 +1,4 @@
+using EncosyTower.PubSub;
 using UnityEngine;
 
 namespace GrassSimulation.Gameplay
@@ -5,16 +6,25 @@ namespace GrassSimulation.Gameplay
     public sealed class LevelSession
     {
         private const float SECOND_STAR_TIME_FRACTION = 0.2f;
+        private const float HARVEST_BATCH_INTERVAL = 0.1f;
 
         private readonly LevelDefinition _level;
         private readonly int _cuttableCells;
+        private readonly MessagePublisher.Publisher<GameplayScope> _publisher;
+        private readonly HarvestBatcher _harvestBatcher = new(HARVEST_BATCH_INTERVAL);
 
         private int _clearedCells;
 
-        public LevelSession(LevelDefinition level, MachineConfig machine, int cuttableCells)
+        public LevelSession(
+              LevelDefinition level
+            , MachineConfig machine
+            , int cuttableCells
+            , MessagePublisher.Publisher<GameplayScope> publisher
+        )
         {
             _level = level;
             _cuttableCells = cuttableCells;
+            _publisher = publisher;
             Growth = new MowerGrowth(machine);
             Objectives = new LevelObjectives(level.Quotas);
             Protection = new ProtectedRule(level.ProtectedHitCooldown);
@@ -56,6 +66,7 @@ namespace GrassSimulation.Gameplay
             ElapsedTime = 0f;
             Result = default;
             _clearedCells = 0;
+            _harvestBatcher.Clear();
         }
 
         public bool TryBegin()
@@ -66,6 +77,8 @@ namespace GrassSimulation.Gameplay
             }
 
             State = LevelState.Playing;
+            LevelStartedMsg.Publish(in _publisher, new LevelStartedMsg(_level.Id));
+            PublishAlreadyMetQuotas();
             return true;
         }
 
@@ -89,18 +102,27 @@ namespace GrassSimulation.Gameplay
 
             _clearedCells++;
 
-            if (State == LevelState.Playing)
+            if (State != LevelState.Playing)
             {
-                Objectives.Record(kind);
-                Growth.AddXp(xp);
+                _harvestBatcher.Add(cells: 1, xp: 0, ElapsedTime);
+                return;
             }
+
+            Objectives.Record(kind);
+            _harvestBatcher.Add(cells: 1, xp, ElapsedTime);
+
+            var tiersGained = Growth.AddXp(xp);
+
+            PublishCompletedQuotas(kind);
+            PublishTierUps(tiersGained);
         }
 
         public void RecordXp(int xp)
         {
             if (State == LevelState.Playing && IsPaused == false)
             {
-                Growth.AddXp(xp);
+                _harvestBatcher.Add(cells: 0, xp, ElapsedTime);
+                PublishTierUps(Growth.AddXp(xp));
             }
         }
 
@@ -111,7 +133,20 @@ namespace GrassSimulation.Gameplay
                 return false;
             }
 
-            return Protection.Touch(ElapsedTime);
+            var isNewHit = Protection.Touch(ElapsedTime);
+
+            if (isNewHit)
+            {
+                var message = new ProtectedHitMsg(
+                      Protection.Hits
+                    , _level.ProtectedHitLimit
+                    , _level.FailOnProtectedHits
+                );
+
+                ProtectedHitMsg.Publish(in _publisher, message);
+            }
+
+            return isNewHit;
         }
 
         public void EndTick(float deltaTime)
@@ -122,6 +157,7 @@ namespace GrassSimulation.Gameplay
             }
 
             ElapsedTime += deltaTime;
+            FlushHarvestBatch(force: false);
 
             if (State != LevelState.Playing)
             {
@@ -163,10 +199,15 @@ namespace GrassSimulation.Gameplay
                 return false;
             }
 
+            var resolvedTier = Growth.Tier - Growth.PendingUpgrades;
+            var message = new UpgradeChosenMsg(option, Growth.GetUpgrade(option).Id, resolvedTier);
+
             if (Growth.PendingUpgrades == 0)
             {
                 State = LevelState.Playing;
             }
+
+            UpgradeChosenMsg.Publish(in _publisher, message);
 
             return true;
         }
@@ -188,6 +229,60 @@ namespace GrassSimulation.Gameplay
 
             State = isSuccess ? LevelState.Success : LevelState.Failure;
             Result = new LevelResult(outcome, RemainingTime, Protection.Hits);
+
+            var finished = new LevelFinishedMsg(_level.Id, Result, ElapsedTime);
+
+            FlushHarvestBatch(force: true);
+            LevelFinishedMsg.Publish(in _publisher, finished);
+        }
+
+        private void PublishTierUps(int tiersGained)
+        {
+            var firstTier = Growth.Tier - tiersGained + 1;
+
+            for (var i = 0; i < tiersGained; i++)
+            {
+                TierUpMsg.Publish(in _publisher, new TierUpMsg(firstTier + i));
+            }
+        }
+
+        private void PublishCompletedQuotas(PlantKind kind)
+        {
+            var count = Objectives.QuotaCount;
+            var harvested = Objectives.GetHarvested(kind);
+
+            for (var i = 0; i < count; i++)
+            {
+                ref readonly var quota = ref Objectives.GetQuota(i);
+
+                if (quota.Kind == kind && harvested == quota.Amount)
+                {
+                    QuotaCompletedMsg.Publish(in _publisher, new QuotaCompletedMsg(i, kind, quota.IsBonus));
+                }
+            }
+        }
+
+        private void PublishAlreadyMetQuotas()
+        {
+            var count = Objectives.QuotaCount;
+
+            for (var i = 0; i < count; i++)
+            {
+                ref readonly var quota = ref Objectives.GetQuota(i);
+
+                if (quota.Amount <= 0)
+                {
+                    QuotaCompletedMsg.Publish(in _publisher, new QuotaCompletedMsg(i, quota.Kind, quota.IsBonus));
+                }
+            }
+        }
+
+        private void FlushHarvestBatch(bool force)
+        {
+            if (_harvestBatcher.TryFlush(ElapsedTime, force, out var message))
+            {
+                HarvestBatchedMsg.Publish(in _publisher, message);
+            }
         }
 
         private int CountStars()

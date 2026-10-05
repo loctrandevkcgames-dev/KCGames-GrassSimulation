@@ -2,6 +2,8 @@
     "name": "GrassSimulation.Gameplay.Tests",
     "rootNamespace": "GrassSimulation.Gameplay.Tests",
     "references": [
+        "EncosyTower.Core",
+        "EncosyTower.PubSub",
         "GrassSimulation.Gameplay",
         "UnityEditor.TestRunner",
         "UnityEngine.TestRunner"

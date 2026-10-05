@@ -229,6 +229,7 @@ MonoBehaviour:
   _protectedZone: {fileID: 425614669}
   _clippings: {fileID: 799609463}
   _props: {fileID: 1161807234}
+  _machine: {fileID: 11400000, guid: ebc40e11f7bfca245aa82bc9c2f13402, type: 2}
   _cameraShake: 0.12
   _clippingsPerCell: 3
   _petalsPerFlower: 2
@@ -326,17 +327,7 @@ MonoBehaviour:
   _spawn: {x: 2, y: 2}
   _spawnClearing: 1
   _seed: 4
-  _xpThresholds: 6400000004010000e0010000
-  _baseCutRadius: 0.65
-  _cutRadiusStep: 0.15
-  _maxCutRadius: 1.1
-  _radiusTweenSeconds: 0.25
   _pauseOnLevelUp: 0
-  _baseCuttingPower: 1
-  _cuttingPowerStep: 0.3
-  _baseSpeed: 4
-  _speedStep: 0.25
-  _maxSpeed: 4.75
   _warningDistance: 0.5
   _protectedCooldown: 1
   _cameraPitch: 60

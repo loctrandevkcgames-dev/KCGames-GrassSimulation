@@ -17,7 +17,6 @@ namespace GrassSimulation.Gameplay
         private const float HUD_LINES_PER_SCREEN = 36f;
         private const float HUD_WIDTH_IN_LINES = 26f;
         private const float HUD_HEIGHT_IN_LINES = 10f;
-        private const float MOWER_BODY_RADIUS = 0.3f;
 
         private static readonly RectInt s_flowerZone = new(50, 6, 16, 20);
         private static readonly RectInt s_thickGrassPath = new(8, 32, 56, 5);
@@ -45,6 +44,9 @@ namespace GrassSimulation.Gameplay
         private CuttablePropController _props;
 
         [SerializeField]
+        private MachineConfig _machine;
+
+        [SerializeField]
         private float _cameraShake = 0.12f;
 
         [SerializeField]
@@ -66,37 +68,7 @@ namespace GrassSimulation.Gameplay
         private int _seed = 4;
 
         [SerializeField]
-        private int[] _xpThresholds = { 100, 260, 480 };
-
-        [SerializeField]
-        private float _baseCutRadius = 0.65f;
-
-        [SerializeField]
-        private float _cutRadiusStep = 0.15f;
-
-        [SerializeField]
-        private float _maxCutRadius = 1.1f;
-
-        [SerializeField]
-        private float _radiusTweenSeconds = 0.25f;
-
-        [SerializeField]
         private bool _pauseOnLevelUp;
-
-        [SerializeField]
-        private float _baseCuttingPower = 1f;
-
-        [SerializeField]
-        private float _cuttingPowerStep = 0.3f;
-
-        [SerializeField]
-        private float _baseSpeed = 4f;
-
-        [SerializeField]
-        private float _speedStep = 0.25f;
-
-        [SerializeField]
-        private float _maxSpeed = 4.75f;
 
         [SerializeField]
         private float _warningDistance = 0.5f;
@@ -123,28 +95,18 @@ namespace GrassSimulation.Gameplay
         private FieldGrid _grid;
         private FieldFeedback _feedback;
         private GrassCutter _cutter;
+        private MowerGrowth _growth;
         private MaterialPropertyBlock _zoneProperties;
         private Vector3 _previousBlade;
         private Vector3 _cameraFocus;
         private float _cutRadius;
         private float _zoneFlash;
         private float _lastProtectedTouch;
-        private int _tier;
-        private int _xp;
-        private int _wideBladeUpgrades;
-        private int _engineUpgrades;
-        private int _pendingUpgrades;
         private int _protectedHits;
         private bool _wasResetHeld;
-        private bool _wasWideBladeHeld;
-        private bool _wasEngineHeld;
+        private bool _wasFirstUpgradeHeld;
+        private bool _wasSecondUpgradeHeld;
         private GUIStyle _hudStyle;
-
-        private float TargetCutRadius => Mathf.Min(_baseCutRadius + _wideBladeUpgrades * _cutRadiusStep, _maxCutRadius);
-
-        private float CuttingPower => _baseCuttingPower + _engineUpgrades * _cuttingPowerStep;
-
-        private float Speed => Mathf.Min(_baseSpeed + _engineUpgrades * _speedStep, _maxSpeed);
 
         private static bool IsNewPress(bool isHeld, ref bool wasHeld)
         {
@@ -158,6 +120,7 @@ namespace GrassSimulation.Gameplay
             _grid = new FieldGrid(CELLS_X, CELLS_Z, CELL_SIZE);
             _feedback = new FieldFeedback(_grid.Count);
             _cutter = new GrassCutter(_grid, _feedback, _plants);
+            _growth = new MowerGrowth(_machine);
             _zoneProperties = new MaterialPropertyBlock();
 
             IndexClippingColors();
@@ -177,20 +140,22 @@ namespace GrassSimulation.Gameplay
 
             HandleKeys();
 
-            var isChoosingUpgrade = _pauseOnLevelUp && _pendingUpgrades > 0;
+            var isChoosingUpgrade = _pauseOnLevelUp && _growth.PendingUpgrades > 0;
 
             if (isChoosingUpgrade == false)
             {
-                _mower.MaxSpeed = Speed;
+                var stats = _growth.Stats;
+
+                _mower.MaxSpeed = stats.Speed;
                 _mower.Step(deltaTime, _camera);
                 PushMowerOutOfProps();
 
-                var radiusDelta = _cutRadiusStep / _radiusTweenSeconds * deltaTime;
-                _cutRadius = Mathf.MoveTowards(_cutRadius, TargetCutRadius, radiusDelta);
+                var radiusDelta = _machine.CutRadiusTweenSpeed * deltaTime;
+                _cutRadius = Mathf.MoveTowards(_cutRadius, stats.CutRadius, radiusDelta);
 
                 var blade = _mower.transform.position;
-                Cut(_previousBlade, blade, deltaTime);
-                CutProps(blade, deltaTime);
+                Cut(_previousBlade, blade, stats.CuttingPower, deltaTime);
+                CutProps(blade, stats.CuttingPower, deltaTime);
                 _previousBlade = blade;
             }
 
@@ -208,7 +173,7 @@ namespace GrassSimulation.Gameplay
             }
 
             var mowerPosition = _mower.transform.position;
-            var lookAhead = _mower.Velocity / Mathf.Max(Speed, MIN_SEGMENT) * _cameraLookAhead;
+            var lookAhead = _mower.Velocity / Mathf.Max(_growth.Stats.Speed, MIN_SEGMENT) * _cameraLookAhead;
             var blend = 1f - Mathf.Exp(-_cameraSmoothing * Time.deltaTime);
 
             _cameraFocus = Vector3.Lerp(_cameraFocus, mowerPosition + lookAhead, blend);
@@ -224,10 +189,12 @@ namespace GrassSimulation.Gameplay
             _hudStyle ??= new GUIStyle(GUI.skin.label) { richText = true };
             _hudStyle.fontSize = Mathf.RoundToInt(lineHeight * 0.7f);
 
+            var stats = _growth.Stats;
+
             GUILayout.BeginArea(new Rect(new Vector2(margin, margin), size), GUI.skin.box);
-            HudLine($"Tier {_tier}   XP {_xp}{NextThresholdText()}");
-            HudLine($"Cut radius {TargetCutRadius:0.00} m   Power {CuttingPower:0.00}");
-            HudLine($"Speed {Speed:0.00} m/s   Protected hits {_protectedHits}");
+            HudLine($"Tier {_growth.Tier}   XP {_growth.Xp}{NextThresholdText()}");
+            HudLine($"Cut radius {stats.CutRadius:0.00} m   Power {stats.CuttingPower:0.00}");
+            HudLine($"Speed {stats.Speed:0.00} m/s   Protected hits {_protectedHits}");
             HudLine($"Grass {Harvested(PlantKind.Grass)}   Flowers {Harvested(PlantKind.HarvestFlower)}");
             HudLine($"Thick grass {Harvested(PlantKind.ThickGrass)}   Low bush {Harvested(PlantKind.LowBush)}");
             HudLine($"Hard bush {Harvested(PlantKind.HardBush)}");
@@ -238,13 +205,27 @@ namespace GrassSimulation.Gameplay
                 HudLine($"<color=#ff8080>Needs tier {_props.LockedTier}</color>");
             }
 
-            if (_pendingUpgrades > 0)
+            if (_growth.PendingUpgrades > 0)
             {
-                HudLine($"<color=yellow>LEVEL UP x{_pendingUpgrades}: 1 = Wide blade, 2 = Strong engine</color>");
+                HudLine($"<color=yellow>LEVEL UP x{_growth.PendingUpgrades}: {UpgradeChoicesText()}</color>");
             }
 
             HudLine("Move: WASD / arrows / drag / gamepad   R: reset");
             GUILayout.EndArea();
+        }
+
+        private string UpgradeChoicesText()
+        {
+            var count = _growth.UpgradeOptionCount;
+            var text = string.Empty;
+
+            for (var i = 0; i < count; i++)
+            {
+                var separator = i == 0 ? string.Empty : ", ";
+                text += $"{separator}{i + 1} = {_growth.GetUpgrade(i).Id}";
+            }
+
+            return text;
         }
 
         private string PropsText()
@@ -289,21 +270,21 @@ namespace GrassSimulation.Gameplay
             }
 
             var mowerTransform = _mower.transform;
-            mowerTransform.position = _props.PushOut(mowerTransform.position, MOWER_BODY_RADIUS);
+            mowerTransform.position = _props.PushOut(mowerTransform.position, _machine.BodyRadius);
         }
 
-        private void CutProps(Vector3 blade, float deltaTime)
+        private void CutProps(Vector3 blade, float cuttingPower, float deltaTime)
         {
             if (_props.IsInvalid())
             {
                 return;
             }
 
-            var xp = _props.Cut(blade, _cutRadius, _tier, CuttingPower, deltaTime);
+            var xp = _props.Cut(blade, _cutRadius, _growth.Tier, cuttingPower, deltaTime);
 
             if (xp > 0)
             {
-                AddXp(xp);
+                _growth.AddXp(xp);
             }
         }
 
@@ -314,8 +295,7 @@ namespace GrassSimulation.Gameplay
 
         private string NextThresholdText()
         {
-            var thresholdIndex = _tier - 1;
-            return thresholdIndex < _xpThresholds.Length ? $" / {_xpThresholds[thresholdIndex]}" : " (max tier)";
+            return _growth.TryGetNextThreshold(out var threshold) ? $" / {threshold}" : " (max tier)";
         }
 
         private int Harvested(PlantKind kind)
@@ -375,15 +355,11 @@ namespace GrassSimulation.Gameplay
             _feedback.Clear();
             Array.Clear(_harvestedByKind, 0, _harvestedByKind.Length);
 
-            _tier = 1;
-            _xp = 0;
-            _wideBladeUpgrades = 0;
-            _engineUpgrades = 0;
-            _pendingUpgrades = 0;
+            _growth.Reset();
             _protectedHits = 0;
             _zoneFlash = 0f;
             _lastProtectedTouch = float.NegativeInfinity;
-            _cutRadius = TargetCutRadius;
+            _cutRadius = _growth.Stats.CutRadius;
 
             var spawn = _grid.ToWorld(_spawn);
             _mower.ResetTo(spawn);
@@ -416,11 +392,11 @@ namespace GrassSimulation.Gameplay
                 return;
             }
 
-            var isWideBladeHeld = keyboard.digit1Key.isPressed || keyboard.numpad1Key.isPressed;
-            var isEngineHeld = keyboard.digit2Key.isPressed || keyboard.numpad2Key.isPressed;
+            var isFirstUpgradeHeld = keyboard.digit1Key.isPressed || keyboard.numpad1Key.isPressed;
+            var isSecondUpgradeHeld = keyboard.digit2Key.isPressed || keyboard.numpad2Key.isPressed;
             var resetPressed = IsNewPress(keyboard.rKey.isPressed, ref _wasResetHeld);
-            var widePressed = IsNewPress(isWideBladeHeld, ref _wasWideBladeHeld);
-            var enginePressed = IsNewPress(isEngineHeld, ref _wasEngineHeld);
+            var firstPressed = IsNewPress(isFirstUpgradeHeld, ref _wasFirstUpgradeHeld);
+            var secondPressed = IsNewPress(isSecondUpgradeHeld, ref _wasSecondUpgradeHeld);
 
             if (resetPressed)
             {
@@ -428,26 +404,19 @@ namespace GrassSimulation.Gameplay
                 return;
             }
 
-            if (_pendingUpgrades == 0)
+            if (firstPressed)
             {
-                return;
+                _growth.TryChooseUpgrade(0);
             }
-
-            if (widePressed)
+            else if (secondPressed)
             {
-                _wideBladeUpgrades++;
-                _pendingUpgrades--;
-            }
-            else if (enginePressed)
-            {
-                _engineUpgrades++;
-                _pendingUpgrades--;
+                _growth.TryChooseUpgrade(1);
             }
         }
 
-        private void Cut(Vector3 from, Vector3 to, float deltaTime)
+        private void Cut(Vector3 from, Vector3 to, float cuttingPower, float deltaTime)
         {
-            var stroke = new CutStroke(from, to, _cutRadius, _tier, CuttingPower, deltaTime);
+            var stroke = new CutStroke(from, to, _cutRadius, _growth.Tier, cuttingPower, deltaTime);
             var touchedProtected = _cutter.Cut(stroke, _harvestedCells);
             var harvestedCount = _harvestedCells.Count;
 
@@ -455,7 +424,8 @@ namespace GrassSimulation.Gameplay
             {
                 var index = _harvestedCells[i];
                 ref readonly var plant = ref _cutter.GetPlant(_grid.GetKind(index));
-                Harvest(plant.Kind, plant.Xp);
+                _harvestedByKind[(int)plant.Kind]++;
+                _growth.AddXp(plant.Xp);
                 EmitClippings(index, plant);
             }
 
@@ -483,23 +453,6 @@ namespace GrassSimulation.Gameplay
             if (plant.HasHead)
             {
                 _clippings.Emit(position, away, plant.HeadColor, _petalsPerFlower);
-            }
-        }
-
-        private void Harvest(PlantKind kind, int xp)
-        {
-            _harvestedByKind[(int)kind]++;
-            AddXp(xp);
-        }
-
-        private void AddXp(int xp)
-        {
-            _xp += xp;
-
-            while (_tier - 1 < _xpThresholds.Length && _xp >= _xpThresholds[_tier - 1])
-            {
-                _tier++;
-                _pendingUpgrades++;
             }
         }
 

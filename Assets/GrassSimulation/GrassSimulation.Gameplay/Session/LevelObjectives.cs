@@ -6,7 +6,7 @@ namespace GrassSimulation.Gameplay
     public sealed class LevelObjectives
     {
         private readonly QuotaSettings[] _quotas;
-        private readonly int[] _harvestedByKind = new int[(int)PlantKind.ProtectedFlower + 1];
+        private readonly int[] _harvestedByKind = new int[PlantKindExtensions.Length];
 
         public LevelObjectives(ReadOnlySpan<QuotaSettings> quotas)
         {

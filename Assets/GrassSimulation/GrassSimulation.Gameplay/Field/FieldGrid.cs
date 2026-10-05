@@ -1,9 +1,10 @@
 using System;
+using EncosyTower.Collections;
 using UnityEngine;
 
 namespace GrassSimulation.Gameplay
 {
-    public sealed class FieldGrid
+    public sealed class FieldGrid : IHasCount
     {
         private readonly PlantKind[] _kinds;
         private readonly float[] _progress;

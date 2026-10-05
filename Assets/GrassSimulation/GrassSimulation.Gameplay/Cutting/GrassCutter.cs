@@ -7,7 +7,7 @@ namespace GrassSimulation.Gameplay
     {
         private const float MIN_SEGMENT = 1e-4f;
 
-        private readonly PlantSettings[] _plantByKind = new PlantSettings[(int)PlantKind.ProtectedFlower + 1];
+        private readonly PlantSettings[] _plantByKind = new PlantSettings[PlantKindExtensions.Length];
         private readonly FieldGrid _grid;
         private readonly FieldFeedback _feedback;
 

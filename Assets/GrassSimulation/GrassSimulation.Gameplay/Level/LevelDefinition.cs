@@ -51,7 +51,7 @@ namespace GrassSimulation.Gameplay
         [SerializeField]
         private float _protectedHitCooldown = 1f;
 
-        public string Id => _id;
+        public LevelId Id => new(_id);
 
         public int CellsX => _cellsX;
 

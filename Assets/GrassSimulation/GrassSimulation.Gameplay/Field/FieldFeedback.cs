@@ -1,10 +1,11 @@
 using System;
+using EncosyTower.Collections;
 using Unity.Collections;
 using UnityEngine;
 
 namespace GrassSimulation.Gameplay
 {
-    public sealed class FieldFeedback
+    public sealed class FieldFeedback : IClearable
     {
         private const float SHAKE_DECAY = 4f;
         private const float LOCK_FLASH_DECAY = 3f;

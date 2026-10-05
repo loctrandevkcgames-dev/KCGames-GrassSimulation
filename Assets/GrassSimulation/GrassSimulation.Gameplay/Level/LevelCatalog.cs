@@ -1,10 +1,11 @@
 using System;
+using EncosyTower.Collections;
 using UnityEngine;
 
 namespace GrassSimulation.Gameplay
 {
     [CreateAssetMenu(fileName = "LevelCatalog", menuName = "Grass Simulation/Level Catalog")]
-    public sealed class LevelCatalog : ScriptableObject
+    public sealed class LevelCatalog : ScriptableObject, IHasCount
     {
         [SerializeField]
         private LevelDefinition[] _levels = Array.Empty<LevelDefinition>();

@@ -10,7 +10,7 @@ namespace GrassSimulation.Gameplay
         private const float LOCKED_SHAKE = 0.35f;
         private const float MIN_DISTANCE = 1e-4f;
         private const float KICK_DECAY = 5f;
-        private const int KIND_COUNT = (int)PropKind.Fruit + 1;
+        private const int KIND_COUNT = PropKindExtensions.Length;
         private const float HALF_GAP = 0.05f;
         private const float DEBRIS_SHRINK_SECONDS = 0.3f;
         private const float FLIP_DEGREES = -90f;

@@ -69,7 +69,7 @@ namespace GrassSimulation.Gameplay
         [SerializeField]
         private float _cameraSmoothing = 6f;
 
-        private readonly Color[] _clippingColorByKind = new Color[(int)PlantKind.ProtectedFlower + 1];
+        private readonly Color[] _clippingColorByKind = new Color[PlantKindExtensions.Length];
         private readonly List<int> _harvestedCells = new();
 
         private LevelDefinition _level;
@@ -195,7 +195,7 @@ namespace GrassSimulation.Gameplay
             var stats = growth.Stats;
 
             GUILayout.BeginArea(new Rect(new Vector2(margin, margin), size), GUI.skin.box);
-            HudLine($"Level {_levelIndex + 1} / {_catalog.Count}   {_level.Id}");
+            HudLine($"Level {_levelIndex + 1} / {_catalog.Count}   {_level.Id.Value}");
             HudLine($"{StateText()}   Time {_session.RemainingTime:0.0} s   Cleared {_session.ClearedFraction:P0}");
             HudLine($"Tier {growth.Tier}   XP {growth.Xp}{NextThresholdText()}   {ProtectedHitsText()}");
             HudLine($"Radius {stats.CutRadius:0.00} m   Power {stats.CuttingPower:0.00}   Speed {stats.Speed:0.00}");
@@ -218,12 +218,12 @@ namespace GrassSimulation.Gameplay
 
         private string StateText()
         {
-            var state = _session.IsPaused ? "Paused" : _session.State.ToString();
+            var state = _session.IsPaused ? "Paused" : _session.State.ToStringFast();
             var result = _session.Result;
 
             return result.Outcome == LevelOutcome.None
                 ? $"<b>{state}</b>"
-                : $"<b>{state}</b> ({result.Outcome}, {result.Stars} stars)";
+                : $"<b>{state}</b> ({result.Outcome.ToStringFast()}, {result.Stars} stars)";
         }
 
         private string ProtectedHitsText()

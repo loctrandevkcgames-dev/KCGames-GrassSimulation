@@ -29,7 +29,7 @@ namespace GrassSimulation.Gameplay
         private GrassFieldRenderer _field;
 
         [SerializeField]
-        private GrassMowerController _mower;
+        private LawnMowerController _mower;
 
         [SerializeField]
         private Camera _camera;

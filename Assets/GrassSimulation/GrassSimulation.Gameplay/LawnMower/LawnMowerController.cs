@@ -4,7 +4,7 @@ using UnityEngine.InputSystem;
 
 namespace GrassSimulation.Gameplay
 {
-    public sealed class GrassMowerController : MonoBehaviour
+    public sealed class LawnMowerController : MonoBehaviour
     {
         private const float DEAD_ZONE = 0.1f;
         private const float MIN_TURN_SPEED = 0.05f;

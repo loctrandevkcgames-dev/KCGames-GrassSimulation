@@ -34,6 +34,9 @@ namespace GrassSimulation.Gameplay
         private float _spawnClearing = 1f;
 
         [SerializeField]
+        private GameObject _propLayout;
+
+        [SerializeField]
         private float _timeLimit = 120f;
 
         [SerializeField]
@@ -59,6 +62,8 @@ namespace GrassSimulation.Gameplay
         public int Seed => _seed;
 
         public Vector2 Spawn => _spawn;
+
+        public GameObject PropLayout => _propLayout;
 
         public float TimeLimit => _timeLimit;
 

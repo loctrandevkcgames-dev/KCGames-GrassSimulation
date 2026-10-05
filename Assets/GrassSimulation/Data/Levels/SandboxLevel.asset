@@ -57,6 +57,8 @@ MonoBehaviour:
       height: 12
   _spawn: {x: 2, y: 2}
   _spawnClearing: 1
+  _propLayout: {fileID: 8443559758747741977, guid: 153fe7ba6639ab64c9c3faede758b6a3,
+    type: 3}
   _timeLimit: 150
   _quotas:
   - <Kind>k__BackingField: 2

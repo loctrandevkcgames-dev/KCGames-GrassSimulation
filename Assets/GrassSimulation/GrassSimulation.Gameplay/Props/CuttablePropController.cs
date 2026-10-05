@@ -83,6 +83,7 @@ namespace GrassSimulation.Gameplay
         private readonly int[] _brokenByKind = new int[KIND_COUNT];
 
         private Transform _collector;
+        private GameObject _layout;
         private Mesh _halfMesh;
         private float _chipTimer;
 
@@ -105,10 +106,23 @@ namespace GrassSimulation.Gameplay
         private static float Range(Vector2 range)
             => Random.Range(range.x, range.y);
 
-        public void Initialize(Transform collector)
+        public void Load(GameObject layout, Transform collector)
         {
+            ResetAll();
+
+            if (_layout.IsValid())
+            {
+                Destroy(_layout);
+            }
+
             _collector = collector;
-            GetComponentsInChildren(includeInactive: true, result: _props);
+            _props.Clear();
+            _layout = layout.IsValid() ? Instantiate(layout, transform) : null;
+
+            if (_layout.IsValid())
+            {
+                _layout.GetComponentsInChildren(includeInactive: true, results: _props);
+            }
         }
 
         public int Broken(PropKind kind)

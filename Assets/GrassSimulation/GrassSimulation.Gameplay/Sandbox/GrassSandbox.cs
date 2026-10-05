@@ -13,7 +13,7 @@ namespace GrassSimulation.Gameplay
         private const float ZONE_MARGIN = 0.3f;
         private const float HUD_LINES_PER_SCREEN = 36f;
         private const float HUD_WIDTH_IN_LINES = 26f;
-        private const float HUD_HEIGHT_IN_LINES = 15f;
+        private const float HUD_HEIGHT_IN_LINES = 16f;
 
         [SerializeField]
         private GrassFieldRenderer _field;
@@ -37,7 +37,10 @@ namespace GrassSimulation.Gameplay
         private MachineConfig _machine;
 
         [SerializeField]
-        private LevelDefinition _level;
+        private LevelCatalog _catalog;
+
+        [SerializeField]
+        private int _startLevel;
 
         [SerializeField]
         private float _cameraShake = 0.12f;
@@ -69,6 +72,7 @@ namespace GrassSimulation.Gameplay
         private readonly Color[] _clippingColorByKind = new Color[(int)PlantKind.ProtectedFlower + 1];
         private readonly List<int> _harvestedCells = new();
 
+        private LevelDefinition _level;
         private FieldGrid _grid;
         private FieldFeedback _feedback;
         private GrassCutter _cutter;
@@ -80,7 +84,11 @@ namespace GrassSimulation.Gameplay
         private Vector3 _cameraFocus;
         private float _cutRadius;
         private float _zoneFlash;
+        private int _levelIndex;
         private bool _wasResetHeld;
+        private bool _wasNextLevelHeld;
+        private bool _wasPreviousLevelHeld;
+        private bool _wasSkipLevelHeld;
         private bool _wasConfirmHeld;
         private bool _wasPauseHeld;
         private bool _wasFirstUpgradeHeld;
@@ -96,14 +104,21 @@ namespace GrassSimulation.Gameplay
 
         private void Start()
         {
+            _zoneProperties = new MaterialPropertyBlock();
+
+            IndexClippingColors();
+            LoadLevel(_startLevel);
+        }
+
+        private void LoadLevel(int index)
+        {
+            _levelIndex = _catalog.ClampIndex(index);
+            _level = _catalog.Get(_levelIndex);
             _grid = _level.CreateGrid();
             _feedback = new FieldFeedback(_grid.Count);
             _cutter = new GrassCutter(_grid, _feedback, _plants);
-            _zoneProperties = new MaterialPropertyBlock();
-
             _hasProtectedBed = _level.TryGetProtectedBed(out _protectedBed);
 
-            IndexClippingColors();
             ClearPropCells();
             PlaceProtectedZone();
 
@@ -180,6 +195,7 @@ namespace GrassSimulation.Gameplay
             var stats = growth.Stats;
 
             GUILayout.BeginArea(new Rect(new Vector2(margin, margin), size), GUI.skin.box);
+            HudLine($"Level {_levelIndex + 1} / {_catalog.Count}   {_level.Id}");
             HudLine($"{StateText()}   Time {_session.RemainingTime:0.0} s   Cleared {_session.ClearedFraction:P0}");
             HudLine($"Tier {growth.Tier}   XP {growth.Xp}{NextThresholdText()}   {ProtectedHitsText()}");
             HudLine($"Radius {stats.CutRadius:0.00} m   Power {stats.CuttingPower:0.00}   Speed {stats.Speed:0.00}");
@@ -223,8 +239,9 @@ namespace GrassSimulation.Gameplay
         {
             return _session.State switch {
                 LevelState.Preview => "Enter: start   R: reset",
-                LevelState.Success => "Enter: cleanup   R: retry",
+                LevelState.Success => "Enter: cleanup   N: next level   R: retry",
                 LevelState.Failure => "R: retry",
+                LevelState.Cleanup => "N: next level   P: pause   R: retry",
                 _ => "Move: WASD / arrows / drag / gamepad   P: pause   R: reset",
             };
         }
@@ -280,7 +297,7 @@ namespace GrassSimulation.Gameplay
                 return;
             }
 
-            _props.Initialize(_mower.transform);
+            _props.Load(_level.PropLayout, _mower.transform);
 
             var props = _props.Props;
             var propCount = props.Count;
@@ -416,6 +433,9 @@ namespace GrassSimulation.Gameplay
             var isFirstUpgradeHeld = keyboard.digit1Key.isPressed || keyboard.numpad1Key.isPressed;
             var isSecondUpgradeHeld = keyboard.digit2Key.isPressed || keyboard.numpad2Key.isPressed;
             var resetPressed = IsNewPress(keyboard.rKey.isPressed, ref _wasResetHeld);
+            var nextLevelPressed = IsNewPress(keyboard.nKey.isPressed, ref _wasNextLevelHeld);
+            var previousLevelPressed = IsNewPress(keyboard.pageUpKey.isPressed, ref _wasPreviousLevelHeld);
+            var skipLevelPressed = IsNewPress(keyboard.pageDownKey.isPressed, ref _wasSkipLevelHeld);
             var confirmPressed = IsNewPress(isConfirmHeld, ref _wasConfirmHeld);
             var pausePressed = IsNewPress(isPauseHeld, ref _wasPauseHeld);
             var firstPressed = IsNewPress(isFirstUpgradeHeld, ref _wasFirstUpgradeHeld);
@@ -424,6 +444,18 @@ namespace GrassSimulation.Gameplay
             if (resetPressed)
             {
                 ResetRun();
+                return;
+            }
+
+            if (nextLevelPressed)
+            {
+                TryAdvanceLevel();
+                return;
+            }
+
+            if (previousLevelPressed || skipLevelPressed)
+            {
+                LoadLevel(_levelIndex + (skipLevelPressed ? 1 : -1));
                 return;
             }
 
@@ -444,6 +476,17 @@ namespace GrassSimulation.Gameplay
             else if (secondPressed)
             {
                 _session.TryChooseUpgrade(1);
+            }
+        }
+
+        private void TryAdvanceLevel()
+        {
+            var hasWon = _session.State == LevelState.Success || _session.State == LevelState.Cleanup;
+            var hasNextLevel = _levelIndex + 1 < _catalog.Count;
+
+            if (hasWon && hasNextLevel)
+            {
+                LoadLevel(_levelIndex + 1);
             }
         }
 

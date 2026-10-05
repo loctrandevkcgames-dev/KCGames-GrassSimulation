@@ -13,7 +13,7 @@ namespace GrassSimulation.Gameplay
         private const float ZONE_MARGIN = 0.3f;
         private const float HUD_LINES_PER_SCREEN = 36f;
         private const float HUD_WIDTH_IN_LINES = 26f;
-        private const float HUD_HEIGHT_IN_LINES = 10f;
+        private const float HUD_HEIGHT_IN_LINES = 15f;
 
         [SerializeField]
         private GrassFieldRenderer _field;
@@ -52,13 +52,7 @@ namespace GrassSimulation.Gameplay
         private PlantSettings[] _plants = Array.Empty<PlantSettings>();
 
         [SerializeField]
-        private bool _pauseOnLevelUp;
-
-        [SerializeField]
         private float _warningDistance = 0.5f;
-
-        [SerializeField]
-        private float _protectedCooldown = 1f;
 
         [SerializeField]
         private float _cameraPitch = 60f;
@@ -72,14 +66,13 @@ namespace GrassSimulation.Gameplay
         [SerializeField]
         private float _cameraSmoothing = 6f;
 
-        private readonly int[] _harvestedByKind = new int[(int)PlantKind.ProtectedFlower + 1];
         private readonly Color[] _clippingColorByKind = new Color[(int)PlantKind.ProtectedFlower + 1];
         private readonly List<int> _harvestedCells = new();
 
         private FieldGrid _grid;
         private FieldFeedback _feedback;
         private GrassCutter _cutter;
-        private MowerGrowth _growth;
+        private LevelSession _session;
         private MaterialPropertyBlock _zoneProperties;
         private RectInt _protectedBed;
         private bool _hasProtectedBed;
@@ -87,9 +80,9 @@ namespace GrassSimulation.Gameplay
         private Vector3 _cameraFocus;
         private float _cutRadius;
         private float _zoneFlash;
-        private float _lastProtectedTouch;
-        private int _protectedHits;
         private bool _wasResetHeld;
+        private bool _wasConfirmHeld;
+        private bool _wasPauseHeld;
         private bool _wasFirstUpgradeHeld;
         private bool _wasSecondUpgradeHeld;
         private GUIStyle _hudStyle;
@@ -106,7 +99,6 @@ namespace GrassSimulation.Gameplay
             _grid = _level.CreateGrid();
             _feedback = new FieldFeedback(_grid.Count);
             _cutter = new GrassCutter(_grid, _feedback, _plants);
-            _growth = new MowerGrowth(_machine);
             _zoneProperties = new MaterialPropertyBlock();
 
             _hasProtectedBed = _level.TryGetProtectedBed(out _protectedBed);
@@ -115,6 +107,7 @@ namespace GrassSimulation.Gameplay
             ClearPropCells();
             PlaceProtectedZone();
 
+            _session = new LevelSession(_level, _machine, _cutter.CountCuttableCells());
             _field.Build(_grid, _plants, _level.Seed);
             _mower.Bounds = _grid.Bounds;
 
@@ -127,11 +120,9 @@ namespace GrassSimulation.Gameplay
 
             HandleKeys();
 
-            var isChoosingUpgrade = _pauseOnLevelUp && _growth.PendingUpgrades > 0;
-
-            if (isChoosingUpgrade == false)
+            if (_session.IsSimulating)
             {
-                var stats = _growth.Stats;
+                var stats = _session.Growth.Stats;
 
                 _mower.MaxSpeed = stats.Speed;
                 _mower.Step(deltaTime, _camera);
@@ -146,10 +137,19 @@ namespace GrassSimulation.Gameplay
                 _previousBlade = blade;
             }
 
+            _session.EndTick(deltaTime);
             DecayFeedback(deltaTime);
             WriteCellStates();
             UpdateBlade();
             UpdateProtectedZone();
+        }
+
+        private void OnApplicationPause(bool isPaused)
+        {
+            if (isPaused && _session != null)
+            {
+                _session.Pause();
+            }
         }
 
         private void LateUpdate()
@@ -160,7 +160,7 @@ namespace GrassSimulation.Gameplay
             }
 
             var mowerPosition = _mower.transform.position;
-            var lookAhead = _mower.Velocity / Mathf.Max(_growth.Stats.Speed, MIN_SEGMENT) * _cameraLookAhead;
+            var lookAhead = _mower.Velocity / Mathf.Max(_session.Growth.Stats.Speed, MIN_SEGMENT) * _cameraLookAhead;
             var blend = 1f - Mathf.Exp(-_cameraSmoothing * Time.deltaTime);
 
             _cameraFocus = Vector3.Lerp(_cameraFocus, mowerPosition + lookAhead, blend);
@@ -176,15 +176,14 @@ namespace GrassSimulation.Gameplay
             _hudStyle ??= new GUIStyle(GUI.skin.label) { richText = true };
             _hudStyle.fontSize = Mathf.RoundToInt(lineHeight * 0.7f);
 
-            var stats = _growth.Stats;
+            var growth = _session.Growth;
+            var stats = growth.Stats;
 
             GUILayout.BeginArea(new Rect(new Vector2(margin, margin), size), GUI.skin.box);
-            HudLine($"Tier {_growth.Tier}   XP {_growth.Xp}{NextThresholdText()}");
-            HudLine($"Cut radius {stats.CutRadius:0.00} m   Power {stats.CuttingPower:0.00}");
-            HudLine($"Speed {stats.Speed:0.00} m/s   Protected hits {_protectedHits}");
-            HudLine($"Grass {Harvested(PlantKind.Grass)}   Flowers {Harvested(PlantKind.HarvestFlower)}");
-            HudLine($"Thick grass {Harvested(PlantKind.ThickGrass)}   Low bush {Harvested(PlantKind.LowBush)}");
-            HudLine($"Hard bush {Harvested(PlantKind.HardBush)}");
+            HudLine($"{StateText()}   Time {_session.RemainingTime:0.0} s   Cleared {_session.ClearedFraction:P0}");
+            HudLine($"Tier {growth.Tier}   XP {growth.Xp}{NextThresholdText()}   {ProtectedHitsText()}");
+            HudLine($"Radius {stats.CutRadius:0.00} m   Power {stats.CuttingPower:0.00}   Speed {stats.Speed:0.00}");
+            HudQuotas();
             HudLine(PropsText());
 
             if (_props.IsValid() && _props.IsTouchingLocked)
@@ -192,24 +191,68 @@ namespace GrassSimulation.Gameplay
                 HudLine($"<color=#ff8080>Needs tier {_props.LockedTier}</color>");
             }
 
-            if (_growth.PendingUpgrades > 0)
+            if (_session.State == LevelState.UpgradeChoice)
             {
-                HudLine($"<color=yellow>LEVEL UP x{_growth.PendingUpgrades}: {UpgradeChoicesText()}</color>");
+                HudLine($"<color=yellow>LEVEL UP x{growth.PendingUpgrades}: {UpgradeChoicesText()}</color>");
             }
 
-            HudLine("Move: WASD / arrows / drag / gamepad   R: reset");
+            HudLine(HintText());
             GUILayout.EndArea();
+        }
+
+        private string StateText()
+        {
+            var state = _session.IsPaused ? "Paused" : _session.State.ToString();
+            var result = _session.Result;
+
+            return result.Outcome == LevelOutcome.None
+                ? $"<b>{state}</b>"
+                : $"<b>{state}</b> ({result.Outcome}, {result.Stars} stars)";
+        }
+
+        private string ProtectedHitsText()
+        {
+            var hits = _session.Protection.Hits;
+
+            return _session.CountsProtectedHits
+                ? $"Protected hits {hits} / {_session.ProtectedHitLimit}"
+                : $"Protected hits {hits}";
+        }
+
+        private string HintText()
+        {
+            return _session.State switch {
+                LevelState.Preview => "Enter: start   R: reset",
+                LevelState.Success => "Enter: cleanup   R: retry",
+                LevelState.Failure => "R: retry",
+                _ => "Move: WASD / arrows / drag / gamepad   P: pause   R: reset",
+            };
+        }
+
+        private void HudQuotas()
+        {
+            var objectives = _session.Objectives;
+            var count = objectives.QuotaCount;
+
+            for (var i = 0; i < count; i++)
+            {
+                ref readonly var quota = ref objectives.GetQuota(i);
+                var label = quota.IsBonus ? "Bonus" : "Quota";
+                var mark = objectives.IsQuotaMet(i) ? " <color=#80ff80>done</color>" : string.Empty;
+                HudLine($"{label} {quota.Kind} {objectives.GetQuotaProgress(i)} / {quota.Amount}{mark}");
+            }
         }
 
         private string UpgradeChoicesText()
         {
-            var count = _growth.UpgradeOptionCount;
+            var growth = _session.Growth;
+            var count = growth.UpgradeOptionCount;
             var text = string.Empty;
 
             for (var i = 0; i < count; i++)
             {
                 var separator = i == 0 ? string.Empty : ", ";
-                text += $"{separator}{i + 1} = {_growth.GetUpgrade(i).Id}";
+                text += $"{separator}{i + 1} = {growth.GetUpgrade(i).Id}";
             }
 
             return text;
@@ -267,11 +310,11 @@ namespace GrassSimulation.Gameplay
                 return;
             }
 
-            var xp = _props.Cut(blade, _cutRadius, _growth.Tier, cuttingPower, deltaTime);
+            var xp = _props.Cut(blade, _cutRadius, _session.Growth.Tier, cuttingPower, deltaTime);
 
             if (xp > 0)
             {
-                _growth.AddXp(xp);
+                _session.RecordXp(xp);
             }
         }
 
@@ -282,11 +325,8 @@ namespace GrassSimulation.Gameplay
 
         private string NextThresholdText()
         {
-            return _growth.TryGetNextThreshold(out var threshold) ? $" / {threshold}" : " (max tier)";
+            return _session.Growth.TryGetNextThreshold(out var threshold) ? $" / {threshold}" : " (max tier)";
         }
-
-        private int Harvested(PlantKind kind)
-            => _harvestedByKind[(int)kind];
 
         private void IndexClippingColors()
         {
@@ -336,13 +376,9 @@ namespace GrassSimulation.Gameplay
 
             _grid.ResetProgress();
             _feedback.Clear();
-            Array.Clear(_harvestedByKind, 0, _harvestedByKind.Length);
-
-            _growth.Reset();
-            _protectedHits = 0;
+            _session.Reset();
             _zoneFlash = 0f;
-            _lastProtectedTouch = float.NegativeInfinity;
-            _cutRadius = _growth.Stats.CutRadius;
+            _cutRadius = _session.Growth.Stats.CutRadius;
 
             var spawn = _grid.ToWorld(_level.Spawn);
             _mower.ResetTo(spawn);
@@ -375,9 +411,13 @@ namespace GrassSimulation.Gameplay
                 return;
             }
 
+            var isConfirmHeld = keyboard.enterKey.isPressed || keyboard.numpadEnterKey.isPressed;
+            var isPauseHeld = keyboard.pKey.isPressed || keyboard.escapeKey.isPressed;
             var isFirstUpgradeHeld = keyboard.digit1Key.isPressed || keyboard.numpad1Key.isPressed;
             var isSecondUpgradeHeld = keyboard.digit2Key.isPressed || keyboard.numpad2Key.isPressed;
             var resetPressed = IsNewPress(keyboard.rKey.isPressed, ref _wasResetHeld);
+            var confirmPressed = IsNewPress(isConfirmHeld, ref _wasConfirmHeld);
+            var pausePressed = IsNewPress(isPauseHeld, ref _wasPauseHeld);
             var firstPressed = IsNewPress(isFirstUpgradeHeld, ref _wasFirstUpgradeHeld);
             var secondPressed = IsNewPress(isSecondUpgradeHeld, ref _wasSecondUpgradeHeld);
 
@@ -387,19 +427,59 @@ namespace GrassSimulation.Gameplay
                 return;
             }
 
+            if (pausePressed)
+            {
+                TogglePause();
+            }
+
+            if (confirmPressed)
+            {
+                Confirm();
+            }
+
             if (firstPressed)
             {
-                _growth.TryChooseUpgrade(0);
+                _session.TryChooseUpgrade(0);
             }
             else if (secondPressed)
             {
-                _growth.TryChooseUpgrade(1);
+                _session.TryChooseUpgrade(1);
+            }
+        }
+
+        private void TogglePause()
+        {
+            if (_session.IsPaused)
+            {
+                _session.Resume();
+            }
+            else
+            {
+                _session.Pause();
+            }
+        }
+
+        private void Confirm()
+        {
+            switch (_session.State)
+            {
+                case LevelState.Preview:
+                {
+                    _session.TryBegin();
+                    break;
+                }
+
+                case LevelState.Success:
+                {
+                    _session.TryEnterCleanup();
+                    break;
+                }
             }
         }
 
         private void Cut(Vector3 from, Vector3 to, float cuttingPower, float deltaTime)
         {
-            var stroke = new CutStroke(from, to, _cutRadius, _growth.Tier, cuttingPower, deltaTime);
+            var stroke = new CutStroke(from, to, _cutRadius, _session.Growth.Tier, cuttingPower, deltaTime);
             var touchedProtected = _cutter.Cut(stroke, _harvestedCells);
             var harvestedCount = _harvestedCells.Count;
 
@@ -407,16 +487,15 @@ namespace GrassSimulation.Gameplay
             {
                 var index = _harvestedCells[i];
                 ref readonly var plant = ref _cutter.GetPlant(_grid.GetKind(index));
-                _harvestedByKind[(int)plant.Kind]++;
-                _growth.AddXp(plant.Xp);
+                _session.RecordHarvest(plant.Kind, plant.Xp);
                 EmitClippings(index, plant);
             }
 
             _harvestedCells.Clear();
 
-            if (touchedProtected)
+            if (touchedProtected && _session.RecordProtectedTouch())
             {
-                RegisterProtectedTouch();
+                _zoneFlash = 1f;
             }
         }
 
@@ -437,19 +516,6 @@ namespace GrassSimulation.Gameplay
             {
                 _clippings.Emit(position, away, plant.HeadColor, _petalsPerFlower);
             }
-        }
-
-        private void RegisterProtectedTouch()
-        {
-            var now = Time.time;
-
-            if (now - _lastProtectedTouch > _protectedCooldown)
-            {
-                _protectedHits++;
-                _zoneFlash = 1f;
-            }
-
-            _lastProtectedTouch = now;
         }
 
         private void DecayFeedback(float deltaTime)

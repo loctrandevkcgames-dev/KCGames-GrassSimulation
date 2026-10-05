@@ -325,9 +325,7 @@ MonoBehaviour:
     <HasHead>k__BackingField: 1
     <HeadColor>k__BackingField: {r: 1, g: 1, b: 1, a: 1}
     <HeadRadius>k__BackingField: 0.11
-  _pauseOnLevelUp: 0
   _warningDistance: 0.5
-  _protectedCooldown: 1
   _cameraPitch: 60
   _cameraDistance: 25
   _cameraLookAhead: 1.2

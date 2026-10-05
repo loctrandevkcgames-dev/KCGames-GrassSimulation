@@ -54,6 +54,24 @@ namespace GrassSimulation.Gameplay
         public ref readonly PlantSettings GetPlant(PlantKind kind)
             => ref _plantByKind[(int)kind];
 
+        public int CountCuttableCells()
+        {
+            var cuttable = 0;
+            var count = _grid.Count;
+
+            for (var i = 0; i < count; i++)
+            {
+                var kind = _grid.GetKind(i);
+
+                if (kind != PlantKind.None && _plantByKind[(int)kind].IsProtected == false)
+                {
+                    cuttable++;
+                }
+            }
+
+            return cuttable;
+        }
+
         public bool Cut(in CutStroke stroke, List<int> harvested)
         {
             var radius = stroke.Radius;

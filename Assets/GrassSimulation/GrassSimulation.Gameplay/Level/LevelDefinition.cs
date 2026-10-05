@@ -33,6 +33,21 @@ namespace GrassSimulation.Gameplay
         [SerializeField]
         private float _spawnClearing = 1f;
 
+        [SerializeField]
+        private float _timeLimit = 120f;
+
+        [SerializeField]
+        private QuotaSettings[] _quotas = Array.Empty<QuotaSettings>();
+
+        [SerializeField]
+        private bool _failOnProtectedHits;
+
+        [SerializeField]
+        private int _protectedHitLimit = 3;
+
+        [SerializeField]
+        private float _protectedHitCooldown = 1f;
+
         public string Id => _id;
 
         public int CellsX => _cellsX;
@@ -44,6 +59,16 @@ namespace GrassSimulation.Gameplay
         public int Seed => _seed;
 
         public Vector2 Spawn => _spawn;
+
+        public float TimeLimit => _timeLimit;
+
+        public ReadOnlySpan<QuotaSettings> Quotas => _quotas;
+
+        public bool FailOnProtectedHits => _failOnProtectedHits;
+
+        public int ProtectedHitLimit => _protectedHitLimit;
+
+        public float ProtectedHitCooldown => _protectedHitCooldown;
 
         public FieldGrid CreateGrid()
         {

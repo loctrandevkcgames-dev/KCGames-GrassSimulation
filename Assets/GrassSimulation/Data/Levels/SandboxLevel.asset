@@ -57,3 +57,17 @@ MonoBehaviour:
       height: 12
   _spawn: {x: 2, y: 2}
   _spawnClearing: 1
+  _timeLimit: 150
+  _quotas:
+  - <Kind>k__BackingField: 2
+    <Amount>k__BackingField: 250
+    <IsBonus>k__BackingField: 0
+  - <Kind>k__BackingField: 4
+    <Amount>k__BackingField: 120
+    <IsBonus>k__BackingField: 0
+  - <Kind>k__BackingField: 5
+    <Amount>k__BackingField: 60
+    <IsBonus>k__BackingField: 1
+  _failOnProtectedHits: 1
+  _protectedHitLimit: 3
+  _protectedHitCooldown: 1

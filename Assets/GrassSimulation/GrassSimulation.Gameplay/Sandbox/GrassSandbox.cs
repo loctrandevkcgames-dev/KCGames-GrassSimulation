@@ -19,7 +19,8 @@ namespace GrassSimulation.Gameplay
         private const float PARTIAL_SCALE = 254f;
         private const float HUD_LINES_PER_SCREEN = 36f;
         private const float HUD_WIDTH_IN_LINES = 26f;
-        private const float HUD_HEIGHT_IN_LINES = 9f;
+        private const float HUD_HEIGHT_IN_LINES = 10f;
+        private const float MOWER_BODY_RADIUS = 0.3f;
 
         private static readonly RectInt s_flowerZone = new(50, 6, 16, 20);
         private static readonly RectInt s_thickGrassPath = new(8, 32, 56, 5);
@@ -42,6 +43,12 @@ namespace GrassSimulation.Gameplay
 
         [SerializeField]
         private GrassClippingsEmitter _clippings;
+
+        [SerializeField]
+        private CuttablePropController _props;
+
+        [SerializeField]
+        private float _cameraShake = 0.12f;
 
         [SerializeField]
         private int _clippingsPerCell = 3;
@@ -205,6 +212,7 @@ namespace GrassSimulation.Gameplay
 
             IndexPlants();
             CreateLayout();
+            ClearPropCells();
             PlaceProtectedZone();
 
             _field.Build(_origin, CELLS_X, CELLS_Z, CELL_SIZE, _kinds, _plants, _seed);
@@ -225,12 +233,14 @@ namespace GrassSimulation.Gameplay
             {
                 _mower.MaxSpeed = Speed;
                 _mower.Step(deltaTime, _camera);
+                PushMowerOutOfProps();
 
                 var radiusDelta = _cutRadiusStep / _radiusTweenSeconds * deltaTime;
                 _cutRadius = Mathf.MoveTowards(_cutRadius, TargetCutRadius, radiusDelta);
 
                 var blade = _mower.transform.position;
                 Cut(_previousBlade, blade, deltaTime);
+                CutProps(blade, deltaTime);
                 _previousBlade = blade;
             }
 
@@ -271,6 +281,12 @@ namespace GrassSimulation.Gameplay
             HudLine($"Grass {Harvested(PlantKind.Grass)}   Flowers {Harvested(PlantKind.HarvestFlower)}");
             HudLine($"Thick grass {Harvested(PlantKind.ThickGrass)}   Low bush {Harvested(PlantKind.LowBush)}");
             HudLine($"Hard bush {Harvested(PlantKind.HardBush)}");
+            HudLine(PropsText());
+
+            if (_props.IsValid() && _props.IsTouchingLocked)
+            {
+                HudLine($"<color=#ff8080>Needs tier {_props.LockedTier}</color>");
+            }
 
             if (_pendingUpgrades > 0)
             {
@@ -279,6 +295,87 @@ namespace GrassSimulation.Gameplay
 
             HudLine("Move: WASD / arrows / drag / gamepad   R: reset");
             GUILayout.EndArea();
+        }
+
+        private string PropsText()
+        {
+            if (_props.IsInvalid())
+            {
+                return string.Empty;
+            }
+
+            var berries = _props.Broken(PropKind.BerryBush);
+            var logs = _props.Broken(PropKind.Log);
+            var fruitTrees = _props.Broken(PropKind.FruitTree);
+            var trees = _props.Broken(PropKind.Tree);
+            var fruits = _props.Broken(PropKind.Fruit);
+            return $"Berry {berries}  Log {logs}  Apple tree {fruitTrees}  Tree {trees}  Fruit {fruits}";
+        }
+
+        private void ClearPropCells()
+        {
+            if (_props.IsInvalid())
+            {
+                return;
+            }
+
+            _props.Initialize(_mower.transform);
+
+            var props = _props.Props;
+            var propCount = props.Count;
+
+            for (var i = 0; i < propCount; i++)
+            {
+                var prop = props[i];
+                var center = prop.transform.position;
+                var centerXZ = new Vector2(center.x, center.z) - _origin;
+                ClearCellsAround(centerXZ, prop.FootprintRadius);
+            }
+        }
+
+        private void ClearCellsAround(Vector2 centerXZ, float radius)
+        {
+            var xMin = Mathf.Max(0, Mathf.FloorToInt((centerXZ.x - radius) / CELL_SIZE));
+            var zMin = Mathf.Max(0, Mathf.FloorToInt((centerXZ.y - radius) / CELL_SIZE));
+            var xMax = Mathf.Min(CELLS_X - 1, Mathf.FloorToInt((centerXZ.x + radius) / CELL_SIZE));
+            var zMax = Mathf.Min(CELLS_Z - 1, Mathf.FloorToInt((centerXZ.y + radius) / CELL_SIZE));
+
+            for (var z = zMin; z <= zMax; z++)
+            {
+                for (var x = xMin; x <= xMax; x++)
+                {
+                    if (Vector2.Distance(CellCenter(x, z), centerXZ) <= radius)
+                    {
+                        _kinds[z * CELLS_X + x] = PlantKind.None;
+                    }
+                }
+            }
+        }
+
+        private void PushMowerOutOfProps()
+        {
+            if (_props.IsInvalid())
+            {
+                return;
+            }
+
+            var mowerTransform = _mower.transform;
+            mowerTransform.position = _props.PushOut(mowerTransform.position, MOWER_BODY_RADIUS);
+        }
+
+        private void CutProps(Vector3 blade, float deltaTime)
+        {
+            if (_props.IsInvalid())
+            {
+                return;
+            }
+
+            var xp = _props.Cut(blade, _cutRadius, _tier, CuttingPower, deltaTime);
+
+            if (xp > 0)
+            {
+                AddXp(xp);
+            }
         }
 
         private void HudLine(string text)
@@ -352,6 +449,11 @@ namespace GrassSimulation.Gameplay
 
         private void ResetRun()
         {
+            if (_props.IsValid())
+            {
+                _props.ResetAll();
+            }
+
             Array.Clear(_progress, 0, _progress.Length);
             Array.Clear(_shake, 0, _shake.Length);
             Array.Clear(_lockFlash, 0, _lockFlash.Length);
@@ -384,7 +486,9 @@ namespace GrassSimulation.Gameplay
             }
 
             var rotation = Quaternion.Euler(_cameraPitch, 0f, 0f);
-            var position = _cameraFocus - rotation * Vector3.forward * _cameraDistance;
+            var kick = _props.IsValid() ? _props.CameraKick : 0f;
+            var shake = UnityEngine.Random.insideUnitSphere * (kick * _cameraShake);
+            var position = _cameraFocus + shake - rotation * Vector3.forward * _cameraDistance;
             _camera.transform.SetPositionAndRotation(position, rotation);
         }
 
@@ -525,6 +629,11 @@ namespace GrassSimulation.Gameplay
         private void Harvest(PlantKind kind, int xp)
         {
             _harvestedByKind[(int)kind]++;
+            AddXp(xp);
+        }
+
+        private void AddXp(int xp)
+        {
             _xp += xp;
 
             while (_tier - 1 < _xpThresholds.Length && _xp >= _xpThresholds[_tier - 1])

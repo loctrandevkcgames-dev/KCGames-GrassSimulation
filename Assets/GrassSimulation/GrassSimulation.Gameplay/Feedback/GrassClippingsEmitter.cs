@@ -8,6 +8,7 @@ namespace GrassSimulation.Gameplay
     {
         private const float LEAF_HALF_LENGTH = 0.5f;
         private const float LEAF_HALF_WIDTH = 0.28f;
+        private const float LEAF_FOLD = 0.14f;
         private const float MIN_DIRECTION = 1e-4f;
 
         [SerializeField]
@@ -48,16 +49,14 @@ namespace GrassSimulation.Gameplay
         private static Mesh CreateLeafMesh()
         {
             var mesh = new Mesh { name = "GrassClippingLeaf" };
+            var back = new Vector3(0f, 0f, -LEAF_HALF_LENGTH);
+            var front = new Vector3(0f, 0f, LEAF_HALF_LENGTH);
+            var left = new Vector3(-LEAF_HALF_WIDTH, LEAF_FOLD, 0f);
+            var right = new Vector3(LEAF_HALF_WIDTH, LEAF_FOLD, 0f);
 
-            mesh.SetVertices(new[] {
-                new Vector3(0f, 0f, -LEAF_HALF_LENGTH),
-                new Vector3(LEAF_HALF_WIDTH, 0f, 0f),
-                new Vector3(0f, 0f, LEAF_HALF_LENGTH),
-                new Vector3(-LEAF_HALF_WIDTH, 0f, 0f),
-            });
-
-            mesh.SetNormals(new[] { Vector3.up, Vector3.up, Vector3.up, Vector3.up });
-            mesh.SetTriangles(new[] { 0, 2, 1, 0, 3, 2 }, submesh: 0);
+            mesh.SetVertices(new[] { back, front, left, back, right, front });
+            mesh.SetTriangles(new[] { 0, 1, 2, 3, 4, 5 }, submesh: 0);
+            mesh.RecalculateNormals();
             mesh.RecalculateBounds();
             return mesh;
         }

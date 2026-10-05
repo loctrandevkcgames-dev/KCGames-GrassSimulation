@@ -31,21 +31,31 @@ Material:
     m_Floats:
     - _AmbientStrength: 0.45
     - _BaseMapWorldSize: 4
+    - _BlotchCoverage: 0.45
+    - _BlotchScale: 0.9
     - _CutEdge: 0.5
     - _CutEdgeDarkening: 0
     - _CutEdgeSoftness: 0.2
     - _LightWrap: 0.3
     - _NoiseScale: 0.8
     - _NoiseStrength: 0.1
+    - _PebbleDensity: 0.35
+    - _PebbleScale: 3
+    - _PebbleSize: 0.2
     - _ShadeSoftness: 0.3
     - _ShadeThreshold: 0.35
     - _ShadowStrength: 0.75
+    - _SpeckDensity: 0.25
+    - _SpeckScale: 14
     - _StripeAngle: 0
     - _StripeStrength: 0
     - _StripeWidth: 1
     m_Colors:
+    - _BlotchColor: {r: 0.78, g: 0.65999997, b: 0.6, a: 0.5}
     - _CutColor: {r: 0.62, g: 0.46, b: 0.3, a: 1}
-    - _ShadeColor: {r: 0.46, g: 0.48, b: 0.78, a: 1}
+    - _PebbleColor: {r: 0.86, g: 0.76, b: 0.62, a: 1}
+    - _ShadeColor: {r: 0.52, g: 0.56, b: 0.68, a: 1}
+    - _SpeckColor: {r: 0.62, g: 0.47999996, b: 0.37999994, a: 0.6}
     - _UncutColor: {r: 0.62, g: 0.46, b: 0.3, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

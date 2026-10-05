@@ -21,20 +21,17 @@ namespace GrassSimulation.Gameplay
 
         public NativeArray<Color32> CellStates => _stateTexture.GetPixelData<Color32>(mipLevel: 0);
 
-        public void Build(
-              Vector2 origin
-            , int cellsX
-            , int cellsZ
-            , float cellSize
-            , PlantKind[] kinds
-            , PlantSettings[] plants
-            , int seed
-        )
+        public void Build(FieldGrid grid, PlantSettings[] plants, int seed)
         {
+            var cellsX = grid.CellsX;
+            var cellsZ = grid.CellsZ;
+            var origin = grid.Origin;
+            var size = grid.Size;
+
             ClearChunks();
             CreateStateTexture(cellsX, cellsZ);
 
-            _fieldParams = new Vector4(origin.x, origin.y, 1f / (cellsX * cellSize), 1f / (cellsZ * cellSize));
+            _fieldParams = new Vector4(origin.x, origin.y, 1f / size.x, 1f / size.y);
 
             var builder = new GrassFieldMeshBuilder();
             var random = new System.Random(seed);
@@ -52,7 +49,7 @@ namespace GrassSimulation.Gameplay
                     {
                         var plant = plants[i];
 
-                        if (builder.TryBuildChunk(kinds, cellsX, chunk, cellSize, in plant, random, out var mesh))
+                        if (builder.TryBuildChunk(grid, chunk, in plant, random, out var mesh))
                         {
                             CreateChunk(mesh, plant.Material, origin);
                         }

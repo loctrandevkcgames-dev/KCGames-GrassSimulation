@@ -51,22 +51,22 @@ namespace GrassSimulation.Gameplay
             => new(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
 
         public bool TryBuildChunk(
-              PlantKind[] kinds
-            , int cellsX
+              FieldGrid grid
             , RectInt chunk
-            , float cellSize
             , in PlantSettings settings
             , System.Random random
             , out Mesh mesh
         )
         {
+            var cellSize = grid.CellSize;
+
             Clear();
 
             for (var z = chunk.yMin; z < chunk.yMax; z++)
             {
                 for (var x = chunk.xMin; x < chunk.xMax; x++)
                 {
-                    if (kinds[z * cellsX + x] != settings.Kind)
+                    if (grid.GetKind(grid.IndexOf(x, z)) != settings.Kind)
                     {
                         continue;
                     }

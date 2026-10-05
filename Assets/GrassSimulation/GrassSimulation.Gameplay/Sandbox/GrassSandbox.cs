@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using EncosyTower.UnityExtensions;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -11,12 +12,8 @@ namespace GrassSimulation.Gameplay
         private const int CELLS_Z = 56;
         private const float CELL_SIZE = 0.25f;
         private const float MIN_SEGMENT = 1e-4f;
-        private const float SHAKE_DECAY = 4f;
-        private const float LOCK_FLASH_DECAY = 3f;
-        private const float PROTECTED_FLASH_DECAY = 2f;
+        private const float ZONE_FLASH_DECAY = 2f;
         private const float ZONE_MARGIN = 0.3f;
-        private const byte FULL = 255;
-        private const float PARTIAL_SCALE = 254f;
         private const float HUD_LINES_PER_SCREEN = 36f;
         private const float HUD_WIDTH_IN_LINES = 26f;
         private const float HUD_HEIGHT_IN_LINES = 10f;
@@ -119,17 +116,14 @@ namespace GrassSimulation.Gameplay
         [SerializeField]
         private float _cameraSmoothing = 6f;
 
-        private readonly PlantSettings[] _plantByKind = new PlantSettings[(int)PlantKind.ProtectedFlower + 1];
         private readonly int[] _harvestedByKind = new int[(int)PlantKind.ProtectedFlower + 1];
         private readonly Color[] _clippingColorByKind = new Color[(int)PlantKind.ProtectedFlower + 1];
-        private readonly PlantKind[] _kinds = new PlantKind[CELLS_X * CELLS_Z];
-        private readonly float[] _progress = new float[CELLS_X * CELLS_Z];
-        private readonly float[] _shake = new float[CELLS_X * CELLS_Z];
-        private readonly float[] _lockFlash = new float[CELLS_X * CELLS_Z];
-        private readonly float[] _protectedFlash = new float[CELLS_X * CELLS_Z];
+        private readonly List<int> _harvestedCells = new();
 
+        private FieldGrid _grid;
+        private FieldFeedback _feedback;
+        private GrassCutter _cutter;
         private MaterialPropertyBlock _zoneProperties;
-        private Vector2 _origin;
         private Vector3 _previousBlade;
         private Vector3 _cameraFocus;
         private float _cutRadius;
@@ -152,46 +146,6 @@ namespace GrassSimulation.Gameplay
 
         private float Speed => Mathf.Min(_baseSpeed + _engineUpgrades * _speedStep, _maxSpeed);
 
-        private static void Fill(PlantKind[] kinds, RectInt rect, PlantKind kind)
-        {
-            for (var z = rect.yMin; z < rect.yMax; z++)
-            {
-                for (var x = rect.xMin; x < rect.xMax; x++)
-                {
-                    kinds[z * CELLS_X + x] = kind;
-                }
-            }
-        }
-
-        private static Vector2 CellCenter(int x, int z)
-            => new((x + 0.5f) * CELL_SIZE, (z + 0.5f) * CELL_SIZE);
-
-        private static float ContactCoverage(Vector2 from, Vector2 to, Vector2 point, float radius)
-        {
-            var segment = to - from;
-            var length = segment.magnitude;
-
-            if (length < MIN_SEGMENT)
-            {
-                return (point - to).sqrMagnitude <= radius * radius ? 1f : 0f;
-            }
-
-            var direction = segment / length;
-            var offset = point - from;
-            var along = Vector2.Dot(offset, direction);
-            var across = Mathf.Abs(direction.x * offset.y - direction.y * offset.x);
-
-            if (across > radius)
-            {
-                return 0f;
-            }
-
-            var halfChord = Mathf.Sqrt(radius * radius - across * across);
-            var enter = Mathf.Max(along - halfChord, 0f);
-            var exit = Mathf.Min(along + halfChord, length);
-            return Mathf.Max(exit - enter, 0f) / length;
-        }
-
         private static bool IsNewPress(bool isHeld, ref bool wasHeld)
         {
             var isNewPress = isHeld && wasHeld == false;
@@ -199,24 +153,20 @@ namespace GrassSimulation.Gameplay
             return isNewPress;
         }
 
-        private static byte ToByte(float value)
-            => (byte)Mathf.RoundToInt(Mathf.Clamp01(value) * FULL);
-
-        private static byte ToClearanceByte(float progress)
-            => progress >= 1f ? FULL : (byte)(Mathf.Clamp01(progress) * PARTIAL_SCALE);
-
         private void Start()
         {
-            _origin = new Vector2(-CELLS_X * CELL_SIZE * 0.5f, -CELLS_Z * CELL_SIZE * 0.5f);
+            _grid = new FieldGrid(CELLS_X, CELLS_Z, CELL_SIZE);
+            _feedback = new FieldFeedback(_grid.Count);
+            _cutter = new GrassCutter(_grid, _feedback, _plants);
             _zoneProperties = new MaterialPropertyBlock();
 
-            IndexPlants();
+            IndexClippingColors();
             CreateLayout();
             ClearPropCells();
             PlaceProtectedZone();
 
-            _field.Build(_origin, CELLS_X, CELLS_Z, CELL_SIZE, _kinds, _plants, _seed);
-            _mower.Bounds = new Rect(_origin, new Vector2(CELLS_X * CELL_SIZE, CELLS_Z * CELL_SIZE));
+            _field.Build(_grid, _plants, _seed);
+            _mower.Bounds = _grid.Bounds;
 
             ResetRun();
         }
@@ -327,28 +277,7 @@ namespace GrassSimulation.Gameplay
             for (var i = 0; i < propCount; i++)
             {
                 var prop = props[i];
-                var center = prop.transform.position;
-                var centerXZ = new Vector2(center.x, center.z) - _origin;
-                ClearCellsAround(centerXZ, prop.FootprintRadius);
-            }
-        }
-
-        private void ClearCellsAround(Vector2 centerXZ, float radius)
-        {
-            var xMin = Mathf.Max(0, Mathf.FloorToInt((centerXZ.x - radius) / CELL_SIZE));
-            var zMin = Mathf.Max(0, Mathf.FloorToInt((centerXZ.y - radius) / CELL_SIZE));
-            var xMax = Mathf.Min(CELLS_X - 1, Mathf.FloorToInt((centerXZ.x + radius) / CELL_SIZE));
-            var zMax = Mathf.Min(CELLS_Z - 1, Mathf.FloorToInt((centerXZ.y + radius) / CELL_SIZE));
-
-            for (var z = zMin; z <= zMax; z++)
-            {
-                for (var x = xMin; x <= xMax; x++)
-                {
-                    if (Vector2.Distance(CellCenter(x, z), centerXZ) <= radius)
-                    {
-                        _kinds[z * CELLS_X + x] = PlantKind.None;
-                    }
-                }
+                _grid.ClearCircle(_grid.ToLocal(prop.transform.position), prop.FootprintRadius);
             }
         }
 
@@ -392,43 +321,31 @@ namespace GrassSimulation.Gameplay
         private int Harvested(PlantKind kind)
             => _harvestedByKind[(int)kind];
 
-        private void IndexPlants()
+        private void IndexClippingColors()
         {
             var plantCount = _plants.Length;
 
             for (var i = 0; i < plantCount; i++)
             {
                 var plant = _plants[i];
-                var kindIndex = (int)plant.Kind;
-                _plantByKind[kindIndex] = plant;
 
                 if (plant.Material.IsValid())
                 {
-                    _clippingColorByKind[kindIndex] = plant.Material.GetColor(GrassFieldShaderIds.TipColor);
+                    _clippingColorByKind[(int)plant.Kind] = plant.Material.GetColor(GrassFieldShaderIds.TipColor);
                 }
             }
         }
 
         private void CreateLayout()
         {
-            Fill(_kinds, new RectInt(0, 0, CELLS_X, CELLS_Z), PlantKind.Grass);
-            Fill(_kinds, s_flowerZone, PlantKind.HarvestFlower);
-            Fill(_kinds, s_thickGrassPath, PlantKind.ThickGrass);
-            Fill(_kinds, s_lowBushZone, PlantKind.LowBush);
-            Fill(_kinds, s_hardBushZone, PlantKind.HardBush);
-            Fill(_kinds, s_protectedBorder, PlantKind.None);
-            Fill(_kinds, s_protectedBed, PlantKind.ProtectedFlower);
-
-            for (var z = 0; z < CELLS_Z; z++)
-            {
-                for (var x = 0; x < CELLS_X; x++)
-                {
-                    if (Vector2.Distance(CellCenter(x, z), _spawn) <= _spawnClearing)
-                    {
-                        _kinds[z * CELLS_X + x] = PlantKind.None;
-                    }
-                }
-            }
+            _grid.Fill(new RectInt(0, 0, CELLS_X, CELLS_Z), PlantKind.Grass);
+            _grid.Fill(s_flowerZone, PlantKind.HarvestFlower);
+            _grid.Fill(s_thickGrassPath, PlantKind.ThickGrass);
+            _grid.Fill(s_lowBushZone, PlantKind.LowBush);
+            _grid.Fill(s_hardBushZone, PlantKind.HardBush);
+            _grid.Fill(s_protectedBorder, PlantKind.None);
+            _grid.Fill(s_protectedBed, PlantKind.ProtectedFlower);
+            _grid.ClearCircle(_spawn, _spawnClearing);
         }
 
         private void PlaceProtectedZone()
@@ -438,7 +355,7 @@ namespace GrassSimulation.Gameplay
                 return;
             }
 
-            var min = _origin + new Vector2(s_protectedBed.xMin, s_protectedBed.yMin) * CELL_SIZE;
+            var min = _grid.Origin + new Vector2(s_protectedBed.xMin, s_protectedBed.yMin) * CELL_SIZE;
             var size = new Vector2(s_protectedBed.width, s_protectedBed.height) * CELL_SIZE;
             var center = min + size * 0.5f;
             var zone = _protectedZone.transform;
@@ -454,10 +371,8 @@ namespace GrassSimulation.Gameplay
                 _props.ResetAll();
             }
 
-            Array.Clear(_progress, 0, _progress.Length);
-            Array.Clear(_shake, 0, _shake.Length);
-            Array.Clear(_lockFlash, 0, _lockFlash.Length);
-            Array.Clear(_protectedFlash, 0, _protectedFlash.Length);
+            _grid.ResetProgress();
+            _feedback.Clear();
             Array.Clear(_harvestedByKind, 0, _harvestedByKind.Length);
 
             _tier = 1;
@@ -470,7 +385,7 @@ namespace GrassSimulation.Gameplay
             _lastProtectedTouch = float.NegativeInfinity;
             _cutRadius = TargetCutRadius;
 
-            var spawn = new Vector3(_origin.x + _spawn.x, 0f, _origin.y + _spawn.y);
+            var spawn = _grid.ToWorld(_spawn);
             _mower.ResetTo(spawn);
             _previousBlade = spawn;
             _cameraFocus = spawn;
@@ -532,78 +447,24 @@ namespace GrassSimulation.Gameplay
 
         private void Cut(Vector3 from, Vector3 to, float deltaTime)
         {
-            var radius = _cutRadius;
-            var start = new Vector2(from.x, from.z) - _origin;
-            var end = new Vector2(to.x, to.z) - _origin;
-            var min = Vector2.Min(start, end) - Vector2.one * radius;
-            var max = Vector2.Max(start, end) + Vector2.one * radius;
-            var xMin = Mathf.Max(0, Mathf.FloorToInt(min.x / CELL_SIZE));
-            var zMin = Mathf.Max(0, Mathf.FloorToInt(min.y / CELL_SIZE));
-            var xMax = Mathf.Min(CELLS_X - 1, Mathf.FloorToInt(max.x / CELL_SIZE));
-            var zMax = Mathf.Min(CELLS_Z - 1, Mathf.FloorToInt(max.y / CELL_SIZE));
-            var touchedProtected = false;
+            var stroke = new CutStroke(from, to, _cutRadius, _tier, CuttingPower, deltaTime);
+            var touchedProtected = _cutter.Cut(stroke, _harvestedCells);
+            var harvestedCount = _harvestedCells.Count;
 
-            for (var z = zMin; z <= zMax; z++)
+            for (var i = 0; i < harvestedCount; i++)
             {
-                for (var x = xMin; x <= xMax; x++)
-                {
-                    var index = z * CELLS_X + x;
-                    var kind = _kinds[index];
-
-                    if (kind == PlantKind.None)
-                    {
-                        continue;
-                    }
-
-                    var coverage = ContactCoverage(start, end, CellCenter(x, z), radius);
-
-                    if (coverage <= 0f)
-                    {
-                        continue;
-                    }
-
-                    touchedProtected |= CutCell(index, kind, coverage * deltaTime);
-                }
+                var index = _harvestedCells[i];
+                ref readonly var plant = ref _cutter.GetPlant(_grid.GetKind(index));
+                Harvest(plant.Kind, plant.Xp);
+                EmitClippings(index, plant);
             }
+
+            _harvestedCells.Clear();
 
             if (touchedProtected)
             {
                 RegisterProtectedTouch();
             }
-        }
-
-        private bool CutCell(int index, PlantKind kind, float contactTime)
-        {
-            ref readonly var plant = ref _plantByKind[(int)kind];
-
-            if (plant.IsProtected)
-            {
-                _protectedFlash[index] = 1f;
-                return true;
-            }
-
-            if (_progress[index] >= 1f)
-            {
-                return false;
-            }
-
-            if (plant.RequiredTier > _tier)
-            {
-                _lockFlash[index] = 1f;
-                return false;
-            }
-
-            _shake[index] = 1f;
-            _progress[index] += contactTime * CuttingPower / plant.Toughness;
-
-            if (_progress[index] >= 1f)
-            {
-                _progress[index] = 1f;
-                Harvest(kind, plant.Xp);
-                EmitClippings(index, plant);
-            }
-
-            return false;
         }
 
         private void EmitClippings(int index, in PlantSettings plant)
@@ -613,8 +474,7 @@ namespace GrassSimulation.Gameplay
                 return;
             }
 
-            var center = _origin + CellCenter(index % CELLS_X, index / CELLS_X);
-            var position = new Vector3(center.x, 0f, center.y);
+            var position = _grid.ToWorld(_grid.CellCenter(index));
             var away = position - _mower.transform.position;
             var leafColor = _clippingColorByKind[(int)plant.Kind];
 
@@ -658,39 +518,20 @@ namespace GrassSimulation.Gameplay
 
         private void DecayFeedback(float deltaTime)
         {
-            var count = _kinds.Length;
-
-            for (var i = 0; i < count; i++)
-            {
-                _shake[i] = Mathf.Max(_shake[i] - SHAKE_DECAY * deltaTime, 0f);
-                _lockFlash[i] = Mathf.Max(_lockFlash[i] - LOCK_FLASH_DECAY * deltaTime, 0f);
-                _protectedFlash[i] = Mathf.Max(_protectedFlash[i] - PROTECTED_FLASH_DECAY * deltaTime, 0f);
-            }
-
-            _zoneFlash = Mathf.Max(_zoneFlash - PROTECTED_FLASH_DECAY * deltaTime, 0f);
+            _feedback.Decay(deltaTime);
+            _zoneFlash = Mathf.Max(_zoneFlash - ZONE_FLASH_DECAY * deltaTime, 0f);
         }
 
         private void WriteCellStates()
         {
-            var states = _field.CellStates;
-            var count = _kinds.Length;
-
-            for (var i = 0; i < count; i++)
-            {
-                var clearance = _kinds[i] == PlantKind.None ? FULL : ToClearanceByte(_progress[i]);
-                var shake = ToByte(_shake[i]);
-                var lockFlash = ToByte(_lockFlash[i]);
-                var protectedFlash = ToByte(_protectedFlash[i]);
-                states[i] = new Color32(clearance, shake, lockFlash, protectedFlash);
-            }
-
+            _feedback.Write(_grid, _field.CellStates);
             _field.MarkCellStatesDirty();
         }
 
         private void UpdateBlade()
         {
             var blade = _mower.transform.position;
-            var bladeXZ = new Vector2(blade.x, blade.z) - _origin;
+            var bladeXZ = _grid.ToLocal(blade);
             var bedMin = new Vector2(s_protectedBed.xMin, s_protectedBed.yMin) * CELL_SIZE;
             var bedMax = new Vector2(s_protectedBed.xMax, s_protectedBed.yMax) * CELL_SIZE;
             var nearest = Vector2.Max(bedMin, Vector2.Min(bladeXZ, bedMax));

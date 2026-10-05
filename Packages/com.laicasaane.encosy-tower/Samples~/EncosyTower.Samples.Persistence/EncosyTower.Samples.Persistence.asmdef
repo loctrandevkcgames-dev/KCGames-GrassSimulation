@@ -1,0 +1,40 @@
+{
+    "name": "EncosyTower.Samples.Persistence",
+    "rootNamespace": "EncosyTower.Samples.Persistence",
+    "references": [
+        "EncosyTower.Core",
+        "EncosyTower.Persistence",
+        "EncosyTower.PubSub",
+        "UniTask",
+        "Unity.Collections",
+        "Unity.Mathematics",
+        "Unity.TextMeshPro"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "UNITY_EDITOR || INCLUDE_ENCOSY_SAMPLES_PERSISTENCE"
+    ],
+    "versionDefines": [
+        {
+            "name": "com.unity.textmeshpro",
+            "expression": "",
+            "define": "UNITY_TEXTMESHPRO"
+        },
+        {
+            "name": "com.unity.ugui",
+            "expression": "",
+            "define": "UNITY_UGUI"
+        },
+        {
+            "name": "com.unity.ugui",
+            "expression": "2.0.0",
+            "define": "UNITY_TEXTMESHPRO"
+        }
+    ],
+    "noEngineReferences": false
+}

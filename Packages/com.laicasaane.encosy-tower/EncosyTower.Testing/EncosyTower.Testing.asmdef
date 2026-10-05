@@ -1,0 +1,20 @@
+{
+    "name": "EncosyTower.Testing",
+    "rootNamespace": "EncosyTower.Testing",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "Bcl.Runtime.dll",
+        "Bcl.RuntimeUnsafe.dll",
+        "EncosyTower.LowLevel.Unsafe.dll"
+    ],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

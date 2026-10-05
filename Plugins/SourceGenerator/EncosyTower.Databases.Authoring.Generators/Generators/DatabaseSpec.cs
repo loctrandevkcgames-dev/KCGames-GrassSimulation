@@ -1,0 +1,56 @@
+namespace EncosyTower.Databases.Authoring.Generators
+{
+    public partial struct DatabaseSpec : IEquatable<DatabaseSpec>
+    {
+        public string databaseTypeName;
+        public string databaseTypeKeyword;
+        public string databaseIdentifier;
+        public string openingSource;
+        public string closingSource;
+        public string containerHintName;
+        public EquatableArray<ContainingTypeSpec> containingTypes;
+        public EquatableArray<DataSpec> allDataModels;
+        public EquatableArray<ScopedConverterSpec> scopedConverters;
+        public EquatableArray<TableSpec> tables;
+        public EquatableArray<SheetGroupSpec> sheetGroups;
+        public EquatableArray<string> typeNames;
+        public EquatableArray<SheetSpec> sheets;
+
+        public readonly bool IsValid
+            => string.IsNullOrEmpty(databaseTypeName) == false
+            && string.IsNullOrEmpty(databaseTypeKeyword) == false
+            && string.IsNullOrEmpty(databaseIdentifier) == false
+            ;
+
+        public readonly bool Equals(DatabaseSpec other)
+            => string.Equals(databaseTypeName, other.databaseTypeName, StringComparison.Ordinal)
+            && string.Equals(databaseTypeKeyword, other.databaseTypeKeyword, StringComparison.Ordinal)
+            && string.Equals(databaseIdentifier, other.databaseIdentifier, StringComparison.Ordinal)
+            && containingTypes.Equals(other.containingTypes)
+            && allDataModels.Equals(other.allDataModels)
+            && scopedConverters.Equals(other.scopedConverters)
+            && tables.Equals(other.tables)
+            && sheetGroups.Equals(other.sheetGroups)
+            && typeNames.Equals(other.typeNames)
+            && sheets.Equals(other.sheets)
+            ;
+
+        public readonly override bool Equals(object obj)
+            => obj is DatabaseSpec other && Equals(other);
+
+        public readonly override int GetHashCode()
+            => HashValue.Combine(
+                  databaseTypeName
+                , databaseTypeKeyword
+                , databaseIdentifier
+                , containingTypes
+                , allDataModels
+            )
+            .Add(scopedConverters)
+            .Add(tables)
+            .Add(sheetGroups)
+            .Add(typeNames)
+            .Add(sheets)
+            ;
+    }
+}

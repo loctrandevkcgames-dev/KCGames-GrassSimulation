@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Authors>Jacob Bayer;Yevhen Cherkes</Authors>
+        <LangVersion>Latest</LangVersion>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <RepositoryUrl>https://github.com/Raffinert/FuzzySharp</RepositoryUrl>
+        <TargetFrameworks>netstandard2.1</TargetFrameworks>
+        <RootNamespace>Raffinert.$(MSBuildProjectName.Replace(" ", "_"))</RootNamespace>
+        <SrcRepoDir>../../../SrcRepos/Raffinert.FuzzySharp/FuzzySharp</SrcRepoDir>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Compile Include="$(SrcRepoDir)/**/*.cs" />
+    </ItemGroup>
+
+</Project>

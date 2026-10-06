@@ -1,3 +1,4 @@
+using GrassSimulation.Audio;
 using GrassSimulation.Gameplay;
 using NUnit.Framework;
 
@@ -113,6 +114,39 @@ public sealed class GrassPageRoutesTests
     public void UpgradeChoice_KeepsTheGameplayScreenRouteUnchanged()
     {
         Assert.That(TryScreen(state: LevelState.UpgradeChoice, isHome: false, key: out _), Is.False);
+    }
+
+    [TestCase(UiPageKeys.PAUSE_POPUP)]
+    [TestCase(UiPageKeys.UPGRADE_POPUP)]
+    public void TryGetPopupSound_OpensWhenAPopupAppears(string toKey)
+    {
+        Assert.That(GrassPageRoutes.TryGetPopupSound(fromKey: null, toKey: toKey, sound: out var sound), Is.True);
+        Assert.That(sound, Is.EqualTo(UiSound.PopupOpen));
+    }
+
+    [TestCase(UiPageKeys.PAUSE_POPUP)]
+    [TestCase(UiPageKeys.UPGRADE_POPUP)]
+    public void TryGetPopupSound_ClosesWhenAPopupDisappears(string fromKey)
+    {
+        Assert.That(GrassPageRoutes.TryGetPopupSound(fromKey: fromKey, toKey: null, sound: out var sound), Is.True);
+        Assert.That(sound, Is.EqualTo(UiSound.PopupClose));
+    }
+
+    [Test]
+    public void TryGetPopupSound_StaysSilentForTheResultPopup()
+    {
+        Assert.That(GrassPageRoutes.TryGetPopupSound(fromKey: null, toKey: UiPageKeys.RESULT_POPUP, sound: out _), Is.False);
+        Assert.That(GrassPageRoutes.TryGetPopupSound(fromKey: UiPageKeys.RESULT_POPUP, toKey: null, sound: out _), Is.False);
+        Assert.That(
+              GrassPageRoutes.TryGetPopupSound(fromKey: UiPageKeys.UPGRADE_POPUP, toKey: UiPageKeys.RESULT_POPUP, sound: out _)
+            , Is.False
+        );
+    }
+
+    [Test]
+    public void TryGetPopupSound_StaysSilentWithoutAChange()
+    {
+        Assert.That(GrassPageRoutes.TryGetPopupSound(fromKey: null, toKey: null, sound: out _), Is.False);
     }
 
     private static bool TryScreen(LevelState state, bool isHome, out string key)

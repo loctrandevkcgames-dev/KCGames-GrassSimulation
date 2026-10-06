@@ -115,6 +115,7 @@ namespace GrassSimulation.UI
 
         private void OnPlayClicked()
         {
+            UiAudio.Tap();
             PlayRequestedMsg.Publish(in _commands, new PlayRequestedMsg());
         }
 

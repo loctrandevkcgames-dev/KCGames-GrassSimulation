@@ -48,16 +48,19 @@ namespace GrassSimulation.UI
 
         private void OnResumeClicked()
         {
+            UiAudio.Tap();
             PauseRequestedMsg.Publish(in _commands, new PauseRequestedMsg(Paused: false));
         }
 
         private void OnRetryClicked()
         {
+            UiAudio.Tap();
             RetryRequestedMsg.Publish(in _commands, new RetryRequestedMsg());
         }
 
         private void OnQuitClicked()
         {
+            UiAudio.Tap();
             QuitRequestedMsg.Publish(in _commands, new QuitRequestedMsg());
         }
     }

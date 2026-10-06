@@ -95,11 +95,13 @@ namespace GrassSimulation.UI
 
         private void OnRetryClicked()
         {
+            UiAudio.Tap();
             RetryRequestedMsg.Publish(in _commands, new RetryRequestedMsg());
         }
 
         private void OnHomeClicked()
         {
+            UiAudio.Tap();
             QuitRequestedMsg.Publish(in _commands, new QuitRequestedMsg());
         }
     }

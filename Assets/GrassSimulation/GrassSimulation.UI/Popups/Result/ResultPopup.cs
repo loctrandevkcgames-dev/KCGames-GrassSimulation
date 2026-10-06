@@ -1,6 +1,7 @@
 using EncosyTower.PageFlows.MonoPages;
 using EncosyTower.Processing;
 using EncosyTower.PubSub;
+using GrassSimulation.Audio;
 using GrassSimulation.Gameplay;
 using UnityEngine;
 
@@ -86,8 +87,15 @@ namespace GrassSimulation.UI
                 return;
             }
 
+            var isFirstShow = _hasApplied == false;
+
             _hasApplied = true;
             _appliedVersion = last.Version;
+
+            if (isFirstShow && finished.TryGetStars(out var stars))
+            {
+                UiAudio.Request(UiSound.Stars, stars);
+            }
 
             Show(in finished, in snapshot, in last);
         }

@@ -1,5 +1,6 @@
 using EncosyTower.Common;
 using EncosyTower.PubSub;
+using GrassSimulation.Audio;
 using GrassSimulation.Gameplay;
 using GrassSimulation.Progression;
 using TMPro;
@@ -10,6 +11,8 @@ namespace GrassSimulation.UI
 {
     public sealed class ResultWinView : MonoBehaviour
     {
+        private const int COIN_SOUND_COUNT = 3;
+
         [SerializeField]
         private TMP_Text _titleText;
 
@@ -65,6 +68,7 @@ namespace GrassSimulation.UI
         private TMP_Text _cleanupLabel;
 
         private MessagePublisher.Publisher<LevelCommandScope> _commands;
+        private bool _coinsPlayed;
 
         public void Init(in MessagePublisher.Publisher<LevelCommandScope> commands)
         {
@@ -106,6 +110,11 @@ namespace GrassSimulation.UI
             ShowCoins(in settlement);
         }
 
+        private void OnEnable()
+        {
+            _coinsPlayed = false;
+        }
+
         private void ShowCoins(in Option<Result<LevelSettlement, SettleError>> settlement)
         {
             _coinTotal.SetActive(false);
@@ -140,6 +149,12 @@ namespace GrassSimulation.UI
 
             _coinTotal.SetActive(true);
             _coinTotalText.text = ResultPopupFormat.FormatCoinTotal(settled.CoinsGranted);
+
+            if (_coinsPlayed == false)
+            {
+                _coinsPlayed = true;
+                UiAudio.Request(UiSound.Coins, COIN_SOUND_COUNT);
+            }
         }
 
         private void ShowCoinLines(string text, Color color)
@@ -150,21 +165,25 @@ namespace GrassSimulation.UI
 
         private void OnRetrySaveClicked()
         {
+            UiAudio.Tap();
             RetrySaveRequestedMsg.Publish(in _commands, new RetrySaveRequestedMsg());
         }
 
         private void OnNextClicked()
         {
+            UiAudio.Tap();
             NextLevelRequestedMsg.Publish(in _commands, new NextLevelRequestedMsg());
         }
 
         private void OnReplayClicked()
         {
+            UiAudio.Tap();
             RetryRequestedMsg.Publish(in _commands, new RetryRequestedMsg());
         }
 
         private void OnCleanupClicked()
         {
+            UiAudio.Tap();
             CleanupRequestedMsg.Publish(in _commands, new CleanupRequestedMsg());
         }
     }

@@ -100,11 +100,13 @@ namespace GrassSimulation.UI
 
         private void OnBackClicked()
         {
+            UiAudio.Tap();
             QuitRequestedMsg.Publish(in _commands, new QuitRequestedMsg());
         }
 
         private void OnStartClicked()
         {
+            UiAudio.Tap();
             StartRequestedMsg.Publish(in _commands, new StartRequestedMsg());
         }
 

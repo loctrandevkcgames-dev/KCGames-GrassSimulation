@@ -148,6 +148,11 @@ namespace GrassSimulation.UI
 
                 while (_wantedPopupKey != _shownPopupKey)
                 {
+                    if (GrassPageRoutes.TryGetPopupSound(_shownPopupKey, _wantedPopupKey, out var sound))
+                    {
+                        UiAudio.Request(sound);
+                    }
+
                     var context = new PageContext {
                         ShowOptions = PageTransitionOptions.NoTransition,
                         HideOptions = PageTransitionOptions.NoTransition,

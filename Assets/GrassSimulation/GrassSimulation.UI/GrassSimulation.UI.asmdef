@@ -11,6 +11,7 @@
         "UniTask",
         "Unity.TextMeshPro",
         "UnityEngine.UI",
+        "GrassSimulation.Audio",
         "GrassSimulation.Gameplay",
         "GrassSimulation.Progression"
     ],

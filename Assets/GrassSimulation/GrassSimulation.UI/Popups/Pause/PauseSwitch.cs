@@ -1,3 +1,6 @@
+using EncosyTower.PubSub;
+using GrassSimulation.Audio;
+using GrassSimulation.Gameplay;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -45,6 +48,11 @@ namespace GrassSimulation.UI
 
             PauseOptions.Write(_option, _isOn);
             Show();
+
+            var publisher = GlobalMessenger.Publisher.Scope<GameplayScope>();
+
+            PlayerOptionsChangedMsg.Publish(in publisher, new PlayerOptionsChangedMsg());
+            UiAudio.Request(_isOn ? UiSound.ToggleOn : UiSound.ToggleOff);
         }
 
         private void Show()

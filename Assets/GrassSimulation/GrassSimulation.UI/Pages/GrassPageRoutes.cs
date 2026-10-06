@@ -1,3 +1,4 @@
+using GrassSimulation.Audio;
 using GrassSimulation.Gameplay;
 
 namespace GrassSimulation.UI
@@ -71,6 +72,29 @@ namespace GrassSimulation.UI
                     return false;
                 }
             }
+        }
+
+        public static bool TryGetPopupSound(string fromKey, string toKey, out UiSound sound)
+        {
+            if (fromKey == null && IsSoundPopup(toKey))
+            {
+                sound = UiSound.PopupOpen;
+                return true;
+            }
+
+            if (toKey == null && IsSoundPopup(fromKey))
+            {
+                sound = UiSound.PopupClose;
+                return true;
+            }
+
+            sound = default;
+            return false;
+        }
+
+        private static bool IsSoundPopup(string key)
+        {
+            return key == UiPageKeys.PAUSE_POPUP || key == UiPageKeys.UPGRADE_POPUP;
         }
     }
 }

@@ -167,11 +167,13 @@ namespace GrassSimulation.UI
 
         private void OnPauseClicked()
         {
+            UiAudio.Tap();
             PauseRequestedMsg.Publish(in _commands, new PauseRequestedMsg(Paused: true));
         }
 
         private void OnFinishClicked()
         {
+            UiAudio.Tap();
             FinishCleanupRequestedMsg.Publish(in _commands, new FinishCleanupRequestedMsg());
         }
 

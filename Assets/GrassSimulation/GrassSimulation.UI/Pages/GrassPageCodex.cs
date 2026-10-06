@@ -37,7 +37,7 @@ namespace GrassSimulation.UI
 
             if (result.TryGetValue(out var snapshot))
             {
-                Route(snapshot.State);
+                Route(snapshot.State, snapshot.IsPaused);
             }
 
             return UnityTask.CompletedTask;
@@ -50,12 +50,12 @@ namespace GrassSimulation.UI
 
         private void OnLevelStateChanged(LevelStateChangedMsg message)
         {
-            Route(message.State);
+            Route(message.State, message.IsPaused);
         }
 
-        private void Route(LevelState state)
+        private void Route(LevelState state, bool isPaused)
         {
-            RoutePopup(state);
+            RoutePopup(state, isPaused);
 
             if (GrassPageRoutes.TryGetScreenKey(state, out var key) == false
                 || key == _shownKey
@@ -92,9 +92,9 @@ namespace GrassSimulation.UI
             }
         }
 
-        private void RoutePopup(LevelState state)
+        private void RoutePopup(LevelState state, bool isPaused)
         {
-            GrassPageRoutes.TryGetPopupKey(state, out var key);
+            GrassPageRoutes.TryGetPopupKey(state, isPaused, out var key);
 
             _wantedPopupKey = key;
 

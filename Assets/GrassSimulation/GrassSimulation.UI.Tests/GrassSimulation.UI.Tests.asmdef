@@ -3,7 +3,9 @@
     "rootNamespace": "GrassSimulation.UI.Tests",
     "references": [
         "EncosyTower.Core",
+        "EncosyTower.PubSub",
         "GrassSimulation.Gameplay",
+        "GrassSimulation.Progression",
         "GrassSimulation.UI",
         "UnityEditor.TestRunner",
         "UnityEngine.TestRunner"

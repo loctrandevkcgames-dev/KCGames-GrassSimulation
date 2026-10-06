@@ -77,4 +77,21 @@ public sealed class GameplayScreenFormatTests
     {
         Assert.That(GameplayScreenFormat.GetXpFraction(900, 600, Option.None), Is.EqualTo(1f));
     }
+
+    [TestCase(0f, 0)]
+    [TestCase(0.456f, 45)]
+    [TestCase(0.999f, 99)]
+    [TestCase(1f, 100)]
+    [TestCase(1.4f, 100)]
+    [TestCase(-0.2f, 0)]
+    public void GetClearedPercent_FloorsAndClamps(float fraction, int expected)
+    {
+        Assert.That(GameplayScreenFormat.GetClearedPercent(fraction), Is.EqualTo(expected));
+    }
+
+    [Test]
+    public void FormatCleared_ShowsThePercent()
+    {
+        Assert.That(GameplayScreenFormat.FormatCleared(percent: 63), Is.EqualTo("Đã dọn 63%"));
+    }
 }

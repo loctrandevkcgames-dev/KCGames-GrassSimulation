@@ -15,6 +15,16 @@ MonoBehaviour:
   m_GroupName: UI
   m_GUID: 856ff36e7e23ddd4f91393b8270b0f68
   m_SerializeEntries:
+  - m_GUID: 11158f6e117ad4549806e94724b8846c
+    m_Address: ui/result-popup
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 46a82573e089e8e458bb60687b39989b
+    m_Address: ui/pause-popup
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 7ab60c9563abbc44189e739f1c2d85fb
     m_Address: ui/gameplay-screen
     m_ReadOnly: 0

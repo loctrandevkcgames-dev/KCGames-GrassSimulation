@@ -23,16 +23,36 @@ namespace GrassSimulation.UI
             }
         }
 
-        public static bool TryGetPopupKey(LevelState state, out string key)
+        public static bool TryGetPopupKey(LevelState state, bool isPaused, out string key)
         {
-            if (state == LevelState.UpgradeChoice)
+            switch (state)
             {
-                key = UiPageKeys.UPGRADE_POPUP;
-                return true;
-            }
+                case LevelState.UpgradeChoice:
+                {
+                    key = UiPageKeys.UPGRADE_POPUP;
+                    return true;
+                }
 
-            key = null;
-            return false;
+                case LevelState.Success:
+                case LevelState.Failure:
+                {
+                    key = UiPageKeys.RESULT_POPUP;
+                    return true;
+                }
+
+                case LevelState.Playing:
+                case LevelState.Cleanup:
+                {
+                    key = isPaused ? UiPageKeys.PAUSE_POPUP : null;
+                    return isPaused;
+                }
+
+                default:
+                {
+                    key = null;
+                    return false;
+                }
+            }
         }
     }
 }

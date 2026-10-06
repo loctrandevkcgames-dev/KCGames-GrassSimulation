@@ -9,6 +9,7 @@ namespace GrassSimulation.UI
         public const float TIMER_WARNING_SECONDS = 15f;
 
         private const int SECONDS_PER_MINUTE = 60;
+        private const float PERCENT_SCALE = 100f;
 
         public static bool IsTimerWarning(float remaining)
         {
@@ -63,6 +64,16 @@ namespace GrassSimulation.UI
             var span = next - tierFloorXp;
 
             return span <= 0 ? 1f : Math.Clamp(value: (float)(xp - tierFloorXp) / span, min: 0f, max: 1f);
+        }
+
+        public static int GetClearedPercent(float fraction)
+        {
+            return (int)MathF.Floor(Math.Clamp(value: fraction, min: 0f, max: 1f) * PERCENT_SCALE);
+        }
+
+        public static string FormatCleared(int percent)
+        {
+            return string.Format(UiText.CLEARED, percent);
         }
 
         public static string FormatHitsLeft(int hits, int hitLimit)

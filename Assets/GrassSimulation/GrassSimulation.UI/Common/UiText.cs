@@ -31,6 +31,39 @@ namespace GrassSimulation.UI
         public const string UPGRADE_STRONG_ENGINE = "Động cơ khỏe";
         public const string UPGRADE_STRONG_ENGINE_HINT = "Xử lý bụi cứng và tuyến vòng dài";
 
+        public const string CLEARED = "Đã dọn {0}%";
+        public const string FINISH_CLEANUP = "Kết thúc";
+
+        public const string RESULT_TITLE = "Hoàn thành!";
+        public const string RESULT_GOAL = "Đạt mục tiêu";
+        public const string RESULT_TIME = "Còn {0} (≥ {1})";
+        public const string RESULT_CLEAN = "Không lỗi";
+        public const string RESULT_CLEAN_BONUS = "Không lỗi + phụ {0} {1}";
+        public const string COINS_FIRST_WIN = "Thắng lần đầu +{0}";
+        public const string COINS_NEW_STARS = "{0} sao mới +{1}";
+        public const string COINS_TOTAL = "+{0}";
+        public const string COINS_NONE = "Không có thưởng mới";
+        public const string COINS_SAVING = "Đang lưu…";
+        public const string COINS_SAVE_FAILED = "Chưa lưu được kết quả";
+        public const string QUOTA_SHORT = "{0} / {1} · thiếu {2}";
+
+        public const string BUTTON_NEXT = "Màn tiếp";
+        public const string BUTTON_REPLAY = "Chơi lại";
+        public const string BUTTON_CLEANUP = "Dọn tiếp";
+        public const string BUTTON_RETRY_SAVE = "Thử lại";
+        public const string BUTTON_HOME = "Về trang chính";
+        public const string BUTTON_RESUME = "Tiếp tục";
+        public const string BUTTON_QUIT = "Thoát";
+
+        public const string FAIL_TIME_UP_TITLE = "Hết giờ";
+        public const string FAIL_TIME_UP_REASON = "Chưa đủ mục tiêu khi hết thời gian.";
+        public const string FAIL_PROTECTED_TITLE = "Chạm hoa bảo vệ";
+        public const string FAIL_PROTECTED_REASON = "Lưỡi cắt chạm luống hoa bảo vệ {0} lần, vượt giới hạn {1}.";
+
+        public const string OPTION_SOUND = "Âm thanh";
+        public const string OPTION_HAPTICS = "Rung";
+        public const string OPTION_REDUCE_EFFECTS = "Giảm hiệu ứng";
+
         public const string PLANT_GRASS = "Cỏ";
         public const string PLANT_FLOWER = "Hoa đỏ";
         public const string PLANT_THICK_GRASS = "Cỏ dày";

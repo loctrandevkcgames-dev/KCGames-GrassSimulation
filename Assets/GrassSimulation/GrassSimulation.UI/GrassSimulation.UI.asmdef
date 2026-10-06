@@ -11,7 +11,8 @@
         "UniTask",
         "Unity.TextMeshPro",
         "UnityEngine.UI",
-        "GrassSimulation.Gameplay"
+        "GrassSimulation.Gameplay",
+        "GrassSimulation.Progression"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

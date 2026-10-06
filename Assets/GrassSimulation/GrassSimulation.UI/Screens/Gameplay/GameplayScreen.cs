@@ -19,6 +19,9 @@ namespace GrassSimulation.UI
         private GameplayQuotaChip[] _quotaChips;
 
         [SerializeField]
+        private GameObject _timer;
+
+        [SerializeField]
         private Image _timerBackground;
 
         [SerializeField]
@@ -31,13 +34,16 @@ namespace GrassSimulation.UI
         private Button _pauseButton;
 
         [SerializeField]
-        private Image _pauseIcon;
+        private GameObject _clearedPill;
 
         [SerializeField]
-        private Sprite _pauseSprite;
+        private TMP_Text _clearedText;
 
         [SerializeField]
-        private Sprite _playSprite;
+        private Button _finishButton;
+
+        [SerializeField]
+        private TMP_Text _finishLabel;
 
         [SerializeField]
         private TMP_Text _tierText;
@@ -88,8 +94,10 @@ namespace GrassSimulation.UI
         private bool _hasProtectedHits;
         private QuotaSnapshot _bonus;
         private bool _hasBonus;
-        private bool _isPaused;
-        private bool _hasPaused;
+        private bool _isCleanup;
+        private bool _hasMode;
+        private int _clearedPercent;
+        private bool _hasClearedPercent;
 
         private void Awake()
         {
@@ -97,7 +105,10 @@ namespace GrassSimulation.UI
             _hub = GlobalProcessor.Instance.Scope<GameplayScope>();
             _processingContext = ProcessingContext.DropIfNoHandler(warnNoHandler: false);
 
+            _finishLabel.text = UiText.FINISH_CLEANUP;
+
             _pauseButton.onClick.AddListener(OnPauseClicked);
+            _finishButton.onClick.AddListener(OnFinishClicked);
         }
 
         private void OnEnable()
@@ -124,11 +135,17 @@ namespace GrassSimulation.UI
         private void OnDestroy()
         {
             _pauseButton.onClick.RemoveListener(OnPauseClicked);
+            _finishButton.onClick.RemoveListener(OnFinishClicked);
         }
 
         private void OnPauseClicked()
         {
-            PauseRequestedMsg.Publish(in _commands, new PauseRequestedMsg(Paused: !_isPaused));
+            PauseRequestedMsg.Publish(in _commands, new PauseRequestedMsg(Paused: true));
+        }
+
+        private void OnFinishClicked()
+        {
+            FinishCleanupRequestedMsg.Publish(in _commands, new FinishCleanupRequestedMsg());
         }
 
         private void ResetCaches()
@@ -140,7 +157,8 @@ namespace GrassSimulation.UI
             _hasXpFraction = false;
             _hasProtectedHits = false;
             _hasBonus = false;
-            _hasPaused = false;
+            _hasMode = false;
+            _hasClearedPercent = false;
 
             for (var i = 0; i < _quotaChips.Length; i++)
             {
@@ -157,28 +175,53 @@ namespace GrassSimulation.UI
                 return;
             }
 
-            ShowPause(snapshot);
+            ShowMode(snapshot);
             ShowTimer(snapshot);
             ShowQuotas(snapshot);
             ShowGrowth(snapshot);
             ShowProtectedHits(snapshot);
         }
 
-        private void ShowPause(in LevelSnapshot snapshot)
+        private void ShowMode(in LevelSnapshot snapshot)
         {
-            _isPaused = snapshot.IsPaused;
+            var isCleanup = snapshot.State == LevelState.Cleanup;
 
-            if (_hasPaused && _pauseIcon.sprite == (_isPaused ? _playSprite : _pauseSprite))
+            if (_hasMode == false || isCleanup != _isCleanup)
+            {
+                _hasMode = true;
+                _isCleanup = isCleanup;
+                _timer.SetActive(isCleanup == false);
+                _clearedPill.SetActive(isCleanup);
+                _finishButton.gameObject.SetActive(isCleanup);
+            }
+
+            if (isCleanup)
+            {
+                ShowCleared(snapshot.ClearedFraction);
+            }
+        }
+
+        private void ShowCleared(float fraction)
+        {
+            var percent = GameplayScreenFormat.GetClearedPercent(fraction);
+
+            if (_hasClearedPercent && percent == _clearedPercent)
             {
                 return;
             }
 
-            _hasPaused = true;
-            _pauseIcon.sprite = _isPaused ? _playSprite : _pauseSprite;
+            _hasClearedPercent = true;
+            _clearedPercent = percent;
+            _clearedText.text = GameplayScreenFormat.FormatCleared(percent);
         }
 
         private void ShowTimer(in LevelSnapshot snapshot)
         {
+            if (_isCleanup)
+            {
+                return;
+            }
+
             var remaining = snapshot.RemainingTime;
             var seconds = Mathf.CeilToInt(Mathf.Max(remaining, 0f));
 

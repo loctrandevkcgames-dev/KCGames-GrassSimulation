@@ -166,6 +166,7 @@ MonoBehaviour:
   _field: {fileID: 130738386}
   _mower: {fileID: 1776663715}
   _mowerAnimator: {fileID: 1776663717}
+  _audio: {fileID: 1628998672}
   _camera: {fileID: 1581607472}
   _protectedZone: {fileID: 425614669}
   _clippings: {fileID: 799609463}
@@ -16992,6 +16993,62 @@ MonoBehaviour:
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
   m_Version: 2
+--- !u!1 &1628998671
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1628998673}
+  - component: {fileID: 1628998672}
+  m_Layer: 0
+  m_Name: Audio
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1628998672
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1628998671}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 73e48827c65bd8b46bfcf0d18e802a3c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: GrassSimulation.Audio::GrassSimulation.Audio.GameAudio
+  _library: {fileID: 11400000, guid: cd2c46554493765458e3f306333a8607, type: 2}
+  _mixer: {fileID: 24100000, guid: ba648898f1e546c48aa65e670825cf44, type: 2}
+  _musicGroup: {fileID: -4672847165335269726, guid: ba648898f1e546c48aa65e670825cf44,
+    type: 2}
+  _ambienceGroup: {fileID: 5990375053710979997, guid: ba648898f1e546c48aa65e670825cf44,
+    type: 2}
+  _loopsGroup: {fileID: -72894117114436201, guid: ba648898f1e546c48aa65e670825cf44,
+    type: 2}
+  _eventsGroup: {fileID: -9116317614571279010, guid: ba648898f1e546c48aa65e670825cf44,
+    type: 2}
+  _uiGroup: {fileID: 3881922317859073194, guid: ba648898f1e546c48aa65e670825cf44,
+    type: 2}
+--- !u!4 &1628998673
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1628998671}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1629049823
 GameObject:
   m_ObjectHideFlags: 0
@@ -22520,3 +22577,4 @@ SceneRoots:
   - {fileID: 1161807235}
   - {fileID: 1697150042}
   - {fileID: 735453817}
+  - {fileID: 1628998673}

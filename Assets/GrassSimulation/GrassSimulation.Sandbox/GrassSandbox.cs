@@ -5,6 +5,7 @@ using EncosyTower.Common;
 using EncosyTower.Processing;
 using EncosyTower.PubSub;
 using EncosyTower.UnityExtensions;
+using GrassSimulation.Audio;
 using GrassSimulation.Gameplay;
 using GrassSimulation.Progression;
 using UnityEngine;
@@ -29,6 +30,9 @@ namespace GrassSimulation.Sandbox
 
         [SerializeField]
         private LawnMowerAnimator _mowerAnimator;
+
+        [SerializeField]
+        private GameAudio _audio;
 
         [SerializeField]
         private Camera _camera;
@@ -188,6 +192,7 @@ namespace GrassSimulation.Sandbox
             _mower.IsPointerBlocked = _uiProbe.IsOverUi;
 
             BindMowerAnimator();
+            BindAudio();
 
             var settledSubscriber = GlobalMessenger.Subscriber.Scope<ProgressionScope>();
             _subscriptions.Add(LevelSettledMsg.Subscribe(in settledSubscriber, OnLevelSettled));
@@ -371,6 +376,7 @@ namespace GrassSimulation.Sandbox
 
             _session.EndTick(deltaTime);
             AnimateMower();
+            PushAudioFrame();
             DecayFeedback(deltaTime);
             WriteCellStates();
             UpdateBlade();
@@ -585,6 +591,35 @@ namespace GrassSimulation.Sandbox
             {
                 _mowerAnimator.Bind(GlobalMessenger.Subscriber.Scope<GameplayScope>());
             }
+        }
+
+        private void BindAudio()
+        {
+            if (_props.IsValid())
+            {
+                _props.Bind(GlobalMessenger.Publisher.Scope<GameplayScope>());
+            }
+
+            if (_audio.IsValid())
+            {
+                _audio.Bind(
+                      GlobalMessenger.Subscriber.Scope<GameplayScope>()
+                    , GlobalMessenger.Subscriber.Scope<AudioScope>()
+                );
+            }
+        }
+
+        private void PushAudioFrame()
+        {
+            if (_audio.IsInvalid())
+            {
+                return;
+            }
+
+            var speed = _session.IsSimulating ? _mower.Velocity.magnitude : 0f;
+
+            _audio.MowerSpeed01 = speed / Mathf.Max(_session.Growth.Stats.Speed, MIN_SEGMENT);
+            _audio.RemainingTime = _session.RemainingTime;
         }
 
         private void AnimateMower()

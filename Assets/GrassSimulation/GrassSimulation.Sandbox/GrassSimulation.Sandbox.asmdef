@@ -5,6 +5,7 @@
         "EncosyTower.Core",
         "EncosyTower.PubSub",
         "EncosyTower.Processing",
+        "GrassSimulation.Audio",
         "GrassSimulation.Gameplay",
         "GrassSimulation.Progression",
         "Unity.InputSystem",

@@ -16,9 +16,13 @@ namespace GrassSimulation.UI
 
         private MonoPageCodex _codex;
         private string _shownKey;
-        private string _pendingKey;
+        private string _wantedScreenKey;
         private string _shownPopupKey;
         private string _wantedPopupKey;
+        private LevelState _state;
+        private bool _isPaused;
+        private bool _isHome = true;
+        private bool _isScreenBusy;
         private bool _isPopupBusy;
 
         public IPageFlowScopeCollectionApplier PageFlowScopeCollectionApplier => _flowScopesApplier;
@@ -30,6 +34,7 @@ namespace GrassSimulation.UI
             var subscriber = GlobalMessenger.Subscriber.Scope<GameplayScope>();
 
             _subscriptions.Add(LevelStateChangedMsg.Subscribe(in subscriber, OnLevelStateChanged));
+            _subscriptions.Add(HomeChangedMsg.Subscribe(in subscriber, OnHomeChanged));
 
             var hub = GlobalProcessor.Instance.Scope<GameplayScope>();
             var context = ProcessingContext.DropIfNoHandler(warnNoHandler: false);
@@ -37,7 +42,10 @@ namespace GrassSimulation.UI
 
             if (result.TryGetValue(out var snapshot))
             {
-                Route(snapshot.State, snapshot.IsPaused);
+                _state = snapshot.State;
+                _isPaused = snapshot.IsPaused;
+
+                Route();
             }
 
             return UnityTask.CompletedTask;
@@ -50,51 +58,72 @@ namespace GrassSimulation.UI
 
         private void OnLevelStateChanged(LevelStateChangedMsg message)
         {
-            Route(message.State, message.IsPaused);
+            _state = message.State;
+            _isPaused = message.IsPaused;
+
+            Route();
         }
 
-        private void Route(LevelState state, bool isPaused)
+        private void OnHomeChanged(HomeChangedMsg message)
         {
-            RoutePopup(state, isPaused);
+            _isHome = message.IsHome;
 
-            if (GrassPageRoutes.TryGetScreenKey(state, out var key) == false
-                || key == _shownKey
-                || key == _pendingKey
-                || _flowScopesApplier.TryGet(out var scopes) == false
-            )
+            Route();
+        }
+
+        private void Route()
+        {
+            RoutePopup();
+
+            if (GrassPageRoutes.TryGetScreenKey(_state, _isHome, out var key) == false)
             {
                 return;
             }
 
-            _ = ShowAsync(key, scopes);
+            _wantedScreenKey = key;
+
+            if (_isScreenBusy == false && key != _shownKey)
+            {
+                _ = SyncScreenAsync();
+            }
         }
 
-        private async UnityTask ShowAsync(string key, GrassPageFlowScopes scopes)
+        private async UnityTask SyncScreenAsync()
         {
-            _pendingKey = key;
+            if (_flowScopesApplier.TryGet(out var scopes) == false)
+            {
+                return;
+            }
+
+            _isScreenBusy = true;
 
             try
             {
                 var publisher = _codex.FlowContext.Publisher.Scope(scopes.Screen);
 
-                await ShowPageMessage.Async.Publish(
-                      in publisher
-                    , new ShowPageMessage(key, new PageContext {
-                        ShowOptions = PageTransitionOptions.NoTransition,
-                    })
-                );
+                while (_wantedScreenKey != _shownKey)
+                {
+                    var key = _wantedScreenKey;
 
-                _shownKey = key;
+                    await ShowPageMessage.Async.Publish(
+                          in publisher
+                        , new ShowPageMessage(key, new PageContext {
+                            ShowOptions = PageTransitionOptions.NoTransition,
+                        })
+                    );
+
+                    _shownKey = key;
+                }
             }
             finally
             {
-                _pendingKey = null;
+                _isScreenBusy = false;
             }
         }
 
-        private void RoutePopup(LevelState state, bool isPaused)
+        private void RoutePopup()
         {
-            GrassPageRoutes.TryGetPopupKey(state, isPaused, out var key);
+            GrassPageRoutes.TryGetPopupKey(_state, _isPaused, _isHome, out var key);
 
             _wantedPopupKey = key;
 

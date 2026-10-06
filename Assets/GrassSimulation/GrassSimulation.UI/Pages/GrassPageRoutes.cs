@@ -4,10 +4,22 @@ namespace GrassSimulation.UI
 {
     public static class GrassPageRoutes
     {
-        public static bool TryGetScreenKey(LevelState state, out string key)
+        public static bool TryGetScreenKey(LevelState state, bool isHome, out string key)
         {
+            if (isHome)
+            {
+                key = UiPageKeys.MAIN_MENU_SCREEN;
+                return true;
+            }
+
             switch (state)
             {
+                case LevelState.Preview:
+                {
+                    key = UiPageKeys.PREVIEW_SCREEN;
+                    return true;
+                }
+
                 case LevelState.Playing:
                 case LevelState.Cleanup:
                 {
@@ -23,8 +35,14 @@ namespace GrassSimulation.UI
             }
         }
 
-        public static bool TryGetPopupKey(LevelState state, bool isPaused, out string key)
+        public static bool TryGetPopupKey(LevelState state, bool isPaused, bool isHome, out string key)
         {
+            if (isHome)
+            {
+                key = null;
+                return false;
+            }
+
             switch (state)
             {
                 case LevelState.UpgradeChoice:

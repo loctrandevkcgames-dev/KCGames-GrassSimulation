@@ -35,12 +35,17 @@ namespace GrassSimulation.UI
             return $"{minutes}:{totalSeconds % SECONDS_PER_MINUTE:00}";
         }
 
+        public static string FormatThreshold(float timeLimit)
+        {
+            return FormatClock(MathF.Ceiling(GetTimeThreshold(timeLimit)));
+        }
+
         public static string FormatTimeStar(float remaining, float timeLimit)
         {
             return string.Format(
                   UiText.RESULT_TIME
                 , FormatClock(remaining)
-                , FormatClock(GetTimeThreshold(timeLimit))
+                , FormatThreshold(timeLimit)
             );
         }
 

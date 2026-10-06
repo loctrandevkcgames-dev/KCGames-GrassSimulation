@@ -64,6 +64,31 @@ namespace GrassSimulation.UI
         public const string OPTION_HAPTICS = "Rung";
         public const string OPTION_REDUCE_EFFECTS = "Giảm hiệu ứng";
 
+        public const string GAME_TITLE = "Grass Route";
+        public const string GARDEN_NAME = "Khu vườn 1 · Sân sau";
+        public const string COIN_AMOUNT = "{0}";
+        public const string QUOTA_AMOUNT = "{0}";
+        public const string GARDEN_PROGRESS_TITLE = "Tiến độ khu vườn";
+        public const string GARDEN_PROGRESS = "{0} / {1} màn · {2} / {3} sao";
+        public const string NEXT_LEVEL_HEADER = "Màn tiếp theo";
+        public const string LAST_LEVEL_HEADER = "Màn cuối";
+        public const string LEVEL_NUMBER = "Màn {0}";
+        public const string QUOTA_CHIP = "{0} {1}";
+        public const string COMING_SOON = "Sắp có";
+
+        public const string BUTTON_PLAY = "Chơi";
+        public const string BUTTON_START = "Bắt đầu";
+        public const string BUTTON_ZEN = "Zen";
+        public const string BUTTON_LEVEL_SELECT = "Chọn màn";
+
+        public const string PREVIEW_GOALS = "Mục tiêu";
+        public const string PREVIEW_BONUS = "Phụ · {0}";
+        public const string STAR_TITLE = "{0} sao";
+        public const string STAR_RULE_GOAL = "Đạt mục tiêu";
+        public const string STAR_RULE_TIME = "Còn ≥ {0}";
+        public const string STAR_RULE_CLEAN = "Không lỗi";
+        public const string STAR_RULE_CLEAN_BONUS = "Không lỗi + phụ";
+
         public const string PLANT_GRASS = "Cỏ";
         public const string PLANT_FLOWER = "Hoa đỏ";
         public const string PLANT_THICK_GRASS = "Cỏ dày";

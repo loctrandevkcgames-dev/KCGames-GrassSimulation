@@ -46,6 +46,14 @@ public sealed class ResultPopupFormatTests
         Assert.That(text, Is.EqualTo("Còn 0:31 (≥ 0:24)"));
     }
 
+    [TestCase(120f, "0:24")]
+    [TestCase(118f, "0:24")]
+    [TestCase(100f, "0:20")]
+    public void FormatThreshold_RoundsUpSoItNeverShowsLessThanTheRealThreshold(float timeLimit, string expected)
+    {
+        Assert.That(ResultPopupFormat.FormatThreshold(timeLimit), Is.EqualTo(expected));
+    }
+
     [Test]
     public void FormatTimeStar_FloorsTheRemainingTimeSoItNeverReachesTheThresholdEarly()
     {

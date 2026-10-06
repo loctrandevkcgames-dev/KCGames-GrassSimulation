@@ -29,6 +29,10 @@ public sealed class ProgressionServiceTests
         var second = Settle(stars: 2);
 
         Assert.That(first.CoinsGranted, Is.EqualTo(150));
+        Assert.That(first.FirstWinCoins, Is.EqualTo(RewardRules.FIRST_WIN_COINS));
+        Assert.That(first.NewStars, Is.EqualTo(2));
+        Assert.That(second.FirstWinCoins, Is.Zero);
+        Assert.That(second.NewStars, Is.Zero);
         Assert.That(second.CoinsGranted, Is.Zero);
         Assert.That(_service.Coins, Is.EqualTo(150));
         Assert.That(_store.SaveCount, Is.EqualTo(1));
@@ -68,6 +72,8 @@ public sealed class ProgressionServiceTests
         Assert.That(settlement.IsNewBest, Is.True);
         Assert.That(settlement.IsFirstCompletion, Is.False);
         Assert.That(settlement.CoinsGranted, Is.EqualTo(50));
+        Assert.That(settlement.FirstWinCoins, Is.Zero);
+        Assert.That(settlement.NewStars, Is.EqualTo(2));
         Assert.That(_service.Coins, Is.EqualTo(175));
     }
 
@@ -82,6 +88,7 @@ public sealed class ProgressionServiceTests
 
         Assert.That(outcome.TryGetError(out var error), Is.True);
         Assert.That(error.GetEnumCase(), Is.EqualTo(SettleError.EnumCase.NotSaved));
+        Assert.That(error.CanRetry, Is.True);
         Assert.That(error.TryGetValue(out SettleError.NotSaved notSaved), Is.True);
         Assert.That(notSaved.Cause.GetEnumCase(), Is.EqualTo(SaveError.EnumCase.WriteFailed));
 
@@ -205,6 +212,7 @@ public sealed class ProgressionServiceTests
         Assert.That(_service.IsReadOnly, Is.True);
         Assert.That(_service.LoadFailure.GetEnumCase(), Is.EqualTo(LoadError.EnumCase.Unreadable));
         Assert.That(outcome.TryGetError(out var error), Is.True);
+        Assert.That(error.CanRetry, Is.False);
         Assert.That(error.TryGetValue(out SettleError.StoreUnavailable unavailable), Is.True);
         Assert.That(unavailable.Cause.GetEnumCase(), Is.EqualTo(LoadError.EnumCase.Unreadable));
         Assert.That(_store.SaveCount, Is.Zero);

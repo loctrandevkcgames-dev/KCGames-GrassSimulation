@@ -76,15 +76,36 @@ namespace GrassSimulation.Progression
 
             var grantCount = _grants.Count;
             var coins = 0;
+            var firstWinCoins = 0;
+            var newStars = 0;
 
             for (var i = 0; i < grantCount; i++)
             {
-                coins += _grants[i].Coins;
+                var grant = _grants[i];
+
+                coins += grant.Coins;
+
+                if (grant.Id.IsFirstWin)
+                {
+                    firstWinCoins += grant.Coins;
+                }
+
+                if (grant.Id.IsStar)
+                {
+                    newStars++;
+                }
             }
 
             var isNewBest = isWin && earnedStars > GetBestStars(level);
             var isFirstCompletion = isWin && IsCompleted(level) == false;
-            var settlement = new LevelSettlement(coins, earnedStars, isNewBest, isFirstCompletion);
+            var settlement = new LevelSettlement(
+                  CoinsGranted: coins
+                , FirstWinCoins: firstWinCoins
+                , NewStars: newStars
+                , Stars: earnedStars
+                , IsNewBest: isNewBest
+                , IsFirstCompletion: isFirstCompletion
+            );
 
             if (grantCount == 0 && isNewBest == false && isFirstCompletion == false)
             {

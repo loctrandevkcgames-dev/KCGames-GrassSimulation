@@ -10,6 +10,8 @@ namespace GrassSimulation.Progression
         {
             string ToMessage()
                 => string.Empty;
+
+            bool CanRetry => false;
         }
 
         public readonly partial struct Undefined
@@ -25,6 +27,8 @@ namespace GrassSimulation.Progression
 
         public readonly partial record struct NotSaved(SaveError Cause)
         {
+            public bool CanRetry => true;
+
             [MethodImpl(MethodImplOptions.NoInlining)]
             public string ToMessage()
                 => $"The settlement was not saved: {Cause.ToMessage()}";

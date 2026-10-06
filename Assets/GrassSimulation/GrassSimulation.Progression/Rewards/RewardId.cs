@@ -11,6 +11,10 @@ namespace GrassSimulation.Progression
         {
             string ToKey()
                 => string.Empty;
+
+            bool IsFirstWin => false;
+
+            bool IsStar => false;
         }
 
         public readonly partial struct Undefined
@@ -19,6 +23,8 @@ namespace GrassSimulation.Progression
 
         public readonly partial record struct FirstWin(LevelId Level)
         {
+            public bool IsFirstWin => true;
+
             [MethodImpl(MethodImplOptions.NoInlining)]
             public string ToKey()
                 => $"first-win:{Level.Value}";
@@ -26,6 +32,8 @@ namespace GrassSimulation.Progression
 
         public readonly partial record struct Star(LevelId Level, int Number)
         {
+            public bool IsStar => true;
+
             [MethodImpl(MethodImplOptions.NoInlining)]
             public string ToKey()
                 => $"star:{Level.Value}:{Number}";

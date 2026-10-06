@@ -6,7 +6,7 @@ namespace GrassSimulation.UI
 {
     public static class GameplayScreenFormat
     {
-        public const float TIMER_WARNING_SECONDS = 15f;
+        public const float TIMER_WARNING_SECONDS = LevelSession.TIMER_WARNING_SECONDS;
 
         private const int SECONDS_PER_MINUTE = 60;
         private const float PERCENT_SCALE = 100f;

@@ -6,6 +6,7 @@ namespace GrassSimulation.Gameplay
     public sealed class LevelSession
     {
         public const float SECOND_STAR_TIME_FRACTION = 0.2f;
+        public const float TIMER_WARNING_SECONDS = 15f;
 
         private const float HARVEST_BATCH_INTERVAL = 0.1f;
 

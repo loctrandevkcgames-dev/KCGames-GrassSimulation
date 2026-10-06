@@ -1,0 +1,105 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 037467e03dc5f154c961ee37e972c7fd, type: 3}
+  m_Name: Level05
+  m_EditorClassIdentifier: GrassSimulation.Gameplay::GrassSimulation.Gameplay.LevelDefinition
+  _id: level-05
+  _cellsX: 28
+  _cellsZ: 32
+  _cellSize: 0.5
+  _seed: 5
+  _baseKind: 0
+  _zones: []
+  _spawn: {x: 8.5, y: 1.5}
+  _spawnClearing: 1
+  _bakedKinds: 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000202000202000000000000000000000000000000000000000000000002020202020200000000000000000000000000000000000000000000020202020202000000000000000000000000000000000000000000000202020202020000000000000000000000000000000000000000000002020202020200000000000000000000000000000000000000000000020202020202000000000000000000000000000000000000000000000202020202020000000000000000000000000000000000000000000002020202020200000000000000000000000000000000000000000000020202020202000000010101010101010101000000000000000000000202020202000000010101010101010101010000000000000000000000020002020000000101010101010101010101000000000000000000000000000000000001010101010101010101010000000000000000000000000000000000010101010101010101010100000000000000000000000000000000000001010101010101010100000000000000000000000000000000000000010101010101010100000000000000000000000000000000000000000001010101010100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+  _plants:
+  - <Kind>k__BackingField: 8
+    <Position>k__BackingField: {x: 6.5120726, y: 12.783505}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 223.32695
+    <Scale>k__BackingField: 0.9317881
+  - <Kind>k__BackingField: 8
+    <Position>k__BackingField: {x: 5.5088854, y: 12.328678}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 47.86138
+    <Scale>k__BackingField: 1.062685
+  - <Kind>k__BackingField: 8
+    <Position>k__BackingField: {x: 3.599886, y: 12.399555}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 280.0831
+    <Scale>k__BackingField: 0.93872243
+  - <Kind>k__BackingField: 8
+    <Position>k__BackingField: {x: 7.519376, y: 14.575844}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 276.4707
+    <Scale>k__BackingField: 1.0381459
+  - <Kind>k__BackingField: 8
+    <Position>k__BackingField: {x: 6.200611, y: 13.788438}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 218.28731
+    <Scale>k__BackingField: 0.959347
+  - <Kind>k__BackingField: 8
+    <Position>k__BackingField: {x: 3.9330873, y: 13.682471}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 42.527992
+    <Scale>k__BackingField: 1.0115191
+  - <Kind>k__BackingField: 8
+    <Position>k__BackingField: {x: 9.496898, y: 12.701723}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 321.24796
+    <Scale>k__BackingField: 1.0634642
+  - <Kind>k__BackingField: 8
+    <Position>k__BackingField: {x: 5.0616093, y: 13.8047285}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 291.87027
+    <Scale>k__BackingField: 1.0643778
+  - <Kind>k__BackingField: 8
+    <Position>k__BackingField: {x: 5.683601, y: 14.651911}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 168.97401
+    <Scale>k__BackingField: 0.9618179
+  - <Kind>k__BackingField: 8
+    <Position>k__BackingField: {x: 7.7461004, y: 12.523946}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 64.50481
+    <Scale>k__BackingField: 1.0384336
+  - <Kind>k__BackingField: 8
+    <Position>k__BackingField: {x: 8.915335, y: 13.708083}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 91.79875
+    <Scale>k__BackingField: 0.97196865
+  - <Kind>k__BackingField: 8
+    <Position>k__BackingField: {x: 3.9062247, y: 14.698247}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 217.95592
+    <Scale>k__BackingField: 1.0586064
+  _obstacles: []
+  _timeLimit: 85
+  _quotas:
+  - <Kind>k__BackingField: 2
+    <Amount>k__BackingField: 45
+    <IsBonus>k__BackingField: 0
+  - <Kind>k__BackingField: 8
+    <Amount>k__BackingField: 10
+    <IsBonus>k__BackingField: 0
+  - <Kind>k__BackingField: 1
+    <Amount>k__BackingField: 60
+    <IsBonus>k__BackingField: 1
+  _type: 1
+  _maxTier: 2
+  _displayName: "Rau c\u1EE7 c\u1EA5p 2"
+  _decision: "Hoa cho quota, c\u1ECF cho XP; rau c\u1EA7n c\u1EA5p 2"
+  _unlock:
+    <Kind>k__BackingField: 0
+    <Amount>k__BackingField: 0
+  _bakedBeds: []

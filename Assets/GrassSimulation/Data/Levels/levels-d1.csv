@@ -1,0 +1,51 @@
+id,order,step,type,name,decision,width,length,zones,beds,max_tier,grass,flower,thick,bush_low,veg,bush_big,melon,fruit_tree,fruit_giant,q1_kind,q1_amount,q2_kind,q2_amount,q3_kind,q3_amount,side_kind,side_amount,timer,unlock,timer_suggested
+L01,1,1,Hướng dẫn,Lái và cắt cỏ,Kéo để lái; sân sạch thì quota tăng,10,12,1,0,1,80,0,0,0,0,0,0,0,0,Cỏ,60,,,,,,,Không,—,—
+L02,2,2,Hướng dẫn,Hoa thu hoạch,Tìm đúng loại: chỉ hoa tính quota,12,12,2,0,1,40,50,0,0,0,0,0,0,0,Hoa,40,,,,,,,Không,—,—
+L03,3,2,Hướng dẫn,Hai loại quota,Chọn thứ tự cỏ hay hoa trước,12,14,2,0,1,45,45,0,0,0,0,0,0,0,Hoa,36,Cỏ,30,,,,,Không,—,—
+L04,4,3,Thường,Lên cấp 2,Lấy XP ở cỏ trước rồi quay lại bụi,14,14,2,0,2,125,0,0,18,0,0,0,0,0,Bụi thấp,15,,,,,,,Có,Extra Time (tặng 3),75
+L05,5,3,Thường,Rau củ cấp 2,"Hoa cho quota, cỏ cho XP; rau cần cấp 2",14,16,3,0,2,75,60,0,0,12,0,0,0,0,Hoa,45,Rau,10,,,Cỏ,60,Có,—,85
+L06,6,4,Thường,Hai đường đi,A→C→B (XP trước) hay B→A→C (hoa trước),18,14,3,0,2,100,70,0,25,0,0,0,0,0,Hoa,60,Bụi thấp,20,,,,,Có,Turbo (tặng 3),95
+L07,7,4,Thường,Đường vòng có ích,Đường vòng phía bắc có cỏ dày cho quota phụ,18,16,3,0,2,95,40,20,15,0,0,0,0,0,Hoa,35,Bụi thấp,12,,,Cỏ dày,18,Có,—,95
+L08,8,5,Thường,Hoa bảo vệ,Đi sát luống hoa thu hoạch mà không chạm luống bảo vệ,14,16,2,3,2,105,50,0,0,10,0,0,0,0,Hoa,40,Rau,8,,,,,Có,—,70
+L09,9,5,Thường,Luống xen kẽ,Chọn lối đi giữa các luống bảo vệ,16,16,3,5,2,95,60,15,20,0,0,0,0,0,Hoa,50,Bụi thấp,15,,,Cỏ dày,13,Có,—,95
+L10,10,6,Thường,"Sân rộng, luống hẹp",Nâng Lưỡi rộng dọn nhanh nhưng gần luống bảo vệ,22,16,2,4,2,150,30,20,0,0,0,0,0,0,Cỏ,120,Cỏ dày,18,,,,,Có,Máy Wide (miễn phí),60
+L11,11,6,Thường,Wide hay Standard,Wide phủ nhanh sân rộng; Standard xoay vòng nhanh,22,18,3,6,2,130,0,25,20,0,0,0,0,0,Cỏ dày,22,Bụi thấp,16,,,Cỏ,100,Có,—,90
+L12,12,7,Thường,Thứ tự ba vùng,Ba quota ở ba vùng; chọn thứ tự theo XP,18,18,3,4,2,90,50,0,10,15,0,0,0,0,Hoa,45,Rau,13,Bụi thấp,9,,,Có,—,95
+L13,13,7,Thường,Kiểm soát tốc độ,Bụi dày: đi chậm để cắt hết trong một lượt,16,18,2,3,2,125,0,0,30,0,0,0,0,0,Bụi thấp,26,,,,,Cỏ,90,Có,—,80
+L14,14,7,Thường,Củng cố cấp 2,"Tổng hợp hoa, rau, bảo vệ, quota phụ",18,18,3,5,2,95,40,20,0,12,0,0,0,0,Hoa,36,Rau,10,,,Cỏ dày,18,Có,—,85
+L15,15,8,Thường,Lên cấp 3,Tích XP cấp 1–2 để mở bụi lớn,20,20,3,0,3,175,0,40,25,0,15,0,0,0,Bụi lớn,12,,,,,,,Có,—,110
+L16,16,8,Thường,Dưa hấu,Dưa hấu ở cuối sân; chuẩn bị XP trên đường,20,20,3,0,3,150,40,0,25,15,0,10,0,0,Dưa/bí,8,Hoa,35,,,,,Có,—,110
+L17,17,8,Thường,Cấp 3 và bảo vệ,Bụi lớn nằm giữa luống bảo vệ,20,22,3,6,3,165,0,45,20,0,12,8,0,0,Bụi lớn,10,Dưa/bí,6,,,,,Có,—,120
+L18,18,8,Thường,Đường dài,"Vườn rau đầu sân, dưa cuối sân",22,22,4,4,3,160,50,25,0,15,0,12,0,0,Hoa,45,Dưa/bí,10,,,Rau,13,Có,—,130
+L19,19,8,Thường,Củng cố cấp 3,"Sân lớn, ba loại cây cấp 3 và 2",24,22,4,5,3,180,0,35,25,0,15,10,0,0,Bụi lớn,12,Dưa/bí,8,,,Bụi thấp,22,Có,—,150
+L20,20,9,Thường,Quả khổng lồ,Thấy quả khổng lồ từ đầu; cắt được khi lên cấp 4,24,24,4,0,4,230,0,50,30,0,20,14,0,2,Quả KL,1,,,,,,,Có,—,145
+L21,21,9,Thường,Cây ăn quả,Cây táo ×5 ở góc sân; vòng lấy XP trước,24,24,4,4,4,220,0,50,30,12,15,14,3,0,Cây quả,2,,,,,Dưa/bí,12,Có,—,155
+L22,22,9,Thường,Vườn hỗn hợp,Quả khổng lồ + dưa; chọn nâng Lưỡi rộng hay Động cơ,26,24,4,5,4,230,40,50,30,0,15,16,0,3,Quả KL,2,Dưa/bí,10,,,,,Có,—,155
+L23,23,9,Thường,Củng cố cấp 4,Hai cây ăn quả cách xa nhau,26,26,4,6,4,240,0,55,35,0,18,16,4,0,Cây quả,3,Bụi lớn,12,,,Dưa/bí,12,Có,—,165
+L24,24,9,Thường,Khu vườn cuối,Cây khổng lồ giữa sân là đích cuối của bản test,28,26,5,6,4,250,40,55,35,0,18,18,2,2,Cây quả,1,Quả KL,1,Dưa/bí,12,Hoa,36,Có,—,165
+L25,25,10,Thường,Luống rau dài,Rau xếp thành luống dài; nâng Lưỡi rộng cắt một lượt cả luống,22,22,3,0,3,170,0,40,20,30,0,6,0,0,Rau,25,Dưa/bí,5,,,,,Có,—,110
+L26,26,10,Thường,Bắp cải và bụi lớn,Bụi lớn chắn lối vào vườn bắp cải,22,24,3,4,3,160,30,20,0,25,14,0,0,0,Rau,20,Bụi lớn,12,,,Hoa,27,Có,—,115
+L27,27,10,Thường,Ruộng rộng,Sân rộng hợp với Wide; dưa ở hai đầu ruộng,26,22,3,0,3,200,0,40,0,20,0,12,0,0,Dưa/bí,10,Rau,18,,,,,Có,—,115
+L28,28,10,Thư giãn,Vườn sau mưa,"Màn thư giãn: dọn cỏ và nhổ rau, không timer",20,20,2,0,2,140,40,0,0,15,0,0,0,0,Cỏ,120,Rau,12,,,,,Không,—,—
+L29,29,10,Thường,Dưa giữa luống bảo vệ,Dưa nằm sau các luống bảo vệ; đi chậm để không chạm luống,24,24,4,6,3,180,0,40,20,0,0,12,0,0,Dưa/bí,10,Bụi thấp,16,,,Cỏ dày,36,Có,—,125
+L30,30,10,Khó,Mùa thu hoạch,"Màn khó: ba quota, quả khổng lồ ở cuối sân",26,26,5,0,4,240,0,50,30,20,15,16,0,2,Rau,18,Dưa/bí,12,Quả KL,1,,,Có,—,155
+L31,31,10,Thường,Hai vườn rau,Hai vườn hai đầu sân; chọn vườn nào trước theo XP,24,22,4,4,3,170,40,0,20,25,0,10,0,0,Hoa,35,Rau,22,Dưa/bí,8,,,Có,—,125
+L32,32,10,Thường,Ruộng bí ngô,Nhiều bí: hướng Động cơ khỏe cắt nhanh hơn,26,24,4,0,4,230,0,50,30,0,15,22,0,2,Dưa/bí,18,Quả KL,1,,,,,Có,—,155
+L33,33,11,Thư giãn,Thảm hoa,Màn thư giãn ngắn: chỉ hoa và cỏ,14,14,2,0,1,50,45,0,0,0,0,0,0,0,Hoa,40,,,,,,,Không,—,—
+L34,34,11,Thường,Lối hẹp giữa luống,Nhiều luống bảo vệ sát lối; cân nhắc có nên nâng Lưỡi rộng,20,20,3,8,2,120,70,0,15,0,0,0,0,0,Hoa,60,Bụi thấp,12,,,,,Có,—,75
+L35,35,11,Khó,Mê cung hoa,Màn khó: lối đi quanh co giữa 10 luống bảo vệ,24,24,4,10,3,180,60,40,0,0,14,0,0,0,Hoa,52,Bụi lớn,12,,,Cỏ dày,27,Có,—,105
+L36,36,11,Thường,Hoa và dưa,Dưa nằm giữa vườn hoa; vào và ra không chạm luống,22,22,3,6,3,185,50,40,0,0,0,10,0,0,Hoa,45,Dưa/bí,8,,,,,Có,—,105
+L37,37,11,Thường,Vườn tròn,"Cây táo giữa vườn tròn, hoa bao quanh",24,24,4,6,4,230,50,45,20,0,15,14,2,0,Hoa,45,Cây quả,1,Bụi lớn,12,,,Có,—,155
+L38,38,11,Thư giãn,Cỏ dày sau vườn,"Màn thư giãn: dọn cỏ dày, không timer",20,18,2,0,2,130,0,60,0,0,0,0,0,0,Cỏ dày,50,,,,,,,Không,—,—
+L39,39,11,Thường,Wide và luống hẹp,Wide phủ nhanh nhưng luống hẹp; chọn máy ở Loadout,24,22,4,8,3,190,40,35,20,0,12,0,0,0,Hoa,36,Bụi lớn,10,,,Bụi thấp,18,Có,—,125
+L40,40,11,Khó,Lễ hội hoa,"Màn khó: nhiều luống bảo vệ, quả khổng lồ là đích cuối",26,26,5,10,4,250,60,50,25,0,18,14,0,2,Hoa,54,Bụi lớn,14,Quả KL,1,,,Có,—,150
+L41,41,11,Thường,Hai luống quý,Rau và dưa nằm trong hai khu có rào bảo vệ,24,22,4,8,3,180,50,40,0,15,0,10,0,0,Rau,13,Dưa/bí,8,,,Hoa,45,Có,—,125
+L42,42,12,Thường,Hàng táo,Bốn cây táo thành hàng; lên cấp 4 trước khi tới hàng cây,26,26,4,0,4,240,0,50,30,0,15,14,4,0,Cây quả,3,,,,,Dưa/bí,12,Có,—,160
+L43,43,12,Thư giãn,Bãi cỏ rộng,"Màn thư giãn: bãi cỏ rộng, không timer",22,20,2,0,2,160,0,30,10,0,0,0,0,0,Cỏ,140,Bụi thấp,8,,,,,Không,—,—
+L44,44,12,Thường,Táo và bí,"Táo ở góc bắc, bí ở góc nam; chọn thứ tự theo XP",26,26,4,4,4,240,0,55,30,12,15,18,3,0,Cây quả,2,Dưa/bí,14,,,,,Có,—,155
+L45,45,12,Khó,Vườn cây cổ thụ,"Màn khó: ba quota lớn, cây và quả khổng lồ xa nhau",28,26,5,6,4,260,0,60,35,0,20,16,4,2,Cây quả,3,Quả KL,1,Bụi lớn,15,,,Có,—,165
+L46,46,12,Thường,Đường vòng vườn quả,"Đường vòng có hoa cho quota, đường thẳng tới cây táo",26,26,4,6,4,250,40,50,30,0,15,14,3,0,Hoa,36,Cây quả,2,,,Bụi lớn,13,Có,—,160
+L47,47,12,Thường,Quả khổng lồ đôi,Hai quả khổng lồ ở hai đầu sân,28,24,4,0,4,250,0,55,30,0,18,16,0,3,Quả KL,2,Dưa/bí,12,,,,,Có,—,155
+L48,48,12,Thư giãn,Vườn hoa nhỏ,Màn thư giãn ngắn trước màn cuối,14,14,2,0,1,55,40,0,0,0,0,0,0,0,Hoa,35,Cỏ,40,,,,,Không,—,—
+L49,49,12,Thường,Chuẩn bị mùa lớn,Đủ mọi loại cây; ba quota ở ba góc,28,28,5,6,4,250,40,55,30,12,18,16,3,2,Cây quả,2,Quả KL,1,Hoa,36,,,Có,—,170
+L50,50,12,Khó,Khu vườn hoàn chỉnh,"Màn khó cuối bản test: cây táo, quả khổng lồ và dưa",30,28,5,8,4,280,45,60,35,15,20,20,3,2,Cây quả,2,Quả KL,1,Dưa/bí,15,Hoa,40,Có,—,155

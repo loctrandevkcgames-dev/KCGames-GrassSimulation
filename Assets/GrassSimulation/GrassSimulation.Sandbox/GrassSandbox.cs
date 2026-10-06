@@ -58,6 +58,9 @@ namespace GrassSimulation.Sandbox
         private LevelCatalog _catalog;
 
         [SerializeField]
+        private GameRules _rules;
+
+        [SerializeField]
         private float _cameraShake = 0.12f;
 
         [SerializeField]
@@ -115,6 +118,8 @@ namespace GrassSimulation.Sandbox
         private readonly List<int> _harvestedCells = new();
         private readonly List<ISubscription> _subscriptions = new();
         private readonly List<ProcessRegistry> _registries = new();
+        private readonly List<Renderer> _zoneRenderers = new();
+        private readonly List<int> _touchedBeds = new();
         private readonly UiPointerProbe _uiProbe = new();
 
         private LevelDefinition _level;
@@ -131,8 +136,7 @@ namespace GrassSimulation.Sandbox
         private Result<LevelSettlement, SettleError> _lastSettlement;
         private bool _hasLastSettlement;
         private MaterialPropertyBlock _zoneProperties;
-        private RectInt _protectedBed;
-        private bool _hasProtectedBed;
+        private float[] _zoneFlashes = Array.Empty<float>();
         private Vector3 _previousBlade;
         private Vector3 _cameraFocus;
         private CameraBlend _previewBlend;
@@ -141,7 +145,6 @@ namespace GrassSimulation.Sandbox
         private float _chuteBudget;
         private Color _chuteColor;
         private float _cutRadius;
-        private float _zoneFlash;
         private int _levelIndex;
         private bool _wasResetHeld;
         private bool _wasNextLevelHeld;
@@ -158,10 +161,25 @@ namespace GrassSimulation.Sandbox
         private bool _showDebugHud;
         private bool _isHome;
         private bool _isStarting;
+        private bool _wasSimulating;
         private FlowRequest _pendingFlow;
         private GUIStyle _hudStyle;
 
         public LevelSession Session => _session;
+
+        private GameRulesValues RulesValues => _rules.IsValid() ? _rules.Values : GameRulesValues.Default;
+
+        private int CleanupTier => _catalog.GetIntroducedTier(_levelIndex);
+
+        private int CutTier
+        {
+            get
+            {
+                var tier = _session.Growth.Tier;
+
+                return _session.State == LevelState.Cleanup ? Mathf.Max(tier, CleanupTier) : tier;
+            }
+        }
 
         public void Begin()
         {
@@ -343,14 +361,23 @@ namespace GrassSimulation.Sandbox
         {
             var index = _catalog.ClampIndex(request.LevelIndex);
 
-            return LevelPreview.From(_catalog.Get(index), index);
+            return LevelPreview.From(_catalog.Get(index), index, RulesValues);
         }
 
         private LevelSnapshot ProvideLevelSnapshot(GetLevelSnapshotRequest request)
         {
             var unlockedKinds = PlantKindMask.FromTier(_plants, _session.Growth.UpgradeTier);
 
-            return LevelSnapshot.From(_session, _level, _levelIndex, _catalog.Count, unlockedKinds);
+            var cleanupTier = _session.State == LevelState.Cleanup ? CleanupTier : 0;
+
+            return LevelSnapshot.From(
+                  _session
+                , _level
+                , _levelIndex
+                , _catalog.Count
+                , unlockedKinds
+                , cleanupTier
+            );
         }
 
         private ProgressSnapshot ProvideProgressSnapshot(GetProgressSnapshotRequest request)
@@ -391,17 +418,17 @@ namespace GrassSimulation.Sandbox
             _grid = _level.CreateGrid();
             _feedback = new FieldFeedback(_grid.Count);
             SetLitterColors();
-            _cutter = new GrassCutter(_grid, _feedback, _plants);
-            _hasProtectedBed = _level.TryGetProtectedBed(out _protectedBed);
+            _cutter = new GrassCutter(_grid, _feedback, _plants, _level.Beds);
 
             ClearPropCells();
-            PlaceProtectedZone();
+            PlaceProtectedZones();
 
             _session = new LevelSession(
                   _level
                 , _machine
                 , _cutter.CountCuttableCells()
                 , GlobalMessenger.Publisher.Scope<GameplayScope>()
+                , RulesValues
             );
             _field.Build(_grid, _plants, _level.Seed);
             _mower.Bounds = _grid.Bounds;
@@ -417,7 +444,16 @@ namespace GrassSimulation.Sandbox
             TryFinishStart();
             HandleKeys();
 
-            if (_session.IsSimulating)
+            var isSimulating = _session.IsSimulating;
+
+            if (isSimulating && _wasSimulating == false)
+            {
+                _mower.ResetInput();
+            }
+
+            _wasSimulating = isSimulating;
+
+            if (isSimulating)
             {
                 var stats = _session.Growth.Stats;
 
@@ -441,7 +477,7 @@ namespace GrassSimulation.Sandbox
             DecayFeedback(deltaTime);
             WriteCellStates();
             UpdateBlade();
-            UpdateProtectedZone();
+            UpdateProtectedZones();
         }
 
         private void OnApplicationPause(bool isPaused)
@@ -496,7 +532,7 @@ namespace GrassSimulation.Sandbox
 
             GUILayout.BeginArea(new Rect(new Vector2(margin, margin), size), GUI.skin.box);
             HudLine($"Level {_levelIndex + 1} / {_catalog.Count}   {_level.Id.Value}");
-            HudLine($"{StateText()}   Time {_session.RemainingTime:0.0} s   Cleared {_session.ClearedFraction:P0}");
+            HudLine($"{StateText()}   {TimeText()}   Cleared {_session.ClearedFraction:P0}");
             HudLine($"Tier {growth.Tier}   XP {growth.Xp}{NextThresholdText()}   {ProtectedHitsText()}");
             HudLine($"Radius {stats.CutRadius:0.00} m   Power {stats.CuttingPower:0.00}   Speed {stats.Speed:0.00}");
             HudQuotas();
@@ -525,7 +561,9 @@ namespace GrassSimulation.Sandbox
             if (state != LevelState.Playing && state != LevelState.UpgradeChoice)
             {
                 var level = _level.Id;
-                HudLine($"Coins {_progression.Coins}   Best {_progression.GetBestStars(level)} stars");
+                var stars = _progression.GetStars(level);
+
+                HudLine($"Best {StarRules.Count(stars)} stars ({stars})   Attempts {_progression.GetAttempts(level)}");
             }
 
             if (_progression.IsReadOnly)
@@ -547,8 +585,9 @@ namespace GrassSimulation.Sandbox
                 && _hasLastSettlement && _lastSettlement.TryGetValue(out var settlement)
             )
             {
-                var best = settlement.IsNewBest ? "   new best" : string.Empty;
-                HudLine($"+{settlement.CoinsGranted} coins{best}");
+                var firstClear = settlement.IsFirstCompletion ? "   first clear" : string.Empty;
+
+                HudLine($"Earned {settlement.Earned}   new {settlement.New}{firstClear}");
             }
         }
 
@@ -560,6 +599,11 @@ namespace GrassSimulation.Sandbox
             return result.IsFinished
                 ? $"<b>{state}</b> ({result.Outcome.ToLabel()})"
                 : $"<b>{state}</b>";
+        }
+
+        private string TimeText()
+        {
+            return _session.Rules.IsTimed ? $"Time {_session.RemainingTime:0.0} s" : "Untimed";
         }
 
         private string ProtectedHitsText()
@@ -693,6 +737,8 @@ namespace GrassSimulation.Sandbox
 
             _audio.MowerSpeed01 = speed / Mathf.Max(_session.Growth.Stats.Speed, MIN_SEGMENT);
             _audio.RemainingTime = _session.RemainingTime;
+            _audio.IsTimed = _session.Rules.IsTimed;
+            _audio.TimerWarningSeconds = _session.Rules.TimerWarning;
         }
 
         private void AnimateMower()
@@ -778,7 +824,7 @@ namespace GrassSimulation.Sandbox
                 return;
             }
 
-            var xp = _props.Cut(blade, _cutRadius, _session.Growth.Tier, cuttingPower, deltaTime);
+            var xp = _props.Cut(blade, _cutRadius, CutTier, cuttingPower, deltaTime);
 
             if (xp > 0)
             {
@@ -836,28 +882,49 @@ namespace GrassSimulation.Sandbox
             }
         }
 
-        private void PlaceProtectedZone()
+        private void PlaceProtectedZones()
         {
             if (_protectedZone.IsInvalid())
             {
                 return;
             }
 
-            _protectedZone.gameObject.SetActive(_hasProtectedBed);
+            var beds = _level.Beds;
+            var bedCount = beds.Length;
 
-            if (_hasProtectedBed == false)
+            _zoneFlashes = new float[bedCount];
+
+            for (var i = _zoneRenderers.Count; i < bedCount; i++)
             {
-                return;
+                var zoneRenderer = i == 0
+                    ? _protectedZone
+                    : Instantiate(_protectedZone, _protectedZone.transform.parent);
+
+                _zoneRenderers.Add(zoneRenderer);
             }
 
             var cellSize = _grid.CellSize;
-            var min = _grid.Origin + new Vector2(_protectedBed.xMin, _protectedBed.yMin) * cellSize;
-            var size = new Vector2(_protectedBed.width, _protectedBed.height) * cellSize;
-            var center = min + size * 0.5f;
-            var zone = _protectedZone.transform;
 
-            zone.SetPositionAndRotation(new Vector3(center.x, 0.02f, center.y), Quaternion.Euler(90f, 0f, 0f));
-            zone.localScale = new Vector3(size.x + ZONE_MARGIN, size.y + ZONE_MARGIN, 1f);
+            for (var i = 0; i < _zoneRenderers.Count; i++)
+            {
+                var isUsed = i < bedCount;
+
+                _zoneRenderers[i].gameObject.SetActive(isUsed);
+
+                if (isUsed == false)
+                {
+                    continue;
+                }
+
+                var bed = beds[i];
+                var min = _grid.Origin + new Vector2(bed.xMin, bed.yMin) * cellSize;
+                var size = new Vector2(bed.width, bed.height) * cellSize;
+                var center = min + size * 0.5f;
+                var zone = _zoneRenderers[i].transform;
+
+                zone.SetPositionAndRotation(new Vector3(center.x, 0.02f, center.y), Quaternion.Euler(90f, 0f, 0f));
+                zone.localScale = new Vector3(size.x + ZONE_MARGIN, size.y + ZONE_MARGIN, 1f);
+            }
         }
 
         private void ResetRun()
@@ -870,8 +937,8 @@ namespace GrassSimulation.Sandbox
             _grid.ResetProgress();
             _feedback.Clear();
             _hasLastSettlement = false;
-            _zoneFlash = 0f;
-            _cutRadius = Mathf.Min(_machine.BaseCutRadius, _machine.MaxCutRadius);
+            Array.Clear(_zoneFlashes, 0, _zoneFlashes.Length);
+            _cutRadius = _machine.BaseCutRadius;
 
             var spawn = _grid.ToWorld(_level.Spawn);
             _mower.ResetTo(spawn);
@@ -1067,8 +1134,10 @@ namespace GrassSimulation.Sandbox
 
         private void Cut(Vector3 from, Vector3 to, float cuttingPower, float deltaTime)
         {
-            var stroke = new CutStroke(from, to, _cutRadius, _session.Growth.Tier, cuttingPower, deltaTime);
-            var touchedProtected = _cutter.Cut(stroke, _harvestedCells);
+            var stroke = new CutStroke(from, to, _cutRadius, CutTier, cuttingPower, deltaTime);
+
+            _cutter.Cut(stroke, _harvestedCells, _touchedBeds);
+
             var harvestedCount = _harvestedCells.Count;
 
             for (var i = 0; i < harvestedCount; i++)
@@ -1083,10 +1152,19 @@ namespace GrassSimulation.Sandbox
 
             _harvestedCells.Clear();
 
-            if (touchedProtected && _session.RecordProtectedTouch())
+            var touchedCount = _touchedBeds.Count;
+
+            for (var i = 0; i < touchedCount; i++)
             {
-                _zoneFlash = 1f;
+                var bed = _touchedBeds[i];
+
+                if (_session.RecordProtectedTouch(bed) && bed < _zoneFlashes.Length)
+                {
+                    _zoneFlashes[bed] = 1f;
+                }
             }
+
+            _touchedBeds.Clear();
         }
 
         private void EmitClippings(int index, in PlantSettings plant)
@@ -1113,7 +1191,11 @@ namespace GrassSimulation.Sandbox
         private void DecayFeedback(float deltaTime)
         {
             _feedback.Decay(deltaTime);
-            _zoneFlash = Mathf.Max(_zoneFlash - ZONE_FLASH_DECAY * deltaTime, 0f);
+
+            for (var i = 0; i < _zoneFlashes.Length; i++)
+            {
+                _zoneFlashes[i] = Mathf.Max(_zoneFlashes[i] - ZONE_FLASH_DECAY * deltaTime, 0f);
+            }
         }
 
         private void WriteCellStates()
@@ -1125,7 +1207,7 @@ namespace GrassSimulation.Sandbox
         private void UpdateBlade()
         {
             var blade = _mower.transform.position;
-            var warning = _hasProtectedBed ? ProtectedWarning(blade) : 0f;
+            var warning = ProtectedWarning(blade);
 
             _field.SetBlade(blade, _cutRadius, warning);
         }
@@ -1134,23 +1216,35 @@ namespace GrassSimulation.Sandbox
         {
             var cellSize = _grid.CellSize;
             var bladeXZ = _grid.ToLocal(blade);
-            var bedMin = new Vector2(_protectedBed.xMin, _protectedBed.yMin) * cellSize;
-            var bedMax = new Vector2(_protectedBed.xMax, _protectedBed.yMax) * cellSize;
-            var nearest = Vector2.Max(bedMin, Vector2.Min(bladeXZ, bedMax));
-            var gap = Vector2.Distance(bladeXZ, nearest) - _cutRadius;
-            return 1f - Mathf.Clamp01(gap / _warningDistance);
-        }
+            var beds = _level.Beds;
+            var warning = 0f;
 
-        private void UpdateProtectedZone()
-        {
-            if (_protectedZone.IsInvalid())
+            for (var i = 0; i < beds.Length; i++)
             {
-                return;
+                var bed = beds[i];
+                var bedMin = new Vector2(bed.xMin, bed.yMin) * cellSize;
+                var bedMax = new Vector2(bed.xMax, bed.yMax) * cellSize;
+                var nearest = Vector2.Max(bedMin, Vector2.Min(bladeXZ, bedMax));
+                var gap = Vector2.Distance(bladeXZ, nearest) - _cutRadius;
+
+                warning = Mathf.Max(warning, 1f - Mathf.Clamp01(gap / _warningDistance));
             }
 
-            _protectedZone.GetPropertyBlock(_zoneProperties);
-            _zoneProperties.SetFloat(GrassFieldShaderIds.Flash, _zoneFlash);
-            _protectedZone.SetPropertyBlock(_zoneProperties);
+            return warning;
+        }
+
+        private void UpdateProtectedZones()
+        {
+            var bedCount = _zoneFlashes.Length;
+
+            for (var i = 0; i < bedCount && i < _zoneRenderers.Count; i++)
+            {
+                var zoneRenderer = _zoneRenderers[i];
+
+                zoneRenderer.GetPropertyBlock(_zoneProperties);
+                _zoneProperties.SetFloat(GrassFieldShaderIds.Flash, _zoneFlashes[i]);
+                zoneRenderer.SetPropertyBlock(_zoneProperties);
+            }
         }
 
         private enum FlowRequest

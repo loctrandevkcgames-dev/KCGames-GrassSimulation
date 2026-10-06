@@ -1,19 +1,13 @@
 using System;
 using GrassSimulation.Gameplay;
-using GrassSimulation.Progression;
 
 namespace GrassSimulation.UI
 {
     public static class MainMenuScreenFormat
     {
-        public static string FormatCoins(int coins)
-        {
-            return string.Format(UiText.COIN_AMOUNT, coins);
-        }
-
         public static int GetMaxStars(int levelCount)
         {
-            return levelCount * RewardRules.MAX_STARS;
+            return levelCount * StarRules.MAX_STARS;
         }
 
         public static string FormatProgress(int completedCount, int levelCount, int totalStars)
@@ -45,6 +39,11 @@ namespace GrassSimulation.UI
         public static string FormatLevelNumber(int levelIndex)
         {
             return string.Format(UiText.LEVEL_NUMBER, levelIndex + 1);
+        }
+
+        public static string FormatTimer(bool isTimed, float timeLimit)
+        {
+            return isTimed ? GameplayScreenFormat.FormatTimer(timeLimit) : UiText.TIMER_UNLIMITED;
         }
 
         public static string FormatQuotaChip(PlantKind kind, int amount)

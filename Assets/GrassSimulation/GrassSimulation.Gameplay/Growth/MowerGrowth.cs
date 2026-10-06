@@ -116,11 +116,7 @@ namespace GrassSimulation.Gameplay
                 speed += upgrade.SpeedDelta * times;
             }
 
-            return new MachineStats(
-                  Mathf.Min(cutRadius, _config.MaxCutRadius)
-                , cuttingPower
-                , Mathf.Min(speed, _config.MaxSpeed)
-            );
+            return new MachineStats(cutRadius, cuttingPower, speed);
         }
     }
 }

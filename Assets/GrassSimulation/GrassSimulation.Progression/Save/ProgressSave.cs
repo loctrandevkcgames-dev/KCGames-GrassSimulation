@@ -6,7 +6,7 @@ namespace GrassSimulation.Progression
     [Preserve]
     public sealed class ProgressSave
     {
-        public const int CURRENT_VERSION = 1;
+        public const int CURRENT_VERSION = 2;
 
         [Preserve]
         public ProgressSave()
@@ -15,30 +15,34 @@ namespace GrassSimulation.Progression
 
         public int Version { get; set; }
 
-        public List<string> CompletedLevels { get; set; } = new();
-
-        public Dictionary<string, int> BestStars { get; set; } = new();
-
-        public List<string> GrantedRewards { get; set; } = new();
-
         public int Revision { get; set; }
 
-        public int Coins { get; set; }
+        public Dictionary<string, LevelRecord> Levels { get; set; } = new();
 
-        public List<string> OwnedSkins { get; set; } = new();
+        // Version 1 fields. They are read only to migrate a version 1 save and are null afterwards.
+        public List<string> CompletedLevels { get; set; }
+
+        public Dictionary<string, int> BestStars { get; set; }
 
         public static ProgressSave CreateNew()
             => new() { Version = CURRENT_VERSION };
 
         public ProgressSave Clone()
-            => new() {
+        {
+            var levels = new Dictionary<string, LevelRecord>(Levels.Count);
+
+            foreach (var pair in Levels)
+            {
+                levels[pair.Key] = pair.Value.Clone();
+            }
+
+            return new ProgressSave {
                 Version = Version,
-                CompletedLevels = new List<string>(CompletedLevels),
-                BestStars = new Dictionary<string, int>(BestStars),
-                GrantedRewards = new List<string>(GrantedRewards),
                 Revision = Revision,
-                Coins = Coins,
-                OwnedSkins = new List<string>(OwnedSkins),
+                Levels = levels,
+                CompletedLevels = CompletedLevels == null ? null : new List<string>(CompletedLevels),
+                BestStars = BestStars == null ? null : new Dictionary<string, int>(BestStars),
             };
+        }
     }
 }

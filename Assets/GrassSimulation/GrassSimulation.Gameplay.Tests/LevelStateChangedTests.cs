@@ -209,7 +209,7 @@ public sealed class LevelStateChangedTests
 
     private LevelSession CreateSession(params QuotaSettings[] quotas)
     {
-        var level = _assets.CreateLevel(timeLimit: 10f, failOnProtectedHits: false, quotas);
+        var level = _assets.CreateLevel(timeLimit: 10f, quotas);
         return new LevelSession(level, _assets.CreateMachine(), CUTTABLE_CELLS, _messages.Publisher);
     }
 }

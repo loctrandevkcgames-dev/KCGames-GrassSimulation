@@ -4,7 +4,7 @@ namespace GrassSimulation.Progression.Tests;
 
 internal static class LevelResults
 {
-    public static LevelResult Win(int stars)
+    public static LevelResult Win(StarFlags stars)
     {
         LevelOutcome outcome = new LevelOutcome.Success(stars);
 

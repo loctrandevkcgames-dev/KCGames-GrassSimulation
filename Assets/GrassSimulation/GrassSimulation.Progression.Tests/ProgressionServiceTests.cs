@@ -1,7 +1,6 @@
 using System.Text.RegularExpressions;
 using GrassSimulation.Gameplay;
 using NUnit.Framework;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.TestTools;
 
@@ -9,6 +8,8 @@ namespace GrassSimulation.Progression.Tests;
 
 public sealed class ProgressionServiceTests
 {
+    private const StarFlags GOAL_CLEAN = StarFlags.Goal | StarFlags.Clean;
+
     private static readonly LevelId s_level = new("level-01");
 
     private FakeProgressStore _store;
@@ -23,19 +24,29 @@ public sealed class ProgressionServiceTests
     }
 
     [Test]
-    public void SettlingTheSameResultTwice_PaysOnce()
+    public void FirstWin_EarnsTheStarsAndMarksTheFirstCompletion()
     {
-        var first = Settle(stars: 2);
-        var second = Settle(stars: 2);
+        var settlement = Settle(GOAL_CLEAN);
 
-        Assert.That(first.CoinsGranted, Is.EqualTo(150));
-        Assert.That(first.FirstWinCoins, Is.EqualTo(RewardRules.FIRST_WIN_COINS));
-        Assert.That(first.NewStars, Is.EqualTo(2));
-        Assert.That(second.FirstWinCoins, Is.Zero);
-        Assert.That(second.NewStars, Is.Zero);
-        Assert.That(second.CoinsGranted, Is.Zero);
-        Assert.That(_service.Coins, Is.EqualTo(150));
+        Assert.That(settlement.Earned, Is.EqualTo(GOAL_CLEAN));
+        Assert.That(settlement.New, Is.EqualTo(GOAL_CLEAN));
+        Assert.That(settlement.IsFirstCompletion, Is.True);
+        Assert.That(_service.GetStars(s_level), Is.EqualTo(GOAL_CLEAN));
+        Assert.That(_service.GetStarCount(s_level), Is.EqualTo(2));
         Assert.That(_store.SaveCount, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void SettlingTheSameResultTwice_ReportsNoNewStars()
+    {
+        Settle(GOAL_CLEAN);
+
+        var second = Settle(GOAL_CLEAN);
+
+        Assert.That(second.Earned, Is.EqualTo(GOAL_CLEAN));
+        Assert.That(second.New, Is.EqualTo(StarFlags.None));
+        Assert.That(second.IsFirstCompletion, Is.False);
+        Assert.That(_service.GetAttempts(s_level), Is.EqualTo(2));
     }
 
     [Test]
@@ -43,48 +54,43 @@ public sealed class ProgressionServiceTests
     {
         Assert.That(_service.IsCompleted(s_level), Is.False);
 
-        var settlement = Settle(stars: 1);
+        Settle(StarFlags.Goal);
 
         Assert.That(_service.IsCompleted(s_level), Is.True);
-        Assert.That(settlement.IsFirstCompletion, Is.True);
-        Assert.That(_service.IsGranted(new RewardId.FirstWin(s_level)), Is.True);
     }
 
     [Test]
-    public void BestStars_NeverDecrease()
+    public void Stars_AreOrMergedAcrossRunsAndNeverLost()
     {
-        Settle(stars: 3);
+        Settle(StarFlags.Goal | StarFlags.Side);
 
-        var settlement = Settle(stars: 1);
+        var settlement = Settle(GOAL_CLEAN);
 
-        Assert.That(_service.GetBestStars(s_level), Is.EqualTo(3));
-        Assert.That(settlement.IsNewBest, Is.False);
+        Assert.That(settlement.New, Is.EqualTo(StarFlags.Clean));
+        Assert.That(_service.GetStars(s_level), Is.EqualTo(StarRules.ALL));
+
+        Settle(StarFlags.Goal);
+
+        Assert.That(_service.GetStars(s_level), Is.EqualTo(StarRules.ALL));
     }
 
     [Test]
-    public void ReplayWithMoreStars_RaisesBestAndPaysOnlyNewStars()
+    public void AssistedResult_KeepsTheGoalOnly()
     {
-        Settle(stars: 1);
+        var settlement = Settle(StarFlags.Goal);
 
-        var settlement = Settle(stars: 3);
-
-        Assert.That(_service.GetBestStars(s_level), Is.EqualTo(3));
-        Assert.That(settlement.IsNewBest, Is.True);
-        Assert.That(settlement.IsFirstCompletion, Is.False);
-        Assert.That(settlement.CoinsGranted, Is.EqualTo(50));
-        Assert.That(settlement.FirstWinCoins, Is.Zero);
-        Assert.That(settlement.NewStars, Is.EqualTo(2));
-        Assert.That(_service.Coins, Is.EqualTo(175));
+        Assert.That(settlement.Earned, Is.EqualTo(StarFlags.Goal));
+        Assert.That(_service.GetStars(s_level), Is.EqualTo(StarFlags.Goal));
     }
 
     [Test]
-    public void FailingSave_RollsBackCoinsLedgerBestAndCompleted()
+    public void FailingSave_RollsBackStarsAttemptsAndCompleted()
     {
         _store.FailSaves = true;
 
         LogAssert.Expect(LogType.Error, new Regex("rolled back"));
 
-        var outcome = _service.Settle(s_level, LevelResults.Win(stars: 3));
+        var outcome = _service.Settle(s_level, LevelResults.Win(StarRules.ALL));
 
         Assert.That(outcome.TryGetError(out var error), Is.True);
         Assert.That(error.GetEnumCase(), Is.EqualTo(SettleError.EnumCase.NotSaved));
@@ -96,7 +102,7 @@ public sealed class ProgressionServiceTests
 
         _store.FailSaves = false;
 
-        Assert.That(Settle(stars: 3).CoinsGranted, Is.EqualTo(175));
+        Assert.That(Settle(StarRules.ALL).New, Is.EqualTo(StarRules.ALL));
     }
 
     [Test]
@@ -107,7 +113,7 @@ public sealed class ProgressionServiceTests
         LogAssert.Expect(LogType.Error, new Regex("threw during"));
         LogAssert.Expect(LogType.Error, new Regex("rolled back"));
 
-        var outcome = _service.Settle(s_level, LevelResults.Win(stars: 3));
+        var outcome = _service.Settle(s_level, LevelResults.Win(StarRules.ALL));
 
         Assert.That(outcome.IsError, Is.True);
 
@@ -115,54 +121,63 @@ public sealed class ProgressionServiceTests
 
         _store.ThrowOnSave = false;
 
-        Assert.That(Settle(stars: 3).CoinsGranted, Is.EqualTo(175));
+        Assert.That(Settle(StarRules.ALL).New, Is.EqualTo(StarRules.ALL));
     }
 
     [Test]
     public void FailingSaveAfterAnEarlierWin_RestoresTheEarlierState()
     {
-        Settle(stars: 1);
+        Settle(StarFlags.Goal);
 
         _store.FailSaves = true;
 
         LogAssert.Expect(LogType.Error, new Regex("rolled back"));
 
-        Assert.That(_service.Settle(s_level, LevelResults.Win(stars: 3)).IsError, Is.True);
+        Assert.That(_service.Settle(s_level, LevelResults.Win(StarRules.ALL)).IsError, Is.True);
 
-        Assert.That(_service.Coins, Is.EqualTo(125));
-        Assert.That(_service.GetBestStars(s_level), Is.EqualTo(1));
+        Assert.That(_service.GetStars(s_level), Is.EqualTo(StarFlags.Goal));
+        Assert.That(_service.GetAttempts(s_level), Is.EqualTo(1));
         Assert.That(_service.IsCompleted(s_level), Is.True);
-        Assert.That(_service.IsGranted(new RewardId.FirstWin(s_level)), Is.True);
-        Assert.That(_service.IsGranted(new RewardId.Star(s_level, 1)), Is.True);
-        Assert.That(_service.IsGranted(new RewardId.Star(s_level, 2)), Is.False);
-        Assert.That(_service.IsGranted(new RewardId.Star(s_level, 3)), Is.False);
 
         _store.FailSaves = false;
 
-        Assert.That(Settle(stars: 3).CoinsGranted, Is.EqualTo(50));
-        Assert.That(_service.Coins, Is.EqualTo(175));
+        Assert.That(Settle(StarRules.ALL).New, Is.EqualTo(StarFlags.Clean | StarFlags.Side));
     }
 
     [Test]
-    public void Loss_ChangesNothingAndDoesNotSave()
+    public void Loss_CountsAnAttemptAndEarnsNothing()
     {
         var outcome = _service.Settle(s_level, LevelResults.Loss());
 
         Assert.That(outcome.TryGetValue(out var settlement), Is.True);
-        Assert.That(settlement.CoinsGranted, Is.Zero);
-        Assert.That(_service.Coins, Is.Zero);
+        Assert.That(settlement.Earned, Is.EqualTo(StarFlags.None));
+        Assert.That(settlement.New, Is.EqualTo(StarFlags.None));
+        Assert.That(settlement.IsFirstCompletion, Is.False);
+        Assert.That(_service.GetAttempts(s_level), Is.EqualTo(1));
         Assert.That(_service.IsCompleted(s_level), Is.False);
-        Assert.That(_store.SaveCount, Is.Zero);
+        Assert.That(_service.GetStars(s_level), Is.EqualTo(StarFlags.None));
+    }
+
+    [Test]
+    public void LossAfterAWin_KeepsTheStarsAndCompletion()
+    {
+        Settle(StarRules.ALL);
+
+        _service.Settle(s_level, LevelResults.Loss());
+
+        Assert.That(_service.GetStars(s_level), Is.EqualTo(StarRules.ALL));
+        Assert.That(_service.IsCompleted(s_level), Is.True);
+        Assert.That(_service.GetAttempts(s_level), Is.EqualTo(2));
     }
 
     [Test]
     public void Wipe_ResetsProgress()
     {
-        Settle(stars: 2);
+        Settle(GOAL_CLEAN);
 
         Assert.That(_service.Wipe().IsSuccess, Is.True);
 
-        Assert.That(_service.Coins, Is.Zero);
+        Assert.That(_service.GetStars(s_level), Is.EqualTo(StarFlags.None));
         Assert.That(_service.IsCompleted(s_level), Is.False);
         Assert.That(_store.Saved, Is.Null);
         Assert.That(_store.DeleteCount, Is.EqualTo(1));
@@ -171,13 +186,13 @@ public sealed class ProgressionServiceTests
     [Test]
     public void FailingWipe_KeepsTheProgress()
     {
-        Settle(stars: 2);
+        Settle(GOAL_CLEAN);
 
         _store.FailDeletes = true;
 
         Assert.That(_service.Wipe().IsSuccess, Is.False);
 
-        Assert.That(_service.Coins, Is.EqualTo(150));
+        Assert.That(_service.GetStars(s_level), Is.EqualTo(GOAL_CLEAN));
         Assert.That(_service.IsCompleted(s_level), Is.True);
         Assert.That(_store.Saved, Is.Not.Null);
     }
@@ -186,7 +201,7 @@ public sealed class ProgressionServiceTests
     public void NothingSaved_StartsEmptyAndWritable()
     {
         Assert.That(_service.IsReadOnly, Is.False);
-        Assert.That(_service.Coins, Is.Zero);
+        Assert.That(_service.GetStars(s_level), Is.EqualTo(StarFlags.None));
     }
 
     [Test]
@@ -196,7 +211,7 @@ public sealed class ProgressionServiceTests
         _service.Reload();
 
         Assert.That(_service.IsReadOnly, Is.False);
-        Assert.That(Settle(stars: 1).CoinsGranted, Is.EqualTo(125));
+        Assert.That(Settle(StarFlags.Goal).IsFirstCompletion, Is.True);
     }
 
     [Test]
@@ -207,7 +222,7 @@ public sealed class ProgressionServiceTests
 
         LogAssert.Expect(LogType.Warning, new Regex("read-only"));
 
-        var outcome = _service.Settle(s_level, LevelResults.Win(stars: 3));
+        var outcome = _service.Settle(s_level, LevelResults.Win(StarRules.ALL));
 
         Assert.That(_service.IsReadOnly, Is.True);
         Assert.That(_service.LoadFailure.GetEnumCase(), Is.EqualTo(LoadError.EnumCase.Unreadable));
@@ -216,7 +231,7 @@ public sealed class ProgressionServiceTests
         Assert.That(error.TryGetValue(out SettleError.StoreUnavailable unavailable), Is.True);
         Assert.That(unavailable.Cause.GetEnumCase(), Is.EqualTo(LoadError.EnumCase.Unreadable));
         Assert.That(_store.SaveCount, Is.Zero);
-        Assert.That(_service.Coins, Is.Zero);
+        Assert.That(_service.GetStars(s_level), Is.EqualTo(StarFlags.None));
     }
 
     [Test]
@@ -228,7 +243,7 @@ public sealed class ProgressionServiceTests
         _service.Reload();
 
         Assert.That(_service.IsReadOnly, Is.False);
-        Assert.That(Settle(stars: 1).CoinsGranted, Is.EqualTo(125));
+        Assert.That(Settle(StarFlags.Goal).IsFirstCompletion, Is.True);
     }
 
     [Test]
@@ -240,15 +255,15 @@ public sealed class ProgressionServiceTests
         {
             Assert.That(_service.FindFirstIncomplete(catalog), Is.Zero);
 
-            Settle(stars: 1);
+            Settle(StarFlags.Goal);
 
             Assert.That(_service.FindFirstIncomplete(catalog), Is.EqualTo(1));
 
-            _service.Settle(new LevelId("level-03"), LevelResults.Win(stars: 1));
+            _service.Settle(new LevelId("level-03"), LevelResults.Win(StarFlags.Goal));
 
             Assert.That(_service.FindFirstIncomplete(catalog), Is.EqualTo(1));
 
-            _service.Settle(new LevelId("level-02"), LevelResults.Win(stars: 1));
+            _service.Settle(new LevelId("level-02"), LevelResults.Win(StarFlags.Goal));
 
             Assert.That(_service.FindFirstIncomplete(catalog), Is.EqualTo(2));
         }
@@ -258,7 +273,7 @@ public sealed class ProgressionServiceTests
         }
     }
 
-    private LevelSettlement Settle(int stars)
+    private LevelSettlement Settle(StarFlags stars)
     {
         var outcome = _service.Settle(s_level, LevelResults.Win(stars));
 
@@ -268,10 +283,8 @@ public sealed class ProgressionServiceTests
 
     private void AssertEmpty()
     {
-        Assert.That(_service.Coins, Is.Zero);
-        Assert.That(_service.GetBestStars(s_level), Is.Zero);
+        Assert.That(_service.GetStars(s_level), Is.EqualTo(StarFlags.None));
+        Assert.That(_service.GetAttempts(s_level), Is.Zero);
         Assert.That(_service.IsCompleted(s_level), Is.False);
-        Assert.That(_service.IsGranted(new RewardId.FirstWin(s_level)), Is.False);
-        Assert.That(_service.IsGranted(new RewardId.Star(s_level, 1)), Is.False);
     }
 }

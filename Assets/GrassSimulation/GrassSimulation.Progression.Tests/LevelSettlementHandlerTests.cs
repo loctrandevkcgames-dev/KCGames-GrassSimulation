@@ -12,6 +12,8 @@ namespace GrassSimulation.Progression.Tests;
 
 public sealed class LevelSettlementHandlerTests
 {
+    private const StarFlags GOAL_CLEAN = StarFlags.Goal | StarFlags.Clean;
+
     private static readonly LevelId s_level = new("level-01");
 
     private Messenger _messenger;
@@ -53,28 +55,31 @@ public sealed class LevelSettlementHandlerTests
     }
 
     [Test]
-    public void LevelFinished_SettlesAndPublishesTheCoins()
+    public void LevelFinished_SettlesAndPublishesTheStars()
     {
-        Finish(stars: 2);
+        Finish(GOAL_CLEAN);
 
         Assert.That(_settled, Has.Count.EqualTo(1));
         Assert.That(_settled[0].Level, Is.EqualTo(s_level));
         Assert.That(_settled[0].Outcome.TryGetValue(out var settlement), Is.True);
-        Assert.That(settlement.CoinsGranted, Is.EqualTo(150));
-        Assert.That(_service.Coins, Is.EqualTo(150));
+        Assert.That(settlement.Earned, Is.EqualTo(GOAL_CLEAN));
+        Assert.That(settlement.New, Is.EqualTo(GOAL_CLEAN));
+        Assert.That(settlement.IsFirstCompletion, Is.True);
+        Assert.That(_service.GetStars(s_level), Is.EqualTo(GOAL_CLEAN));
         Assert.That(_handler.HasPending, Is.False);
     }
 
     [Test]
-    public void LevelFinishedTwice_PaysOnce()
+    public void LevelFinishedTwice_ReportsNoNewStarsTheSecondTime()
     {
-        Finish(stars: 2);
-        Finish(stars: 2);
+        Finish(GOAL_CLEAN);
+        Finish(GOAL_CLEAN);
 
         Assert.That(_settled, Has.Count.EqualTo(2));
         Assert.That(_settled[1].Outcome.TryGetValue(out var settlement), Is.True);
-        Assert.That(settlement.CoinsGranted, Is.Zero);
-        Assert.That(_service.Coins, Is.EqualTo(150));
+        Assert.That(settlement.New, Is.EqualTo(StarFlags.None));
+        Assert.That(settlement.IsFirstCompletion, Is.False);
+        Assert.That(_service.GetStars(s_level), Is.EqualTo(GOAL_CLEAN));
     }
 
     [Test]
@@ -84,12 +89,12 @@ public sealed class LevelSettlementHandlerTests
 
         LogAssert.Expect(LogType.Error, new Regex("rolled back"));
 
-        Finish(stars: 3);
+        Finish(StarRules.ALL);
 
         Assert.That(_handler.HasPending, Is.True);
         Assert.That(_settled, Has.Count.EqualTo(1));
         Assert.That(_settled[0].Outcome.IsError, Is.True);
-        Assert.That(_service.Coins, Is.Zero);
+        Assert.That(_service.GetStars(s_level), Is.EqualTo(StarFlags.None));
 
         _store.FailSaves = false;
         _handler.RetryPending();
@@ -97,13 +102,13 @@ public sealed class LevelSettlementHandlerTests
         Assert.That(_handler.HasPending, Is.False);
         Assert.That(_settled, Has.Count.EqualTo(2));
         Assert.That(_settled[1].Outcome.TryGetValue(out var settlement), Is.True);
-        Assert.That(settlement.CoinsGranted, Is.EqualTo(175));
-        Assert.That(_service.Coins, Is.EqualTo(175));
+        Assert.That(settlement.New, Is.EqualTo(StarRules.ALL));
+        Assert.That(_service.GetStars(s_level), Is.EqualTo(StarRules.ALL));
 
         _handler.RetryPending();
 
         Assert.That(_settled, Has.Count.EqualTo(2));
-        Assert.That(_service.Coins, Is.EqualTo(175));
+        Assert.That(_service.GetAttempts(s_level), Is.EqualTo(1));
     }
 
     [Test]
@@ -114,11 +119,11 @@ public sealed class LevelSettlementHandlerTests
         LogAssert.Expect(LogType.Error, new Regex("rolled back"));
         LogAssert.Expect(LogType.Error, new Regex("rolled back"));
 
-        Finish(stars: 1);
+        Finish(StarFlags.Goal);
         _handler.RetryPending();
 
         Assert.That(_handler.HasPending, Is.True);
-        Assert.That(_service.Coins, Is.Zero);
+        Assert.That(_service.GetStars(s_level), Is.EqualTo(StarFlags.None));
     }
 
     [Test]
@@ -128,11 +133,11 @@ public sealed class LevelSettlementHandlerTests
 
         _subscriptions.Add(LevelSettledMsg.Subscribe(in subscriber, (LevelSettledMsg _) => _handler.RetryPending()));
 
-        Finish(stars: 2);
+        Finish(GOAL_CLEAN);
 
         Assert.That(_settled, Has.Count.EqualTo(1));
         Assert.That(_handler.HasPending, Is.False);
-        Assert.That(_service.Coins, Is.EqualTo(150));
+        Assert.That(_service.GetStars(s_level), Is.EqualTo(GOAL_CLEAN));
     }
 
     [Test]
@@ -142,7 +147,7 @@ public sealed class LevelSettlementHandlerTests
 
         LogAssert.Expect(LogType.Error, new Regex("rolled back"));
 
-        Finish(stars: 3);
+        Finish(StarRules.ALL);
 
         Assert.That(_handler.HasPending, Is.True);
 
@@ -151,7 +156,7 @@ public sealed class LevelSettlementHandlerTests
         _handler.RetryPending();
 
         Assert.That(_handler.HasPending, Is.False);
-        Assert.That(_service.Coins, Is.Zero);
+        Assert.That(_service.GetStars(s_level), Is.EqualTo(StarFlags.None));
     }
 
     [Test]
@@ -159,13 +164,13 @@ public sealed class LevelSettlementHandlerTests
     {
         _handler.Dispose();
 
-        Finish(stars: 3);
+        Finish(StarRules.ALL);
 
         Assert.That(_settled, Is.Empty);
-        Assert.That(_service.Coins, Is.Zero);
+        Assert.That(_service.GetStars(s_level), Is.EqualTo(StarFlags.None));
     }
 
-    private void Finish(int stars)
+    private void Finish(StarFlags stars)
     {
         var message = new LevelFinishedMsg(Level: s_level, Result: LevelResults.Win(stars), Duration: 30f);
 

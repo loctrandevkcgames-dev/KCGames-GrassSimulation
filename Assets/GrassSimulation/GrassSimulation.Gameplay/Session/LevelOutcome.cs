@@ -29,13 +29,13 @@ namespace GrassSimulation.Gameplay
         {
         }
 
-        public readonly partial record struct Success(int Stars)
+        public readonly partial record struct Success(StarFlags Stars)
         {
             public bool IsSuccess => true;
 
             [MethodImpl(MethodImplOptions.NoInlining)]
             public string ToLabel()
-                => $"Success, {Stars} stars";
+                => $"Success, {StarRules.Count(Stars)} stars ({Stars})";
         }
 
         public readonly partial record struct TimeUp(int RemainingQuota)

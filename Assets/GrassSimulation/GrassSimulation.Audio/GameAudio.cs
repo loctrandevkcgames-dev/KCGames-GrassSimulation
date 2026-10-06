@@ -56,6 +56,10 @@ namespace GrassSimulation.Audio
 
         public float RemainingTime { get; set; }
 
+        public bool IsTimed { get; set; } = true;
+
+        public float TimerWarningSeconds { get; set; } = GameRulesValues.DEFAULT_TIMER_WARNING;
+
         private bool IsRunning
             => _isHome == false
             && _isPaused == false
@@ -142,7 +146,7 @@ namespace GrassSimulation.Audio
 
         private void StepTimer(float now)
         {
-            var isTicking = _state == LevelState.Playing && _isPaused == false && _isHome == false;
+            var isTicking = IsTimed && _state == LevelState.Playing && _isPaused == false && _isHome == false;
             var previous = _previousRemaining;
 
             _previousRemaining = RemainingTime;
@@ -155,7 +159,7 @@ namespace GrassSimulation.Audio
             var tick = TimerTicks.Evaluate(
                   previous
                 , RemainingTime
-                , LevelSession.TIMER_WARNING_SECONDS
+                , TimerWarningSeconds
                 , _library.TimerAccentSeconds
             );
 

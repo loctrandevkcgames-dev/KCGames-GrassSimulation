@@ -57,7 +57,9 @@ namespace GrassSimulation.UI
                 _label.text = PlantVisuals.GetLabel(quota.Kind);
             }
 
-            _count.text = GameplayScreenFormat.FormatQuotaProgress(quota.Progress, quota.Amount);
+            _count.text = quota.IsMet
+                ? UiText.QUOTA_DONE
+                : GameplayScreenFormat.FormatQuotaRemaining(quota.Progress, quota.Amount);
 
             if (kindChanged || metChanged)
             {

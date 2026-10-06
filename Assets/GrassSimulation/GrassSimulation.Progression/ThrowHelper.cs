@@ -59,7 +59,7 @@ namespace GrassSimulation.Progression
         [HideInCallstack, StackTraceHidden, MethodImpl(MethodImplOptions.NoInlining)]
         internal static void LogError_SettleNotSaved(string levelId)
         {
-            StaticLogger.LogError($"The result of level '{levelId}' was not saved and its rewards were rolled back.");
+            StaticLogger.LogError($"The result of level '{levelId}' was not saved and its progress was rolled back.");
         }
 
         [HideInCallstack, StackTraceHidden, MethodImpl(MethodImplOptions.NoInlining)]

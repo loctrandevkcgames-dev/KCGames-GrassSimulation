@@ -3,8 +3,7 @@ using GrassSimulation.Gameplay;
 namespace GrassSimulation.Progression
 {
     public readonly record struct ProgressSnapshot(
-          int Coins
-        , int CompletedCount
+          int CompletedCount
         , int LevelCount
         , int NextLevelIndex
         , int TotalStars
@@ -27,12 +26,11 @@ namespace GrassSimulation.Progression
                     completedCount++;
                 }
 
-                totalStars += service.GetBestStars(id);
+                totalStars += service.GetStarCount(id);
             }
 
             return new ProgressSnapshot(
-                  service.Coins
-                , completedCount
+                  completedCount
                 , levelCount
                 , service.FindFirstIncomplete(catalog)
                 , totalStars

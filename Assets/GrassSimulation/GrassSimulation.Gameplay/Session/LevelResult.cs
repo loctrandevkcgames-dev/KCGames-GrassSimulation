@@ -1,19 +1,21 @@
 namespace GrassSimulation.Gameplay
 {
-    public readonly record struct LevelResult(LevelOutcome Outcome, float RemainingTime, int ProtectedHits)
+    public readonly record struct LevelResult(
+          LevelOutcome Outcome
+        , float RemainingTime
+        , int ProtectedHits
+        , bool IsAssisted = false
+    )
     {
         public bool IsFinished => Outcome.GetEnumCase() != LevelOutcome.EnumCase.Undefined;
 
-        public bool TryGetStars(out int stars)
-        {
-            if (Outcome.TryGetValue(out LevelOutcome.Success success))
-            {
-                stars = success.Stars;
-                return true;
-            }
+        public StarFlags Stars
+            => Outcome.TryGetValue(out LevelOutcome.Success success) ? success.Stars : StarFlags.None;
 
-            stars = 0;
-            return false;
+        public bool TryGetStars(out StarFlags stars)
+        {
+            stars = Stars;
+            return Outcome.IsSuccess;
         }
     }
 }

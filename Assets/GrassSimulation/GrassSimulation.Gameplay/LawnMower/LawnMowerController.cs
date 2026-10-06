@@ -92,6 +92,12 @@ namespace GrassSimulation.Gameplay
             _drag.Reset();
         }
 
+        public void ResetInput()
+        {
+            _velocity = Vector3.zero;
+            _drag.Reset();
+        }
+
         public JoystickState GetJoystickState()
         {
             return new JoystickState(_drag.IsDragging, _drag.Origin, _drag.Input, _drag.Radius, IsMoving);

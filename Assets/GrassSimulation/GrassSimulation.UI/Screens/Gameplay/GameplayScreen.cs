@@ -11,6 +11,7 @@ namespace GrassSimulation.UI
     public sealed class GameplayScreen : MonoPageBase<GrassPageFlowScopes>
     {
         private const float POLL_INTERVAL = 0.1f;
+        private const float TOAST_SECONDS = 4f;
 
         [SerializeField]
         private GameplayViewModel _viewModel;
@@ -113,10 +114,14 @@ namespace GrassSimulation.UI
         private bool _hasXpFraction;
         private int _protectedHits;
         private bool _hasProtectedHits;
+        private bool _isProtectedFailMode;
         private QuotaSnapshot _bonus;
         private bool _hasBonus;
         private bool _isCleanup;
+        private bool _isTimed;
         private bool _hasMode;
+        private float _timerWarningSeconds;
+        private float _toastSeconds;
         private int _clearedPercent;
         private bool _hasClearedPercent;
 
@@ -188,6 +193,7 @@ namespace GrassSimulation.UI
             _hasBonus = false;
             _hasMode = false;
             _hasClearedPercent = false;
+            _toastSeconds = 0f;
 
             for (var i = 0; i < _quotaChips.Length; i++)
             {
@@ -230,9 +236,23 @@ namespace GrassSimulation.UI
 
             _hintModel.Update(Time.unscaledDeltaTime, _levelIndex, _levelState, _isPaused, isActive);
 
-            if (_hint.activeSelf != _hintModel.IsVisible)
+            var isToastShown = _toastSeconds > 0f;
+            var isHintShown = isToastShown || _hintModel.IsVisible;
+
+            if (isToastShown)
             {
-                _hint.SetActive(_hintModel.IsVisible);
+                _toastSeconds -= Time.unscaledDeltaTime;
+
+                if (_toastSeconds <= 0f)
+                {
+                    _hintText.text = UiText.DRAG_HINT;
+                    isHintShown = _hintModel.IsVisible;
+                }
+            }
+
+            if (_hint.activeSelf != isHintShown)
+            {
+                _hint.SetActive(isHintShown);
             }
         }
 
@@ -283,20 +303,38 @@ namespace GrassSimulation.UI
         private void ShowMode(in LevelSnapshot snapshot)
         {
             var isCleanup = snapshot.State == LevelState.Cleanup;
+            var isTimed = snapshot.IsTimed;
 
-            if (_hasMode == false || isCleanup != _isCleanup)
+            _timerWarningSeconds = snapshot.TimerWarning;
+
+            if (_hasMode == false || isCleanup != _isCleanup || isTimed != _isTimed)
             {
+                var isCleanupEntered = isCleanup && (_hasMode == false || _isCleanup == false);
+
                 _hasMode = true;
                 _isCleanup = isCleanup;
-                _timer.SetActive(isCleanup == false);
+                _isTimed = isTimed;
+                _timer.SetActive(isCleanup == false && isTimed);
                 _clearedPill.SetActive(isCleanup);
                 _finishButton.gameObject.SetActive(isCleanup);
+
+                if (isCleanupEntered)
+                {
+                    ShowToast(GameplayScreenFormat.FormatCleanupToast(snapshot.CleanupTier));
+                }
             }
 
             if (isCleanup)
             {
                 ShowCleared(snapshot.ClearedFraction);
             }
+        }
+
+        private void ShowToast(string text)
+        {
+            _toastSeconds = TOAST_SECONDS;
+            _hintText.text = text;
+            _hint.SetActive(true);
         }
 
         private void ShowCleared(float fraction)
@@ -315,7 +353,7 @@ namespace GrassSimulation.UI
 
         private void ShowTimer(in LevelSnapshot snapshot)
         {
-            if (_isCleanup)
+            if (_isCleanup || _isTimed == false)
             {
                 return;
             }
@@ -330,7 +368,7 @@ namespace GrassSimulation.UI
                 _viewModel.TimerText = GameplayScreenFormat.FormatTimer(remaining);
             }
 
-            var isWarning = GameplayScreenFormat.IsTimerWarning(remaining);
+            var isWarning = GameplayScreenFormat.IsTimerWarning(remaining, _timerWarningSeconds);
 
             if (_hasTimerStyle && isWarning == _timerWarning)
             {
@@ -420,20 +458,25 @@ namespace GrassSimulation.UI
 
         private void ShowProtectedHits(in LevelSnapshot snapshot)
         {
-            var isCounting = snapshot.CountsProtectedHits;
+            var hasBeds = snapshot.HasProtectedBeds;
 
-            _protectedPill.SetActive(isCounting);
+            _protectedPill.SetActive(hasBeds);
 
-            if (isCounting == false || (_hasProtectedHits && snapshot.ProtectedHits == _protectedHits))
+            var isFailMode = snapshot.FailsOnProtectedHits;
+            var isSame = snapshot.ProtectedHits == _protectedHits && isFailMode == _isProtectedFailMode;
+
+            if (hasBeds == false || (_hasProtectedHits && isSame))
             {
                 return;
             }
 
             _hasProtectedHits = true;
             _protectedHits = snapshot.ProtectedHits;
-            _protectedText.text = GameplayScreenFormat.FormatHitsLeft(
+            _isProtectedFailMode = isFailMode;
+            _protectedText.text = GameplayScreenFormat.FormatHits(
                   snapshot.ProtectedHits
                 , snapshot.ProtectedHitLimit
+                , isFailMode
             );
         }
 

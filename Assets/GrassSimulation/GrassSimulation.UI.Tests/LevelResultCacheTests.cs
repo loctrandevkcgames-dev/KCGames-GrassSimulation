@@ -72,7 +72,7 @@ public sealed class LevelResultCacheTests
         Assert.That(last.Finished.HasValue, Is.True);
         Assert.That(last.Settlement.TryGetValue(out var outcome), Is.True);
         Assert.That(outcome.TryGetValue(out var settlement), Is.True);
-        Assert.That(settlement.CoinsGranted, Is.EqualTo(150));
+        Assert.That(settlement.Earned, Is.EqualTo(StarFlags.Goal | StarFlags.Clean));
     }
 
     [TestCase(LevelState.Preview)]
@@ -131,7 +131,7 @@ public sealed class LevelResultCacheTests
 
     private void PublishFinished()
     {
-        LevelOutcome outcome = new LevelOutcome.Success(Stars: 2);
+        LevelOutcome outcome = new LevelOutcome.Success(Stars: StarFlags.Goal | StarFlags.Clean);
         var result = new LevelResult(Outcome: outcome, RemainingTime: 40f, ProtectedHits: 0);
 
         LevelFinishedMsg.Publish(in _gameplay, new LevelFinishedMsg(Level: s_level, Result: result, Duration: 20f));
@@ -140,11 +140,8 @@ public sealed class LevelResultCacheTests
     private void PublishSettled()
     {
         var settlement = new LevelSettlement(
-              CoinsGranted: 150
-            , FirstWinCoins: 100
-            , NewStars: 2
-            , Stars: 2
-            , IsNewBest: true
+              Earned: StarFlags.Goal | StarFlags.Clean
+            , New: StarFlags.Goal | StarFlags.Clean
             , IsFirstCompletion: true
         );
 

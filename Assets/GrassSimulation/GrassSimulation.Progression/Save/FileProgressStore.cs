@@ -3,6 +3,7 @@ using System.IO;
 using System.Text;
 using EncosyTower.Common;
 using EncosyTower.Serialization.NewtonsoftJson;
+using GrassSimulation.Gameplay;
 
 namespace GrassSimulation.Progression
 {
@@ -68,14 +69,27 @@ namespace GrassSimulation.Progression
 
         private static bool IsValid(ProgressSave save)
         {
-            return save.Version >= 1
-                && save.Version <= ProgressSave.CURRENT_VERSION
-                && save.Revision >= 0
-                && save.Coins >= 0
-                && save.CompletedLevels != null
-                && save.BestStars != null
-                && save.GrantedRewards != null
-                && save.OwnedSkins != null;
+            if (save.Version < 1 || save.Version > ProgressSave.CURRENT_VERSION || save.Revision < 0)
+            {
+                return false;
+            }
+
+            if (save.Levels == null)
+            {
+                return false;
+            }
+
+            foreach (var pair in save.Levels)
+            {
+                var record = pair.Value;
+
+                if (record == null || record.Attempts < 0 || ((int)record.Stars & ~StarRules.ALL_BITS) != 0)
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         private static bool TryQuarantine(string path)

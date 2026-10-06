@@ -105,22 +105,16 @@ namespace GrassSimulation.UI
             return kind switch {
                 UpgradeStatKinds.CutRadius => FormatLine(
                       UiText.STAT_CUT_RADIUS
-                    , before.CutRadius
-                    , after.CutRadius
                     , FormatMeters(before.CutRadius)
                     , FormatMeters(after.CutRadius)
                 ),
                 UpgradeStatKinds.CuttingPower => FormatLine(
                       UiText.STAT_CUTTING_POWER
-                    , before.CuttingPower
-                    , after.CuttingPower
                     , FormatNumber(before.CuttingPower)
                     , FormatNumber(after.CuttingPower)
                 ),
                 UpgradeStatKinds.Speed => FormatLine(
                       UiText.STAT_SPEED
-                    , before.Speed
-                    , after.Speed
                     , FormatNumber(before.Speed)
                     , FormatSpeed(after.Speed)
                 ),
@@ -128,17 +122,9 @@ namespace GrassSimulation.UI
             };
         }
 
-        private static string FormatLine(
-              string label
-            , float before
-            , float after
-            , string beforeText
-            , string afterText
-        )
+        private static string FormatLine(string label, string beforeText, string afterText)
         {
-            return IsChanged(before, after)
-                ? string.Format(UiText.STAT_LINE, label, beforeText, s_afterColor, afterText)
-                : string.Format(UiText.STAT_LINE_CAPPED, label, afterText);
+            return string.Format(UiText.STAT_LINE, label, beforeText, s_afterColor, afterText);
         }
 
         private static bool IsChanged(float before, float after)

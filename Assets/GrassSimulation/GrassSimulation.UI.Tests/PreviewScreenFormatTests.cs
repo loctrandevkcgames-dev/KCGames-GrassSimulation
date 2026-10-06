@@ -5,6 +5,8 @@ namespace GrassSimulation.UI.Tests;
 
 public sealed class PreviewScreenFormatTests
 {
+    private const float STAR2_TIME_LEFT = 0.2f;
+
     [TestCase(0, "Màn 1")]
     [TestCase(3, "Màn 4")]
     public void FormatTitle_IsOneBased(int index, string expected)
@@ -17,7 +19,13 @@ public sealed class PreviewScreenFormatTests
     [TestCase(59.2f, "1:00")]
     public void FormatTimer_RoundsUpLikeTheGameplayTimer(float timeLimit, string expected)
     {
-        Assert.That(PreviewScreenFormat.FormatTimer(timeLimit), Is.EqualTo(expected));
+        Assert.That(PreviewScreenFormat.FormatTimer(isTimed: true, timeLimit), Is.EqualTo(expected));
+    }
+
+    [Test]
+    public void FormatTimer_SaysUnlimitedWhenUntimed()
+    {
+        Assert.That(PreviewScreenFormat.FormatTimer(isTimed: false, timeLimit: 0f), Is.EqualTo("Không giới hạn"));
     }
 
     [Test]
@@ -43,30 +51,40 @@ public sealed class PreviewScreenFormatTests
         Assert.That(PreviewScreenFormat.FormatStarTitle(star), Is.EqualTo(expected));
     }
 
-    [TestCase(120f, "Còn ≥ 0:24")]
-    [TestCase(90f, "Còn ≥ 0:18")]
-    [TestCase(118f, "Còn ≥ 0:24")]
-    public void FormatTimeRule_RoundsTheThresholdUp(float timeLimit, string expected)
+    [TestCase(120f, "Không lỗi, còn ≥ 0:24")]
+    [TestCase(90f, "Không lỗi, còn ≥ 0:18")]
+    [TestCase(118f, "Không lỗi, còn ≥ 0:24")]
+    public void FormatCleanRule_RoundsTheThresholdUpWhenTimed(float timeLimit, string expected)
     {
-        Assert.That(PreviewScreenFormat.FormatTimeRule(timeLimit), Is.EqualTo(expected));
+        Assert.That(PreviewScreenFormat.FormatCleanRule(isTimed: true, timeLimit, STAR2_TIME_LEFT), Is.EqualTo(expected));
     }
 
     [Test]
-    public void FormatTimeRule_ShowsTheSameThresholdAsTheResultPopup()
+    public void FormatCleanRule_OnlyMentionsProtectedFlowersWhenUntimed()
+    {
+        Assert.That(
+              PreviewScreenFormat.FormatCleanRule(isTimed: false, timeLimit: 0f, STAR2_TIME_LEFT)
+            , Is.EqualTo("Không lỗi")
+        );
+    }
+
+    [Test]
+    public void FormatCleanRule_ShowsTheSameThresholdAsTheResultPopup()
     {
         const float TIME_LIMIT = 118f;
 
-        var resultText = ResultPopupFormat.FormatTimeStar(remaining: 30f, timeLimit: TIME_LIMIT);
-        var ruleText = PreviewScreenFormat.FormatTimeRule(TIME_LIMIT);
+        var snapshot = default(LevelSnapshot) with { IsTimed = true, TimeLimit = TIME_LIMIT, Star2TimeLeft = STAR2_TIME_LEFT };
+        var resultText = ResultPopupFormat.FormatCleanStar(in snapshot, remaining: 30f);
+        var ruleText = PreviewScreenFormat.FormatCleanRule(isTimed: true, TIME_LIMIT, STAR2_TIME_LEFT);
 
         Assert.That(resultText, Does.EndWith("≥ 0:24)"));
         Assert.That(ruleText, Does.EndWith("0:24"));
     }
 
     [Test]
-    public void FormatCleanRule_MentionsTheBonusOnlyWhenTheLevelHasOne()
+    public void FormatSideRule_NamesTheSideQuotaOrTheSweepGoal()
     {
-        Assert.That(PreviewScreenFormat.FormatCleanRule(hasBonus: true), Is.EqualTo("Không lỗi + phụ"));
-        Assert.That(PreviewScreenFormat.FormatCleanRule(hasBonus: false), Is.EqualTo("Không lỗi"));
+        Assert.That(PreviewScreenFormat.FormatSideRule(hasBonus: true), Is.EqualTo("Làm xong mục tiêu phụ"));
+        Assert.That(PreviewScreenFormat.FormatSideRule(hasBonus: false), Is.EqualTo("Dọn ≥ 90% cây"));
     }
 }

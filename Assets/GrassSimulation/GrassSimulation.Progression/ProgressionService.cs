@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using EncosyTower.Common;
 using EncosyTower.Initialization;
 using GrassSimulation.Gameplay;
@@ -9,7 +8,6 @@ namespace GrassSimulation.Progression
     public sealed class ProgressionService : IInitializable
     {
         private readonly IProgressStore _store;
-        private readonly List<RewardGrant> _grants = new();
 
         private ProgressSave _save = ProgressSave.CreateNew();
         private LoadError _loadFailure;
@@ -19,8 +17,6 @@ namespace GrassSimulation.Progression
         {
             _store = store;
         }
-
-        public int Coins => _save.Coins;
 
         public bool IsReadOnly => _isReadOnly;
 
@@ -32,13 +28,16 @@ namespace GrassSimulation.Progression
         }
 
         public bool IsCompleted(LevelId level)
-            => _save.CompletedLevels.Contains(level.Value);
+            => _save.Levels.TryGetValue(level.Value, out var record) && record.Completed;
 
-        public int GetBestStars(LevelId level)
-            => _save.BestStars.TryGetValue(level.Value, out var stars) ? stars : 0;
+        public StarFlags GetStars(LevelId level)
+            => _save.Levels.TryGetValue(level.Value, out var record) ? record.Stars : StarFlags.None;
 
-        public bool IsGranted(RewardId id)
-            => _save.GrantedRewards.Contains(id.ToKey());
+        public int GetStarCount(LevelId level)
+            => StarRules.Count(GetStars(level));
+
+        public int GetAttempts(LevelId level)
+            => _save.Levels.TryGetValue(level.Value, out var record) ? record.Attempts : 0;
 
         public int FindFirstIncomplete(LevelCatalog catalog)
         {
@@ -64,73 +63,22 @@ namespace GrassSimulation.Progression
             }
 
             var isWin = result.Outcome.IsSuccess;
-            var earnedStars = 0;
-
-            if (isWin && result.TryGetStars(out var stars))
-            {
-                earnedStars = Math.Min(Math.Max(stars, 0), RewardRules.MAX_STARS);
-            }
-
-            _grants.Clear();
-            RewardCalculator.Collect(level, isWin, earnedStars, _save.GrantedRewards, _grants);
-
-            var grantCount = _grants.Count;
-            var coins = 0;
-            var firstWinCoins = 0;
-            var newStars = 0;
-
-            for (var i = 0; i < grantCount; i++)
-            {
-                var grant = _grants[i];
-
-                coins += grant.Coins;
-
-                if (grant.Id.IsFirstWin)
-                {
-                    firstWinCoins += grant.Coins;
-                }
-
-                if (grant.Id.IsStar)
-                {
-                    newStars++;
-                }
-            }
-
-            var isNewBest = isWin && earnedStars > GetBestStars(level);
+            var earned = isWin ? result.Stars : StarFlags.None;
             var isFirstCompletion = isWin && IsCompleted(level) == false;
-            var settlement = new LevelSettlement(
-                  CoinsGranted: coins
-                , FirstWinCoins: firstWinCoins
-                , NewStars: newStars
-                , Stars: earnedStars
-                , IsNewBest: isNewBest
-                , IsFirstCompletion: isFirstCompletion
-            );
-
-            if (grantCount == 0 && isNewBest == false && isFirstCompletion == false)
-            {
-                return Result<LevelSettlement, SettleError>.Succeed(settlement);
-            }
-
+            var newStars = earned & ~GetStars(level);
+            var settlement = new LevelSettlement(earned, newStars, isFirstCompletion);
             var snapshot = _save.Clone();
 
-            for (var i = 0; i < grantCount; i++)
+            if (_save.Levels.TryGetValue(level.Value, out var record) == false)
             {
-                _save.GrantedRewards.Add(_grants[i].Id.ToKey());
+                record = new LevelRecord();
+                _save.Levels[level.Value] = record;
             }
 
             _save.Revision++;
-            _save.Coins += coins;
-
-            if (isNewBest)
-            {
-                _save.BestStars[level.Value] = earnedStars;
-            }
-
-            if (isFirstCompletion)
-            {
-                _save.CompletedLevels.Add(level.Value);
-            }
+            record.Attempts++;
+            record.Stars |= earned;
+            record.Completed |= isWin;
 
             var saved = SaveSafely(_save);
 

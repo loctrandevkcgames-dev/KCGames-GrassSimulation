@@ -22,6 +22,9 @@ namespace GrassSimulation.Gameplay
         public float Toughness { get; set; }
 
         [field: SerializeField]
+        public float CutZoneRadius { get; set; }
+
+        [field: SerializeField]
         public int Xp { get; set; }
 
         [field: SerializeField]

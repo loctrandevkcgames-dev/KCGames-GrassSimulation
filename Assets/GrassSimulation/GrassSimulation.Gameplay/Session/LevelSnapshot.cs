@@ -10,7 +10,11 @@ namespace GrassSimulation.Gameplay
         , LevelState State
         , bool IsPaused
         , float RemainingTime
+        , LevelType Type
+        , bool IsTimed
         , float TimeLimit
+        , float Star2TimeLeft
+        , float TimerWarning
         , float ClearedFraction
         , int Tier
         , int Xp
@@ -19,7 +23,8 @@ namespace GrassSimulation.Gameplay
         , int PendingUpgrades
         , int ProtectedHits
         , int ProtectedHitLimit
-        , bool CountsProtectedHits
+        , bool FailsOnProtectedHits
+        , bool HasProtectedBeds
         , int QuotaCount
         , QuotaSnapshot Quota0
         , QuotaSnapshot Quota1
@@ -33,6 +38,7 @@ namespace GrassSimulation.Gameplay
         , MachineStats Upgrade1Stats
         , int UpgradeTier
         , PlantKindMask UnlockedKinds
+        , int CleanupTier
     )
     {
         public const int MAX_QUOTAS = 4;
@@ -44,10 +50,12 @@ namespace GrassSimulation.Gameplay
             , int levelIndex
             , int levelCount
             , PlantKindMask unlockedKinds = default
+            , int cleanupTier = 0
         )
         {
             var growth = session.Growth;
             var objectives = session.Objectives;
+            var rules = session.Rules;
             var quotaCount = Math.Min(objectives.QuotaCount, MAX_QUOTAS);
             var optionCount = Math.Min(growth.UpgradeOptionCount, MAX_UPGRADE_OPTIONS);
             Option<int> nextThreshold = growth.TryGetNextThreshold(out var threshold) ? threshold : Option.None;
@@ -59,7 +67,11 @@ namespace GrassSimulation.Gameplay
                 , session.State
                 , session.IsPaused
                 , session.RemainingTime
-                , level.TimeLimit
+                , rules.Type
+                , rules.IsTimed
+                , rules.TimeLimit
+                , rules.Star2TimeLeft
+                , rules.TimerWarning
                 , session.ClearedFraction
                 , growth.Tier
                 , growth.Xp
@@ -68,7 +80,8 @@ namespace GrassSimulation.Gameplay
                 , growth.PendingUpgrades
                 , session.Protection.Hits
                 , session.ProtectedHitLimit
-                , session.CountsProtectedHits
+                , rules.FailsOnProtectedHits
+                , level.Beds.Length > 0
                 , quotaCount
                 , ReadQuota(objectives, index: 0, count: quotaCount)
                 , ReadQuota(objectives, index: 1, count: quotaCount)
@@ -82,6 +95,7 @@ namespace GrassSimulation.Gameplay
                 , ReadUpgradeStats(growth, option: 1, count: optionCount)
                 , growth.UpgradeTier
                 , unlockedKinds
+                , cleanupTier
             );
         }
 

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using EncosyTower.Processing;
 using NUnit.Framework;
+using UnityEngine;
 
 namespace GrassSimulation.Gameplay.Tests;
 
@@ -30,12 +31,11 @@ public sealed class LevelSnapshotTests
     {
         var level = _assets.CreateLevel(
               timeLimit: 30f
-            , failOnProtectedHits: true
             , Quota(PlantKind.Grass, 4)
             , Quota(PlantKind.HarvestFlower, 2, isBonus: true)
         );
 
-        var session = CreateSession(level);
+        var session = CreateSession(level, failOnProtectedHits: true);
         session.TryBegin();
         session.RecordHarvest(PlantKind.Grass, xp: 10);
         session.RecordHarvest(PlantKind.Grass, xp: 10);
@@ -51,7 +51,7 @@ public sealed class LevelSnapshotTests
         Assert.That(snapshot.RemainingTime, Is.EqualTo(28.5f).Within(1e-4f));
         Assert.That(snapshot.TimeLimit, Is.EqualTo(30f));
         Assert.That(snapshot.ClearedFraction, Is.EqualTo(0.02f).Within(1e-5f));
-        Assert.That(snapshot.CountsProtectedHits, Is.True);
+        Assert.That(snapshot.FailsOnProtectedHits, Is.True);
         Assert.That(snapshot.ProtectedHitLimit, Is.EqualTo(3));
         Assert.That(snapshot.ProtectedHits, Is.Zero);
         Assert.That(snapshot.QuotaCount, Is.EqualTo(2));
@@ -74,7 +74,6 @@ public sealed class LevelSnapshotTests
     {
         var level = _assets.CreateLevel(
               timeLimit: 10f
-            , failOnProtectedHits: false
             , Quota(PlantKind.Grass, 2)
             , Quota(PlantKind.HarvestFlower, 0, isBonus: true)
         );
@@ -95,7 +94,7 @@ public sealed class LevelSnapshotTests
     [Test]
     public void From_ReportsTierFloorAndNextThreshold()
     {
-        var level = _assets.CreateLevel(timeLimit: 10f, failOnProtectedHits: false, Quota(PlantKind.Grass, 99));
+        var level = _assets.CreateLevel(timeLimit: 10f, Quota(PlantKind.Grass, 99));
         var session = CreateSession(level);
         session.TryBegin();
 
@@ -129,7 +128,7 @@ public sealed class LevelSnapshotTests
     [Test]
     public void From_ReportsUpgradeBeforeAndAfterStats()
     {
-        var level = _assets.CreateLevel(timeLimit: 10f, failOnProtectedHits: false, Quota(PlantKind.Grass, 99));
+        var level = _assets.CreateLevel(timeLimit: 10f, Quota(PlantKind.Grass, 99));
         var session = CreateSession(level);
         session.TryBegin();
 
@@ -148,9 +147,9 @@ public sealed class LevelSnapshotTests
     }
 
     [Test]
-    public void From_UpgradeStatsRespectTheMaxCaps()
+    public void From_UpgradeStatsAreNotCapped()
     {
-        var level = _assets.CreateLevel(timeLimit: 10f, failOnProtectedHits: false, Quota(PlantKind.Grass, 99));
+        var level = _assets.CreateLevel(timeLimit: 10f, Quota(PlantKind.Grass, 99));
         var session = CreateSession(level);
         session.TryBegin();
         session.RecordHarvest(PlantKind.Grass, xp: 480);
@@ -162,13 +161,47 @@ public sealed class LevelSnapshotTests
         var snapshot = LevelSnapshot.From(session, level, levelIndex: 0, levelCount: 1);
 
         Assert.That(snapshot.Stats.CutRadius, Is.EqualTo(1.1f).Within(1e-5f));
-        Assert.That(snapshot.Upgrade0Stats.CutRadius, Is.EqualTo(1.1f).Within(1e-5f));
+        Assert.That(snapshot.Upgrade0Stats.CutRadius, Is.EqualTo(1.25f).Within(1e-5f));
+    }
+
+    [Test]
+    public void From_ReportsTheResolvedRulesOfAnUntimedLevel()
+    {
+        var level = _assets.CreateLevel(LevelType.Tutorial, timeLimit: 90f, Quota(PlantKind.Grass, 5));
+        var session = CreateSession(level);
+        var snapshot = LevelSnapshot.From(session, level, levelIndex: 0, levelCount: 1, cleanupTier: 2);
+
+        Assert.That(snapshot.Type, Is.EqualTo(LevelType.Tutorial));
+        Assert.That(snapshot.IsTimed, Is.False);
+        Assert.That(snapshot.TimeLimit, Is.Zero);
+        Assert.That(snapshot.Star2TimeLeft, Is.EqualTo(0.2f));
+        Assert.That(snapshot.TimerWarning, Is.EqualTo(15f));
+        Assert.That(snapshot.FailsOnProtectedHits, Is.False);
+        Assert.That(snapshot.HasProtectedBeds, Is.False);
+        Assert.That(snapshot.CleanupTier, Is.EqualTo(2));
+    }
+
+    [Test]
+    public void From_ReportsProtectedBedsAndTheTimerMultiplier()
+    {
+        var level = _assets.CreateLevel(timeLimit: 60f, Quota(PlantKind.Grass, 5));
+
+        _assets.SetBeds(level, new RectInt(0, 0, 2, 2));
+
+        var rules = GameRulesValues.Default with { TimerMultiplier = 1.5f, ProtectedMode = ProtectedMode.Fail };
+        var session = new LevelSession(level, _assets.CreateMachine(), CUTTABLE_CELLS, _messages.Publisher, rules);
+        var snapshot = LevelSnapshot.From(session, level, levelIndex: 0, levelCount: 1);
+
+        Assert.That(snapshot.IsTimed, Is.True);
+        Assert.That(snapshot.TimeLimit, Is.EqualTo(90f).Within(1e-4f));
+        Assert.That(snapshot.HasProtectedBeds, Is.True);
+        Assert.That(snapshot.FailsOnProtectedHits, Is.True);
     }
 
     [Test]
     public void From_ReportsTheTierOfTheUpgradeBeingChosenAndItsUnlocks()
     {
-        var level = _assets.CreateLevel(timeLimit: 10f, failOnProtectedHits: false, Quota(PlantKind.Grass, 99));
+        var level = _assets.CreateLevel(timeLimit: 10f, Quota(PlantKind.Grass, 99));
         var session = CreateSession(level);
         session.TryBegin();
         var plants = new[] {
@@ -208,7 +241,7 @@ public sealed class LevelSnapshotTests
     [Test]
     public void Request_ReturnsTheSnapshotThroughTheScopedHub()
     {
-        var level = _assets.CreateLevel(timeLimit: 10f, failOnProtectedHits: false, Quota(PlantKind.Grass, 5));
+        var level = _assets.CreateLevel(timeLimit: 10f, Quota(PlantKind.Grass, 5));
         var session = CreateSession(level);
         var registries = new List<ProcessRegistry>();
 
@@ -242,6 +275,10 @@ public sealed class LevelSnapshotTests
     private static QuotaSettings Quota(PlantKind kind, int amount, bool isBonus = false)
         => new() { Kind = kind, Amount = amount, IsBonus = isBonus };
 
-    private LevelSession CreateSession(LevelDefinition level)
-        => new(level, _assets.CreateMachine(), CUTTABLE_CELLS, _messages.Publisher);
+    private LevelSession CreateSession(LevelDefinition level, bool failOnProtectedHits = false)
+    {
+        var rules = TestAssets.CreateRules(failOnProtectedHits);
+
+        return new LevelSession(level, _assets.CreateMachine(), CUTTABLE_CELLS, _messages.Publisher, rules);
+    }
 }

@@ -60,6 +60,24 @@ namespace GrassSimulation.Gameplay
             }
         }
 
+        public bool HasBonusQuota
+        {
+            get
+            {
+                var count = _quotas.Length;
+
+                for (var i = 0; i < count; i++)
+                {
+                    if (_quotas[i].IsBonus)
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+        }
+
         public bool AreBonusQuotasMet
         {
             get

@@ -20,11 +20,27 @@ public sealed class GameplayScreenFormatTests
     }
 
     [Test]
-    public void IsTimerWarning_TriggersAtFifteenSecondsInclusive()
+    public void IsTimerWarning_TriggersAtTheConfiguredSecondsInclusive()
     {
-        Assert.That(GameplayScreenFormat.IsTimerWarning(15f), Is.True);
-        Assert.That(GameplayScreenFormat.IsTimerWarning(15.01f), Is.False);
-        Assert.That(GameplayScreenFormat.IsTimerWarning(0f), Is.True);
+        Assert.That(GameplayScreenFormat.IsTimerWarning(15f, warningSeconds: 15f), Is.True);
+        Assert.That(GameplayScreenFormat.IsTimerWarning(15.01f, warningSeconds: 15f), Is.False);
+        Assert.That(GameplayScreenFormat.IsTimerWarning(0f, warningSeconds: 15f), Is.True);
+        Assert.That(GameplayScreenFormat.IsTimerWarning(20f, warningSeconds: 30f), Is.True);
+    }
+
+    [Test]
+    public void FormatQuotaRemaining_ShowsHowManyAreLeftAndNeverGoesNegative()
+    {
+        Assert.That(GameplayScreenFormat.FormatQuotaRemaining(48, 70), Is.EqualTo("22"));
+        Assert.That(GameplayScreenFormat.FormatQuotaRemaining(0, 70), Is.EqualTo("70"));
+        Assert.That(GameplayScreenFormat.FormatQuotaRemaining(80, 70), Is.EqualTo("0"));
+    }
+
+    [Test]
+    public void FormatHits_ShowsHitsLeftInFailModeAndTheCountInWarnMode()
+    {
+        Assert.That(GameplayScreenFormat.FormatHits(1, 3, isFailMode: true), Is.EqualTo("Còn 2 lỗi"));
+        Assert.That(GameplayScreenFormat.FormatHits(2, 3, isFailMode: false), Is.EqualTo("2 lỗi"));
     }
 
     [Test]

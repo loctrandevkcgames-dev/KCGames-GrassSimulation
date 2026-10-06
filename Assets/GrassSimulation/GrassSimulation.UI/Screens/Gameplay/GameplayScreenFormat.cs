@@ -6,14 +6,12 @@ namespace GrassSimulation.UI
 {
     public static class GameplayScreenFormat
     {
-        public const float TIMER_WARNING_SECONDS = LevelSession.TIMER_WARNING_SECONDS;
-
         private const int SECONDS_PER_MINUTE = 60;
         private const float PERCENT_SCALE = 100f;
 
-        public static bool IsTimerWarning(float remaining)
+        public static bool IsTimerWarning(float remaining, float warningSeconds)
         {
-            return remaining <= TIMER_WARNING_SECONDS;
+            return remaining <= warningSeconds;
         }
 
         public static string FormatTimer(float remaining)
@@ -28,6 +26,11 @@ namespace GrassSimulation.UI
         public static string FormatQuotaProgress(int progress, int amount)
         {
             return string.Format(UiText.QUOTA_PROGRESS, Math.Min(progress, amount), amount);
+        }
+
+        public static string FormatQuotaRemaining(int progress, int amount)
+        {
+            return string.Format(UiText.QUOTA_REMAINING, Math.Max(amount - progress, 0));
         }
 
         public static float GetQuotaFraction(int progress, int amount)
@@ -79,6 +82,16 @@ namespace GrassSimulation.UI
         public static string FormatHitsLeft(int hits, int hitLimit)
         {
             return string.Format(UiText.HITS_LEFT, Math.Max(hitLimit - hits, 0));
+        }
+
+        public static string FormatHits(int hits, int hitLimit, bool isFailMode)
+        {
+            return isFailMode ? FormatHitsLeft(hits, hitLimit) : string.Format(UiText.HITS_COUNT, hits);
+        }
+
+        public static string FormatCleanupToast(int tier)
+        {
+            return string.Format(UiText.CLEANUP_TOAST, tier);
         }
     }
 }

@@ -26,7 +26,6 @@ public sealed class LevelCommandRouterTests
 
         var level = _assets.CreateLevel(
               timeLimit: 10f
-            , failOnProtectedHits: false
             , new QuotaSettings { Kind = PlantKind.Grass, Amount = 50 }
         );
 

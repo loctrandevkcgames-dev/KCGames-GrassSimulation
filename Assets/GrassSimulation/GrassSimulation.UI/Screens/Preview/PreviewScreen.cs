@@ -5,6 +5,7 @@ using EncosyTower.UnityExtensions;
 using GrassSimulation.Gameplay;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 namespace GrassSimulation.UI
@@ -44,10 +45,12 @@ namespace GrassSimulation.UI
         private PreviewStarTile _goalTile;
 
         [SerializeField]
-        private PreviewStarTile _timeTile;
+        [FormerlySerializedAs("_timeTile")]
+        private PreviewStarTile _flawlessTile;
 
         [SerializeField]
-        private PreviewStarTile _cleanTile;
+        [FormerlySerializedAs("_cleanTile")]
+        private PreviewStarTile _sideTile;
 
         [SerializeField]
         private Button _startButton;
@@ -171,7 +174,7 @@ namespace GrassSimulation.UI
             _appliedLevel = snapshot.Level;
 
             _titleText.text = PreviewScreenFormat.FormatTitle(snapshot.LevelIndex);
-            _timerText.text = PreviewScreenFormat.FormatTimer(snapshot.TimeLimit);
+            _timerText.text = PreviewScreenFormat.FormatTimer(snapshot.IsTimed, snapshot.TimeLimit);
 
             var bonus = ResultPopupFormat.GetBonus(in snapshot);
 
@@ -218,8 +221,11 @@ namespace GrassSimulation.UI
         private void ShowStarRules(in LevelSnapshot snapshot, in ResultBonus bonus)
         {
             _goalTile.Apply(star: 1, rule: UiText.STAR_RULE_GOAL);
-            _timeTile.Apply(star: 2, rule: PreviewScreenFormat.FormatTimeRule(snapshot.TimeLimit));
-            _cleanTile.Apply(star: 3, rule: PreviewScreenFormat.FormatCleanRule(bonus.First.HasValue));
+            _flawlessTile.Apply(
+                  star: 2
+                , rule: PreviewScreenFormat.FormatCleanRule(snapshot.IsTimed, snapshot.TimeLimit, snapshot.Star2TimeLeft)
+            );
+            _sideTile.Apply(star: 3, rule: PreviewScreenFormat.FormatSideRule(bonus.First.HasValue));
         }
     }
 }

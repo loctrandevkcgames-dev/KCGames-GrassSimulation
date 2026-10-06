@@ -6,9 +6,10 @@ namespace GrassSimulation.UI.Tests;
 public sealed class MainMenuScreenFormatTests
 {
     [Test]
-    public void FormatCoins_ShowsTheBalance()
+    public void FormatTimer_ShowsTheClockWhenTimedAndUnlimitedOtherwise()
     {
-        Assert.That(MainMenuScreenFormat.FormatCoins(175), Is.EqualTo("175"));
+        Assert.That(MainMenuScreenFormat.FormatTimer(isTimed: true, timeLimit: 90f), Is.EqualTo("1:30"));
+        Assert.That(MainMenuScreenFormat.FormatTimer(isTimed: false, timeLimit: 0f), Is.EqualTo("Không giới hạn"));
     }
 
     [TestCase(10, 30)]

@@ -16,7 +16,6 @@ namespace GrassSimulation.UI
         public static readonly Color TimeUp = new Color32(r: 0xC2, g: 0x57, b: 0x1F, a: 0xFF);
         public static readonly Color TimeUpFill = new Color32(r: 0xFC, g: 0xE8, b: 0xE0, a: 0xFF);
         public static readonly Color BonusBox = new Color32(r: 0xFF, g: 0xF3, b: 0xD6, a: 0xFF);
-        public static readonly Color CoinInk = new Color32(r: 0x6B, g: 0x4F, b: 0x12, a: 0xFF);
         public static readonly Color SwitchOff = new Color32(r: 0xB9, g: 0xC7, b: 0xAC, a: 0xFF);
         public static readonly Color GardenMowed = new Color32(r: 0xA9, g: 0xC9, b: 0x8A, a: 0xFF);
         public static readonly Color GardenGrass = new Color32(r: 0x4E, g: 0x9A, b: 0x2E, a: 0xFF);

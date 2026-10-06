@@ -1,15 +1,12 @@
 using System;
 using EncosyTower.Common;
-using EncosyTower.Pooling;
 using GrassSimulation.Gameplay;
-using GrassSimulation.Progression;
 using UnityEngine;
 
 namespace GrassSimulation.UI
 {
     public static class ResultPopupFormat
     {
-        private const char LINE_BREAK = '\n';
         private const int SECONDS_PER_MINUTE = 60;
 
         public static bool HasNextLevel(int levelIndex, int levelCount)
@@ -17,14 +14,14 @@ namespace GrassSimulation.UI
             return levelIndex + 1 < levelCount;
         }
 
-        public static float GetTimeThreshold(float timeLimit)
+        public static float GetTimeThreshold(float timeLimit, float star2TimeLeft)
         {
-            return timeLimit * LevelSession.SECOND_STAR_TIME_FRACTION;
+            return timeLimit * star2TimeLeft;
         }
 
-        public static bool HasTimeStar(float remaining, float timeLimit)
+        public static bool HasTimeStar(float remaining, float timeLimit, float star2TimeLeft)
         {
-            return remaining >= GetTimeThreshold(timeLimit);
+            return remaining >= GetTimeThreshold(timeLimit, star2TimeLeft);
         }
 
         public static string FormatClock(float seconds)
@@ -35,18 +32,9 @@ namespace GrassSimulation.UI
             return $"{minutes}:{totalSeconds % SECONDS_PER_MINUTE:00}";
         }
 
-        public static string FormatThreshold(float timeLimit)
+        public static string FormatThreshold(float timeLimit, float star2TimeLeft)
         {
-            return FormatClock(MathF.Ceiling(GetTimeThreshold(timeLimit)));
-        }
-
-        public static string FormatTimeStar(float remaining, float timeLimit)
-        {
-            return string.Format(
-                  UiText.RESULT_TIME
-                , FormatClock(remaining)
-                , FormatThreshold(timeLimit)
-            );
+            return FormatClock(MathF.Ceiling(GetTimeThreshold(timeLimit, star2TimeLeft)));
         }
 
         public static ResultBonus GetBonus(in LevelSnapshot snapshot)
@@ -76,21 +64,39 @@ namespace GrassSimulation.UI
             return new ResultBonus(first, areAllMet);
         }
 
-        public static bool HasCleanStar(int protectedHits, in ResultBonus bonus)
+        public static bool HasStar(StarFlags stars, StarFlags star)
         {
-            return protectedHits == 0 && bonus.AreAllMet;
+            return (stars & star) == star;
         }
 
-        public static string FormatCleanStar(in ResultBonus bonus)
+        public static string FormatCleanStar(in LevelSnapshot snapshot, float remaining)
         {
-            if (bonus.First.TryGetValue(out var quota) == false)
+            if (snapshot.IsTimed == false)
             {
                 return UiText.RESULT_CLEAN;
             }
 
-            var label = PlantVisuals.GetLabel(quota.Kind).ToLowerInvariant();
+            return string.Format(
+                  UiText.RESULT_CLEAN_TIME
+                , FormatClock(remaining)
+                , FormatThreshold(snapshot.TimeLimit, snapshot.Star2TimeLeft)
+            );
+        }
 
-            return string.Format(UiText.RESULT_CLEAN_BONUS, label, quota.Amount);
+        public static string FormatSideStar(in ResultBonus bonus, float clearedFraction)
+        {
+            if (bonus.First.TryGetValue(out var quota))
+            {
+                var label = PlantVisuals.GetLabel(quota.Kind).ToLowerInvariant();
+
+                return string.Format(UiText.RESULT_SIDE_QUOTA, label, quota.Amount);
+            }
+
+            return string.Format(
+                  UiText.RESULT_SIDE_SWEEP
+                , GameplayScreenFormat.GetClearedPercent(clearedFraction)
+                , GameplayScreenFormat.GetClearedPercent(StarRules.SIDE_SWEEP_FRACTION)
+            );
         }
 
         public static ResultRowData CreateGoalRow()
@@ -98,20 +104,24 @@ namespace GrassSimulation.UI
             return CreateMetRow(UiText.RESULT_GOAL, Option.None, UiPalette.Ink);
         }
 
-        public static ResultRowData CreateTimeRow(float remaining, float timeLimit)
+        public static ResultRowData CreateCleanRow(in LevelResult result, in LevelSnapshot snapshot)
         {
-            var label = FormatTimeStar(remaining, timeLimit);
+            var label = FormatCleanStar(in snapshot, result.RemainingTime);
 
-            return HasTimeStar(remaining, timeLimit)
+            return HasStar(result.Stars, StarFlags.Clean)
                 ? CreateMetRow(label, Option.None, UiPalette.Ink)
                 : CreateUnmetRow(label, Option.None, UiPalette.Muted);
         }
 
-        public static ResultRowData CreateCleanRow(int protectedHits, in ResultBonus bonus)
+        public static ResultRowData CreateSideRow(
+              in LevelResult result
+            , in LevelSnapshot snapshot
+            , in ResultBonus bonus
+        )
         {
-            var label = FormatCleanStar(in bonus);
+            var label = FormatSideStar(in bonus, snapshot.ClearedFraction);
 
-            if (HasCleanStar(protectedHits, in bonus))
+            if (HasStar(result.Stars, StarFlags.Side))
             {
                 return CreateMetRow(label, Option.None, UiPalette.Ink);
             }
@@ -137,40 +147,6 @@ namespace GrassSimulation.UI
             var shortfall = string.Format(UiText.QUOTA_SHORT, current, quota.Amount, quota.Amount - current);
 
             return CreateUnmetRow(label, shortfall, UiPalette.Ink);
-        }
-
-        public static string FormatCoinBreakdown(in LevelSettlement settlement)
-        {
-            if (settlement.CoinsGranted <= 0)
-            {
-                return UiText.COINS_NONE;
-            }
-
-            using var _ = StringBuilderPool.Rent(out var builder);
-
-            if (settlement.FirstWinCoins > 0)
-            {
-                builder.AppendFormat(UiText.COINS_FIRST_WIN, settlement.FirstWinCoins);
-            }
-
-            if (settlement.NewStars > 0)
-            {
-                if (builder.Length > 0)
-                {
-                    builder.Append(LINE_BREAK);
-                }
-
-                var starCoins = settlement.CoinsGranted - settlement.FirstWinCoins;
-
-                builder.AppendFormat(UiText.COINS_NEW_STARS, settlement.NewStars, starCoins);
-            }
-
-            return builder.ToString();
-        }
-
-        public static string FormatCoinTotal(int coins)
-        {
-            return string.Format(UiText.COINS_TOTAL, coins);
         }
 
         private static ResultRowData CreateMetRow(string label, Option<string> value, Color tone)

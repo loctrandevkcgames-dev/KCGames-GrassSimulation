@@ -33,7 +33,7 @@ public sealed class LevelOutcomeTests
     [Test]
     public void Success_IsNeitherFailureKind()
     {
-        LevelOutcome outcome = new LevelOutcome.Success(Stars: 2);
+        LevelOutcome outcome = new LevelOutcome.Success(Stars: StarFlags.Goal | StarFlags.Clean);
 
         Assert.That(outcome.IsSuccess, Is.True);
         Assert.That(outcome.IsTimeUp, Is.False);

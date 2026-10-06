@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -6,12 +7,20 @@ namespace GrassSimulation.Gameplay
     public sealed class GrassCutter
     {
         private const float MIN_SEGMENT = 1e-4f;
+        private const int NO_BED = -1;
 
         private readonly PlantSettings[] _plantByKind = new PlantSettings[PlantKindExtensions.Length];
         private readonly FieldGrid _grid;
         private readonly FieldFeedback _feedback;
+        private readonly int[] _bedByCell;
+        private readonly float _maxZoneRadius;
 
-        public GrassCutter(FieldGrid grid, FieldFeedback feedback, PlantSettings[] plants)
+        public GrassCutter(
+              FieldGrid grid
+            , FieldFeedback feedback
+            , PlantSettings[] plants
+            , ReadOnlySpan<RectInt> beds = default
+        )
         {
             _grid = grid;
             _feedback = feedback;
@@ -22,7 +31,37 @@ namespace GrassSimulation.Gameplay
             {
                 var plant = plants[i];
                 _plantByKind[(int)plant.Kind] = plant;
+                _maxZoneRadius = Mathf.Max(_maxZoneRadius, plant.CutZoneRadius);
             }
+
+            _bedByCell = BuildBedIndex(grid, beds);
+        }
+
+        private static int[] BuildBedIndex(FieldGrid grid, ReadOnlySpan<RectInt> beds)
+        {
+            var bedByCell = new int[grid.Count];
+
+            Array.Fill(bedByCell, NO_BED);
+
+            for (var bed = 0; bed < beds.Length; bed++)
+            {
+                var cells = beds[bed];
+
+                for (var z = Mathf.Max(cells.yMin, 0); z < Mathf.Min(cells.yMax, grid.CellsZ); z++)
+                {
+                    for (var x = Mathf.Max(cells.xMin, 0); x < Mathf.Min(cells.xMax, grid.CellsX); x++)
+                    {
+                        var index = grid.IndexOf(x, z);
+
+                        if (grid.GetKind(index) == PlantKind.ProtectedFlower)
+                        {
+                            bedByCell[index] = bed;
+                        }
+                    }
+                }
+            }
+
+            return bedByCell;
         }
 
         private static float ContactCoverage(Vector2 from, Vector2 to, Vector2 point, float radius)
@@ -75,15 +114,14 @@ namespace GrassSimulation.Gameplay
             return cuttable;
         }
 
-        public bool Cut(in CutStroke stroke, List<int> harvested)
+        public void Cut(in CutStroke stroke, List<int> harvested, List<int> touchedBeds)
         {
             var radius = stroke.Radius;
             var start = _grid.ToLocal(stroke.From);
             var end = _grid.ToLocal(stroke.To);
-            var extent = Vector2.one * radius;
+            var extent = Vector2.one * (radius + _maxZoneRadius);
             var min = Vector2.Min(start, end) - extent;
             var max = Vector2.Max(start, end) + extent;
-            var touchedProtected = false;
 
             _grid.GetCellRange(min, max, out var xMin, out var zMin, out var xMax, out var zMax);
 
@@ -99,41 +137,55 @@ namespace GrassSimulation.Gameplay
                         continue;
                     }
 
-                    var coverage = ContactCoverage(start, end, _grid.CellCenter(x, z), radius);
+                    var reach = radius + _plantByKind[(int)kind].CutZoneRadius;
+                    var coverage = ContactCoverage(start, end, _grid.CellCenter(x, z), reach);
 
                     if (coverage <= 0f)
                     {
                         continue;
                     }
 
-                    touchedProtected |= CutCell(index, kind, coverage * stroke.DeltaTime, stroke, harvested);
+                    CutCell(index, kind, coverage * stroke.DeltaTime, stroke, harvested, touchedBeds);
                 }
             }
-
-            return touchedProtected;
         }
 
-        private bool CutCell(int index, PlantKind kind, float contactTime, in CutStroke stroke, List<int> harvested)
+        private void CutCell(
+              int index
+            , PlantKind kind
+            , float contactTime
+            , in CutStroke stroke
+            , List<int> harvested
+            , List<int> touchedBeds
+        )
         {
             ref readonly var plant = ref _plantByKind[(int)kind];
 
             if (plant.IsProtected)
             {
+                var bed = Mathf.Max(_bedByCell[index], 0);
+
                 _feedback.FlashProtected(index);
-                return true;
+
+                if (touchedBeds.Contains(bed) == false)
+                {
+                    touchedBeds.Add(bed);
+                }
+
+                return;
             }
 
             var progress = _grid.GetProgress(index);
 
             if (progress >= 1f)
             {
-                return false;
+                return;
             }
 
             if (plant.RequiredTier > stroke.Tier)
             {
                 _feedback.FlashLocked(index);
-                return false;
+                return;
             }
 
             _feedback.Shake(index);
@@ -147,7 +199,6 @@ namespace GrassSimulation.Gameplay
             }
 
             _grid.SetProgress(index, progress);
-            return false;
         }
     }
 }

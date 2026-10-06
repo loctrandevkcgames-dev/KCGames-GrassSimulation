@@ -9,8 +9,12 @@ namespace GrassSimulation.UI
         public const string XP = "{0} / {1} XP";
         public const string XP_MAX = "{0} XP";
         public const string QUOTA_PROGRESS = "{0} / {1}";
+        public const string QUOTA_REMAINING = "{0}";
+        public const string QUOTA_DONE = "Xong";
         public const string BONUS = "Phụ: {0} {1} / {2}";
         public const string HITS_LEFT = "Còn {0} lỗi";
+        public const string HITS_COUNT = "{0} lỗi";
+        public const string TIMER_UNLIMITED = "Không giới hạn";
 
         public const string TIME_PAUSED = "Thời gian đang dừng";
         public const string LEVEL_UP = "Lên cấp {0}!";
@@ -20,7 +24,6 @@ namespace GrassSimulation.UI
         public const string LIST_AND = " và ";
 
         public const string STAT_LINE = "{0} {1} <color=#{2}>→ {3}</color>";
-        public const string STAT_LINE_CAPPED = "{0} {1} (tối đa)";
         public const string STAT_CUT_RADIUS = "Bán kính cắt";
         public const string STAT_CUTTING_POWER = "Sức cắt";
         public const string STAT_SPEED = "Tốc độ";
@@ -35,18 +38,16 @@ namespace GrassSimulation.UI
         public const string CLEARED = "Đã dọn {0}%";
         public const string FINISH_CLEANUP = "Kết thúc";
         public const string DRAG_HINT = "Kéo để lái máy cắt";
+        public const string CLEANUP_TOAST = "Dọn tiếp tới cấp {0}. Cây cao hơn vẫn bị khóa.";
 
         public const string RESULT_TITLE = "Hoàn thành!";
         public const string RESULT_GOAL = "Đạt mục tiêu";
-        public const string RESULT_TIME = "Còn {0} (≥ {1})";
         public const string RESULT_CLEAN = "Không lỗi";
-        public const string RESULT_CLEAN_BONUS = "Không lỗi + phụ {0} {1}";
-        public const string COINS_FIRST_WIN = "Thắng lần đầu +{0}";
-        public const string COINS_NEW_STARS = "{0} sao mới +{1}";
-        public const string COINS_TOTAL = "+{0}";
-        public const string COINS_NONE = "Không có thưởng mới";
-        public const string COINS_SAVING = "Đang lưu…";
-        public const string COINS_SAVE_FAILED = "Chưa lưu được kết quả";
+        public const string RESULT_CLEAN_TIME = "Không lỗi, còn {0} (≥ {1})";
+        public const string RESULT_SIDE_QUOTA = "Phụ: {0} {1}";
+        public const string RESULT_SIDE_SWEEP = "Dọn {0}% (≥ {1}%)";
+        public const string SAVE_SAVING = "Đang lưu…";
+        public const string SAVE_FAILED = "Chưa lưu được kết quả";
         public const string QUOTA_SHORT = "{0} / {1} · thiếu {2}";
 
         public const string BUTTON_NEXT = "Màn tiếp";
@@ -71,7 +72,6 @@ namespace GrassSimulation.UI
 
         public const string GAME_TITLE = "Grass Route";
         public const string GARDEN_NAME = "Khu vườn 1 · Sân sau";
-        public const string COIN_AMOUNT = "{0}";
         public const string QUOTA_AMOUNT = "{0}";
         public const string GARDEN_PROGRESS_TITLE = "Tiến độ khu vườn";
         public const string GARDEN_PROGRESS = "{0} / {1} màn · {2} / {3} sao";
@@ -83,16 +83,16 @@ namespace GrassSimulation.UI
 
         public const string BUTTON_PLAY = "Chơi";
         public const string BUTTON_START = "Bắt đầu";
-        public const string BUTTON_ZEN = "Zen";
         public const string BUTTON_LEVEL_SELECT = "Chọn màn";
 
         public const string PREVIEW_GOALS = "Mục tiêu";
         public const string PREVIEW_BONUS = "Phụ · {0}";
         public const string STAR_TITLE = "{0} sao";
         public const string STAR_RULE_GOAL = "Đạt mục tiêu";
-        public const string STAR_RULE_TIME = "Còn ≥ {0}";
         public const string STAR_RULE_CLEAN = "Không lỗi";
-        public const string STAR_RULE_CLEAN_BONUS = "Không lỗi + phụ";
+        public const string STAR_RULE_CLEAN_TIME = "Không lỗi, còn ≥ {0}";
+        public const string STAR_RULE_SIDE_QUOTA = "Làm xong mục tiêu phụ";
+        public const string STAR_RULE_SIDE_SWEEP = "Dọn ≥ {0}% cây";
 
         public const string PLANT_GRASS = "Cỏ";
         public const string PLANT_FLOWER = "Hoa đỏ";

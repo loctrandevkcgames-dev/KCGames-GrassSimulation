@@ -13,9 +13,6 @@ namespace GrassSimulation.Gameplay
         private float _baseCutRadius = 0.65f;
 
         [SerializeField]
-        private float _maxCutRadius = 1.1f;
-
-        [SerializeField]
         private float _cutRadiusTweenSpeed = 0.6f;
 
         [SerializeField]
@@ -23,9 +20,6 @@ namespace GrassSimulation.Gameplay
 
         [SerializeField]
         private float _baseSpeed = 4f;
-
-        [SerializeField]
-        private float _maxSpeed = 4.75f;
 
         [SerializeField]
         private int[] _xpThresholds = { 100, 260, 480 };
@@ -37,15 +31,11 @@ namespace GrassSimulation.Gameplay
 
         public float BaseCutRadius => _baseCutRadius;
 
-        public float MaxCutRadius => _maxCutRadius;
-
         public float CutRadiusTweenSpeed => _cutRadiusTweenSpeed;
 
         public float BaseCuttingPower => _baseCuttingPower;
 
         public float BaseSpeed => _baseSpeed;
-
-        public float MaxSpeed => _maxSpeed;
 
         public ReadOnlySpan<int> XpThresholds => _xpThresholds;
 

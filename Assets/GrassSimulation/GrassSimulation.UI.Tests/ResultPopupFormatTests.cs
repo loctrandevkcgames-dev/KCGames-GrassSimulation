@@ -1,12 +1,13 @@
 using EncosyTower.Common;
 using GrassSimulation.Gameplay;
-using GrassSimulation.Progression;
 using NUnit.Framework;
 
 namespace GrassSimulation.UI.Tests;
 
 public sealed class ResultPopupFormatTests
 {
+    private const float STAR2_TIME_LEFT = 0.2f;
+
     private static readonly QuotaSnapshot s_thickGrass = new(
           Kind: PlantKind.ThickGrass
         , Amount: 30
@@ -33,17 +34,9 @@ public sealed class ResultPopupFormatTests
     }
 
     [Test]
-    public void GetTimeThreshold_IsTwentyPercentOfTheTimeLimit()
+    public void GetTimeThreshold_IsTheConfiguredFractionOfTheTimeLimit()
     {
-        Assert.That(ResultPopupFormat.GetTimeThreshold(120f), Is.EqualTo(24f).Within(1e-4f));
-    }
-
-    [Test]
-    public void FormatTimeStar_ShowsRemainingAndThreshold()
-    {
-        var text = ResultPopupFormat.FormatTimeStar(remaining: 31f, timeLimit: 120f);
-
-        Assert.That(text, Is.EqualTo("Còn 0:31 (≥ 0:24)"));
+        Assert.That(ResultPopupFormat.GetTimeThreshold(120f, STAR2_TIME_LEFT), Is.EqualTo(24f).Within(1e-4f));
     }
 
     [TestCase(120f, "0:24")]
@@ -51,17 +44,7 @@ public sealed class ResultPopupFormatTests
     [TestCase(100f, "0:20")]
     public void FormatThreshold_RoundsUpSoItNeverShowsLessThanTheRealThreshold(float timeLimit, string expected)
     {
-        Assert.That(ResultPopupFormat.FormatThreshold(timeLimit), Is.EqualTo(expected));
-    }
-
-    [Test]
-    public void FormatTimeStar_FloorsTheRemainingTimeSoItNeverReachesTheThresholdEarly()
-    {
-        var text = ResultPopupFormat.FormatTimeStar(remaining: 23.5f, timeLimit: 120f);
-
-        Assert.That(text, Is.EqualTo("Còn 0:23 (≥ 0:24)"));
-        Assert.That(ResultPopupFormat.HasTimeStar(remaining: 23.5f, timeLimit: 120f), Is.False);
-        Assert.That(ResultPopupFormat.CreateTimeRow(remaining: 23.5f, timeLimit: 120f).ShowCheck, Is.False);
+        Assert.That(ResultPopupFormat.FormatThreshold(timeLimit, STAR2_TIME_LEFT), Is.EqualTo(expected));
     }
 
     [TestCase(24f, true)]
@@ -69,7 +52,7 @@ public sealed class ResultPopupFormatTests
     [TestCase(60f, true)]
     public void HasTimeStar_IncludesTheThreshold(float remaining, bool expected)
     {
-        Assert.That(ResultPopupFormat.HasTimeStar(remaining, timeLimit: 120f), Is.EqualTo(expected));
+        Assert.That(ResultPopupFormat.HasTimeStar(remaining, 120f, STAR2_TIME_LEFT), Is.EqualTo(expected));
     }
 
     [Test]
@@ -99,33 +82,53 @@ public sealed class ResultPopupFormatTests
     }
 
     [Test]
-    public void FormatCleanStar_NamesTheBonusKindAndAmount()
+    public void FormatCleanStar_ShowsRemainingAndThresholdWhenTimed()
+    {
+        var snapshot = Timed();
+
+        Assert.That(ResultPopupFormat.FormatCleanStar(in snapshot, remaining: 31f), Is.EqualTo("Không lỗi, còn 0:31 (≥ 0:24)"));
+    }
+
+    [Test]
+    public void FormatCleanStar_FloorsTheRemainingTimeSoItNeverReachesTheThresholdEarly()
+    {
+        var snapshot = Timed();
+
+        Assert.That(ResultPopupFormat.FormatCleanStar(in snapshot, remaining: 23.5f), Is.EqualTo("Không lỗi, còn 0:23 (≥ 0:24)"));
+    }
+
+    [Test]
+    public void FormatCleanStar_OnlyMentionsProtectedFlowersWhenUntimed()
+    {
+        var snapshot = default(LevelSnapshot) with { IsTimed = false };
+
+        Assert.That(ResultPopupFormat.FormatCleanStar(in snapshot, remaining: 0f), Is.EqualTo("Không lỗi"));
+    }
+
+    [Test]
+    public void FormatSideStar_NamesTheSideQuota()
     {
         var bonus = new ResultBonus(First: s_thickGrass, AreAllMet: false);
 
-        Assert.That(ResultPopupFormat.FormatCleanStar(in bonus), Is.EqualTo("Không lỗi + phụ cỏ dày 30"));
+        Assert.That(ResultPopupFormat.FormatSideStar(in bonus, clearedFraction: 0.5f), Is.EqualTo("Phụ: cỏ dày 30"));
     }
 
     [Test]
-    public void FormatCleanStar_OmitsTheBonusWhenThereIsNone()
+    public void FormatSideStar_FallsBackToTheSweepGoal()
     {
         var bonus = new ResultBonus(First: Option.None, AreAllMet: true);
 
-        Assert.That(ResultPopupFormat.FormatCleanStar(in bonus), Is.EqualTo("Không lỗi"));
+        Assert.That(ResultPopupFormat.FormatSideStar(in bonus, clearedFraction: 0.82f), Is.EqualTo("Dọn 82% (≥ 90%)"));
     }
 
     [Test]
-    public void HasCleanStar_NeedsNoHitsAndEveryBonusMet()
+    public void HasStar_ChecksTheFlag()
     {
-        var met = new ResultBonus(First: s_thickGrass, AreAllMet: true);
-        var open = new ResultBonus(First: s_thickGrass, AreAllMet: false);
-        var none = new ResultBonus(First: Option.None, AreAllMet: true);
+        var stars = StarFlags.Goal | StarFlags.Side;
 
-        Assert.That(ResultPopupFormat.HasCleanStar(protectedHits: 0, in none), Is.True);
-        Assert.That(ResultPopupFormat.HasCleanStar(protectedHits: 0, in met), Is.True);
-        Assert.That(ResultPopupFormat.HasCleanStar(protectedHits: 0, in open), Is.False);
-        Assert.That(ResultPopupFormat.HasCleanStar(protectedHits: 1, in met), Is.False);
-        Assert.That(ResultPopupFormat.HasCleanStar(protectedHits: 1, in none), Is.False);
+        Assert.That(ResultPopupFormat.HasStar(stars, StarFlags.Goal), Is.True);
+        Assert.That(ResultPopupFormat.HasStar(stars, StarFlags.Clean), Is.False);
+        Assert.That(ResultPopupFormat.HasStar(stars, StarFlags.Side), Is.True);
     }
 
     [Test]
@@ -139,22 +142,24 @@ public sealed class ResultPopupFormatTests
     }
 
     [Test]
-    public void CreateTimeRow_ChecksOnlyWhenTheThresholdIsReached()
+    public void CreateCleanRow_ChecksOnlyWhenTheCleanStarIsEarned()
     {
-        var met = ResultPopupFormat.CreateTimeRow(remaining: 31f, timeLimit: 120f);
-        var unmet = ResultPopupFormat.CreateTimeRow(remaining: 10f, timeLimit: 120f);
+        var snapshot = Timed();
+        var met = ResultPopupFormat.CreateCleanRow(CreateResult(StarFlags.Goal | StarFlags.Clean, 31f), in snapshot);
+        var unmet = ResultPopupFormat.CreateCleanRow(CreateResult(StarFlags.Goal, 10f), in snapshot);
 
         Assert.That(met.ShowCheck, Is.True);
-        Assert.That(met.Label, Is.EqualTo("Còn 0:31 (≥ 0:24)"));
+        Assert.That(met.Label, Is.EqualTo("Không lỗi, còn 0:31 (≥ 0:24)"));
         Assert.That(unmet.ShowCheck, Is.False);
         Assert.That(unmet.Tone, Is.EqualTo(UiPalette.Muted));
     }
 
     [Test]
-    public void CreateCleanRow_ShowsBonusProgressWhenUnmet()
+    public void CreateSideRow_ShowsBonusProgressWhenUnmet()
     {
+        var snapshot = Timed();
         var bonus = new ResultBonus(First: s_thickGrass, AreAllMet: false);
-        var row = ResultPopupFormat.CreateCleanRow(protectedHits: 0, in bonus);
+        var row = ResultPopupFormat.CreateSideRow(CreateResult(StarFlags.Goal, 10f), in snapshot, in bonus);
 
         Assert.That(row.ShowCheck, Is.False);
         Assert.That(row.Value.TryGetValue(out var value), Is.True);
@@ -162,11 +167,12 @@ public sealed class ResultPopupFormatTests
     }
 
     [Test]
-    public void CreateCleanRow_HasNoValueWithoutABonus()
+    public void CreateSideRow_HasNoValueWithoutABonus()
     {
+        var snapshot = Timed();
         var bonus = new ResultBonus(First: Option.None, AreAllMet: true);
-        var unmet = ResultPopupFormat.CreateCleanRow(protectedHits: 2, in bonus);
-        var met = ResultPopupFormat.CreateCleanRow(protectedHits: 0, in bonus);
+        var unmet = ResultPopupFormat.CreateSideRow(CreateResult(StarFlags.Goal, 10f), in snapshot, in bonus);
+        var met = ResultPopupFormat.CreateSideRow(CreateResult(StarFlags.Goal | StarFlags.Side, 10f), in snapshot, in bonus);
 
         Assert.That(unmet.ShowCheck, Is.False);
         Assert.That(unmet.Value.HasValue, Is.False);
@@ -213,47 +219,6 @@ public sealed class ResultPopupFormatTests
     }
 
     [Test]
-    public void FormatCoinBreakdown_ListsTheFirstWinAndTheNewStars()
-    {
-        var settlement = CreateSettlement(coins: 150, firstWinCoins: 100, newStars: 2, isFirst: true);
-
-        Assert.That(
-              ResultPopupFormat.FormatCoinBreakdown(in settlement)
-            , Is.EqualTo("Thắng lần đầu +100\n2 sao mới +50")
-        );
-    }
-
-    [Test]
-    public void FormatCoinBreakdown_ListsOnlyTheFirstWinWhenNoStarIsNew()
-    {
-        var settlement = CreateSettlement(coins: 100, firstWinCoins: 100, newStars: 0, isFirst: true);
-
-        Assert.That(ResultPopupFormat.FormatCoinBreakdown(in settlement), Is.EqualTo("Thắng lần đầu +100"));
-    }
-
-    [Test]
-    public void FormatCoinBreakdown_ListsOnlyNewStarsOnAReplay()
-    {
-        var settlement = CreateSettlement(coins: 25, firstWinCoins: 0, newStars: 1, isFirst: false);
-
-        Assert.That(ResultPopupFormat.FormatCoinBreakdown(in settlement), Is.EqualTo("1 sao mới +25"));
-    }
-
-    [Test]
-    public void FormatCoinBreakdown_SaysNoRewardWhenNothingWasGranted()
-    {
-        var settlement = CreateSettlement(coins: 0, firstWinCoins: 0, newStars: 0, isFirst: false);
-
-        Assert.That(ResultPopupFormat.FormatCoinBreakdown(in settlement), Is.EqualTo("Không có thưởng mới"));
-    }
-
-    [Test]
-    public void FormatCoinTotal_PrefixesAPlus()
-    {
-        Assert.That(ResultPopupFormat.FormatCoinTotal(150), Is.EqualTo("+150"));
-    }
-
-    [Test]
     public void FailureVisuals_UseTheClockForTimeUp()
     {
         LevelOutcome outcome = new LevelOutcome.TimeUp(RemainingQuota: 22);
@@ -281,15 +246,19 @@ public sealed class ResultPopupFormatTests
         Assert.That(visual.IconTint, Is.EqualTo(UiPalette.Protected));
     }
 
-    private static LevelSettlement CreateSettlement(int coins, int firstWinCoins, int newStars, bool isFirst)
+    private static LevelSnapshot Timed()
     {
-        return new LevelSettlement(
-              CoinsGranted: coins
-            , FirstWinCoins: firstWinCoins
-            , NewStars: newStars
-            , Stars: newStars
-            , IsNewBest: newStars > 0
-            , IsFirstCompletion: isFirst
-        );
+        return default(LevelSnapshot) with {
+            IsTimed = true,
+            TimeLimit = 120f,
+            Star2TimeLeft = STAR2_TIME_LEFT,
+        };
+    }
+
+    private static LevelResult CreateResult(StarFlags stars, float remaining)
+    {
+        LevelOutcome outcome = new LevelOutcome.Success(stars);
+
+        return new LevelResult(Outcome: outcome, RemainingTime: remaining, ProtectedHits: 0);
     }
 }

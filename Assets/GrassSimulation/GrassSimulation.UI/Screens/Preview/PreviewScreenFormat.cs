@@ -9,9 +9,9 @@ namespace GrassSimulation.UI
             return MainMenuScreenFormat.FormatLevelNumber(levelIndex);
         }
 
-        public static string FormatTimer(float timeLimit)
+        public static string FormatTimer(bool isTimed, float timeLimit)
         {
-            return GameplayScreenFormat.FormatTimer(timeLimit);
+            return MainMenuScreenFormat.FormatTimer(isTimed, timeLimit);
         }
 
         public static string FormatQuotaAmount(int amount)
@@ -31,14 +31,29 @@ namespace GrassSimulation.UI
             return string.Format(UiText.STAR_TITLE, star);
         }
 
-        public static string FormatTimeRule(float timeLimit)
+        public static string FormatCleanRule(bool isTimed, float timeLimit, float star2TimeLeft)
         {
-            return string.Format(UiText.STAR_RULE_TIME, ResultPopupFormat.FormatThreshold(timeLimit));
+            if (isTimed == false)
+            {
+                return UiText.STAR_RULE_CLEAN;
+            }
+
+            return string.Format(
+                  UiText.STAR_RULE_CLEAN_TIME
+                , ResultPopupFormat.FormatThreshold(timeLimit, star2TimeLeft)
+            );
         }
 
-        public static string FormatCleanRule(bool hasBonus)
+        public static string FormatSideRule(bool hasBonus)
         {
-            return hasBonus ? UiText.STAR_RULE_CLEAN_BONUS : UiText.STAR_RULE_CLEAN;
+            if (hasBonus)
+            {
+                return UiText.STAR_RULE_SIDE_QUOTA;
+            }
+
+            var percent = GameplayScreenFormat.GetClearedPercent(StarRules.SIDE_SWEEP_FRACTION);
+
+            return string.Format(UiText.STAR_RULE_SIDE_SWEEP, percent);
         }
     }
 }

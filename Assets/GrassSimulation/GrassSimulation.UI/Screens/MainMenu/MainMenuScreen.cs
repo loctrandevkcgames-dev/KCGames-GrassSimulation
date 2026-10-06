@@ -14,9 +14,6 @@ namespace GrassSimulation.UI
         private const float POLL_INTERVAL = 0.1f;
 
         [SerializeField]
-        private TMP_Text _coinText;
-
-        [SerializeField]
         private Button _settingsButton;
 
         [SerializeField]
@@ -88,7 +85,7 @@ namespace GrassSimulation.UI
             _progressTitleText.text = UiText.GARDEN_PROGRESS_TITLE;
             _playLabel.text = UiText.BUTTON_PLAY;
 
-            _zenButton.Init(UiText.BUTTON_ZEN);
+            _zenButton.gameObject.SetActive(false);
             _levelSelectButton.Init(UiText.BUTTON_LEVEL_SELECT);
 
             _playButton.onClick.AddListener(OnPlayClicked);
@@ -166,7 +163,6 @@ namespace GrassSimulation.UI
             var levelCount = progress.LevelCount;
             var fraction = MainMenuScreenFormat.GetProgressFraction(completedCount, levelCount);
 
-            _coinText.text = MainMenuScreenFormat.FormatCoins(progress.Coins);
             _progressText.text = MainMenuScreenFormat.FormatProgress(completedCount, levelCount, progress.TotalStars);
             _progressFill.anchorMax = new Vector2(x: fraction, y: 1f);
             _nextHeaderText.text = MainMenuScreenFormat.FormatNextHeader(completedCount, levelCount);
@@ -197,7 +193,7 @@ namespace GrassSimulation.UI
             _previewIndex = index;
 
             _nextTitleText.text = MainMenuScreenFormat.FormatLevelNumber(preview.LevelIndex);
-            _timerText.text = GameplayScreenFormat.FormatTimer(preview.TimeLimit);
+            _timerText.text = MainMenuScreenFormat.FormatTimer(preview.IsTimed, preview.TimeLimit);
 
             ShowQuotas(in preview);
         }

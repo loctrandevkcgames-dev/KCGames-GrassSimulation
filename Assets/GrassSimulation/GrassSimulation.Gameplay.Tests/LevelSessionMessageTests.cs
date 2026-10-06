@@ -53,7 +53,7 @@ public sealed class LevelSessionMessageTests
 
         Assert.That(message.Result, Is.EqualTo(session.Result));
         Assert.That(message.Result.TryGetStars(out var stars), Is.True);
-        Assert.That(stars, Is.GreaterThan(0));
+        Assert.That(stars, Is.Not.EqualTo(StarFlags.None));
         Assert.That(message.Duration, Is.EqualTo(1f).Within(1e-4f));
     }
 
@@ -130,11 +130,11 @@ public sealed class LevelSessionMessageTests
         var session = CreateSession(timeLimit: 10f, failOnProtectedHits: true, Quota(PlantKind.Grass, 5));
         session.TryBegin();
 
-        session.RecordProtectedTouch();
+        session.RecordProtectedTouch(bed: 0);
         session.EndTick(0.2f);
-        session.RecordProtectedTouch();
+        session.RecordProtectedTouch(bed: 0);
         session.EndTick(1.5f);
-        session.RecordProtectedTouch();
+        session.RecordProtectedTouch(bed: 0);
 
         Assert.That(_messages.ProtectedHits, Has.Count.EqualTo(2));
         Assert.That(_messages.ProtectedHits[0], Is.EqualTo(new ProtectedHitMsg(1, 3, true)));
@@ -316,7 +316,9 @@ public sealed class LevelSessionMessageTests
 
     private LevelSession CreateSession(float timeLimit, bool failOnProtectedHits, params QuotaSettings[] quotas)
     {
-        var level = _assets.CreateLevel(timeLimit, failOnProtectedHits, quotas);
-        return new LevelSession(level, _assets.CreateMachine(), CUTTABLE_CELLS, _messages.Publisher);
+        var level = _assets.CreateLevel(timeLimit, quotas);
+        var rules = TestAssets.CreateRules(failOnProtectedHits);
+
+        return new LevelSession(level, _assets.CreateMachine(), CUTTABLE_CELLS, _messages.Publisher, rules);
     }
 }

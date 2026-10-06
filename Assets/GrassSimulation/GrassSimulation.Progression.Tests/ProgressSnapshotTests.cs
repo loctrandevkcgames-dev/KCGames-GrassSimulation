@@ -28,8 +28,7 @@ public sealed class ProgressSnapshotTests
             var snapshot = ProgressSnapshot.From(_service, catalog, hasPendingSave: false);
 
             Assert.That(snapshot, Is.EqualTo(new ProgressSnapshot(
-                      Coins: 0
-                    , CompletedCount: 0
+                      CompletedCount: 0
                     , LevelCount: 3
                     , NextLevelIndex: 0
                     , TotalStars: 0
@@ -44,18 +43,17 @@ public sealed class ProgressSnapshotTests
     }
 
     [Test]
-    public void From_CountsCompletedLevelsStarsCoinsAndNextLevel()
+    public void From_CountsCompletedLevelsStarsAndNextLevel()
     {
         var catalog = TestCatalogs.Create("level-01", "level-02", "level-03", out var objects);
 
         try
         {
-            _service.Settle(new LevelId("level-01"), LevelResults.Win(stars: 2));
-            _service.Settle(new LevelId("level-03"), LevelResults.Win(stars: 3));
+            _service.Settle(new LevelId("level-01"), LevelResults.Win(StarFlags.Goal | StarFlags.Clean));
+            _service.Settle(new LevelId("level-03"), LevelResults.Win(StarRules.ALL));
 
             var snapshot = ProgressSnapshot.From(_service, catalog, hasPendingSave: true);
 
-            Assert.That(snapshot.Coins, Is.EqualTo(_service.Coins));
             Assert.That(snapshot.CompletedCount, Is.EqualTo(2));
             Assert.That(snapshot.LevelCount, Is.EqualTo(3));
             Assert.That(snapshot.NextLevelIndex, Is.EqualTo(1));

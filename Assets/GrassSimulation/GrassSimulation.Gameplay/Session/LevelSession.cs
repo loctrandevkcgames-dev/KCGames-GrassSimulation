@@ -5,12 +5,10 @@ namespace GrassSimulation.Gameplay
 {
     public sealed class LevelSession
     {
-        public const float SECOND_STAR_TIME_FRACTION = 0.2f;
-        public const float TIMER_WARNING_SECONDS = 15f;
-
         private const float HARVEST_BATCH_INTERVAL = 0.1f;
 
         private readonly LevelDefinition _level;
+        private readonly LevelRules _rules;
         private readonly int _cuttableCells;
         private readonly MessagePublisher.Publisher<GameplayScope> _publisher;
         private readonly HarvestBatcher _harvestBatcher = new(HARVEST_BATCH_INTERVAL);
@@ -23,6 +21,17 @@ namespace GrassSimulation.Gameplay
             , int cuttableCells
             , MessagePublisher.Publisher<GameplayScope> publisher
         )
+            : this(level, machine, cuttableCells, publisher, GameRulesValues.Default)
+        {
+        }
+
+        public LevelSession(
+              LevelDefinition level
+            , MachineConfig machine
+            , int cuttableCells
+            , MessagePublisher.Publisher<GameplayScope> publisher
+            , GameRulesValues rules
+        )
         {
             ThrowHelper.ThrowIfTooManyQuotas(
                   level.Quotas.Length <= LevelSnapshot.MAX_QUOTAS
@@ -31,11 +40,12 @@ namespace GrassSimulation.Gameplay
             );
 
             _level = level;
+            _rules = LevelRules.Resolve(level, in rules);
             _cuttableCells = cuttableCells;
             _publisher = publisher;
             Growth = new MowerGrowth(machine);
             Objectives = new LevelObjectives(level.Quotas);
-            Protection = new ProtectedRule(level.ProtectedHitCooldown);
+            Protection = new ProtectedRule(_rules.Retrigger, level.Beds.Length);
             ResetState();
         }
 
@@ -49,6 +59,8 @@ namespace GrassSimulation.Gameplay
 
         public bool IsPaused { get; private set; }
 
+        public bool IsAssisted { get; set; }
+
         public float RemainingTime { get; private set; }
 
         public float ElapsedTime { get; private set; }
@@ -57,9 +69,11 @@ namespace GrassSimulation.Gameplay
 
         public bool IsSimulating => IsPaused == false && (State == LevelState.Playing || State == LevelState.Cleanup);
 
-        public bool CountsProtectedHits => _level.FailOnProtectedHits;
+        public LevelRules Rules => _rules;
 
-        public int ProtectedHitLimit => _level.ProtectedHitLimit;
+        public bool CountsProtectedHits => _rules.FailsOnProtectedHits;
+
+        public int ProtectedHitLimit => _rules.FailLimit;
 
         public float ClearedFraction => _cuttableCells > 0 ? (float)_clearedCells / _cuttableCells : 1f;
 
@@ -140,22 +154,18 @@ namespace GrassSimulation.Gameplay
             }
         }
 
-        public bool RecordProtectedTouch()
+        public bool RecordProtectedTouch(int bed)
         {
             if (State != LevelState.Playing || IsPaused)
             {
                 return false;
             }
 
-            var isNewHit = Protection.Touch(ElapsedTime);
+            var isNewHit = Protection.Touch(bed, ElapsedTime);
 
             if (isNewHit)
             {
-                var message = new ProtectedHitMsg(
-                      Protection.Hits
-                    , _level.ProtectedHitLimit
-                    , _level.FailOnProtectedHits
-                );
+                var message = new ProtectedHitMsg(Protection.Hits, _rules.FailLimit, _rules.FailsOnProtectedHits);
 
                 ProtectedHitMsg.Publish(in _publisher, message);
             }
@@ -178,23 +188,26 @@ namespace GrassSimulation.Gameplay
                 return;
             }
 
-            RemainingTime = Mathf.Max(RemainingTime - deltaTime, 0f);
+            if (_rules.IsTimed)
+            {
+                RemainingTime = Mathf.Max(RemainingTime - deltaTime, 0f);
+            }
 
-            var hasTooManyHits = _level.FailOnProtectedHits && Protection.Hits > _level.ProtectedHitLimit;
+            var hasTooManyHits = _rules.FailsOnProtectedHits && Protection.Hits > _rules.FailLimit;
 
             if (hasTooManyHits)
             {
-                Finish(new LevelOutcome.TooManyProtectedHits(Protection.Hits, _level.ProtectedHitLimit));
+                Finish(new LevelOutcome.TooManyProtectedHits(Protection.Hits, _rules.FailLimit));
                 return;
             }
 
             if (Objectives.IsComplete)
             {
-                Finish(new LevelOutcome.Success(CountStars()));
+                Finish(new LevelOutcome.Success(EvaluateStars()));
                 return;
             }
 
-            if (RemainingTime <= 0f)
+            if (_rules.IsTimed && RemainingTime <= 0f)
             {
                 Finish(new LevelOutcome.TimeUp(Objectives.RemainingMainQuota));
                 return;
@@ -249,7 +262,7 @@ namespace GrassSimulation.Gameplay
             var isSuccess = outcome.IsSuccess;
 
             State = isSuccess ? LevelState.Success : LevelState.Failure;
-            Result = new LevelResult(outcome, RemainingTime, Protection.Hits);
+            Result = new LevelResult(outcome, RemainingTime, Protection.Hits, IsAssisted);
 
             var finished = new LevelFinishedMsg(_level.Id, Result, ElapsedTime);
 
@@ -312,23 +325,22 @@ namespace GrassSimulation.Gameplay
             }
         }
 
-        private int CountStars()
+        private StarFlags EvaluateStars()
         {
-            var hasTimeStar = RemainingTime >= _level.TimeLimit * SECOND_STAR_TIME_FRACTION;
-            var hasCleanStar = Protection.Hits == 0 && Objectives.AreBonusQuotasMet;
-            var stars = 1;
+            var isSideMet = Objectives.HasBonusQuota
+                ? Objectives.AreBonusQuotasMet
+                : ClearedFraction >= StarRules.SIDE_SWEEP_FRACTION;
 
-            if (hasTimeStar)
-            {
-                stars++;
-            }
-
-            if (hasCleanStar)
-            {
-                stars++;
-            }
-
-            return stars;
+            return StarRules.Evaluate(
+                  isWin: true
+                , isAssisted: IsAssisted
+                , isTimed: _rules.IsTimed
+                , remainingTime: RemainingTime
+                , timeLimit: _rules.TimeLimit
+                , star2TimeLeft: _rules.Star2TimeLeft
+                , protectedHits: Protection.Hits
+                , isSideMet: isSideMet
+            );
         }
 
         private void ResetState()
@@ -338,7 +350,8 @@ namespace GrassSimulation.Gameplay
             Protection.Reset();
             State = LevelState.Preview;
             IsPaused = false;
-            RemainingTime = _level.TimeLimit;
+            IsAssisted = false;
+            RemainingTime = _rules.TimeLimit;
             ElapsedTime = 0f;
             Result = default;
             _clearedCells = 0;

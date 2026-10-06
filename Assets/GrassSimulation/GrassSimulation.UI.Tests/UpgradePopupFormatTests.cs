@@ -84,7 +84,7 @@ public sealed class UpgradePopupFormatTests
     }
 
     [Test]
-    public void GetStatKinds_KnownUpgradeKeepsItsStatsEvenWhenCapped()
+    public void GetStatKinds_KnownUpgradeKeepsItsStatsEvenWhenUnchanged()
     {
         var visual = UpgradeVisuals.Get(UpgradeVisuals.WIDE_BLADE);
 
@@ -170,17 +170,18 @@ public sealed class UpgradePopupFormatTests
     }
 
     [Test]
-    public void FormatStatLine_CappedStatShowsTheValueWithMaxSuffix()
+    public void FormatStatLine_AlwaysShowsBeforeAndAfterWithoutAMaxSuffix()
     {
-        var capped = s_base with { CutRadius = 1.1f, Speed = 4.5f };
+        var wide = s_base with { CutRadius = 1.1f };
+        var wider = s_base with { CutRadius = 1.25f };
 
         Assert.That(
-              UpgradePopupFormat.FormatStatLine(UpgradeStatKinds.CutRadius, in capped, in capped)
-            , Is.EqualTo("Bán kính cắt 1.10 m (tối đa)")
+              UpgradePopupFormat.FormatStatLine(UpgradeStatKinds.CutRadius, in wide, in wider)
+            , Is.EqualTo("Bán kính cắt 1.10 m <color=#2E7D32>→ 1.25 m</color>")
         );
         Assert.That(
-              UpgradePopupFormat.FormatStatLine(UpgradeStatKinds.Speed, in capped, in capped)
-            , Is.EqualTo("Tốc độ 4.50 m/s (tối đa)")
+              UpgradePopupFormat.FormatStatLine(UpgradeStatKinds.CutRadius, in wide, in wide)
+            , Does.Not.Contain("tối đa")
         );
     }
 

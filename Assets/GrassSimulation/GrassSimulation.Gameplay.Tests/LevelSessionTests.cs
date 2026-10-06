@@ -47,7 +47,7 @@ public sealed class LevelSessionTests
         Assert.That(session.State, Is.EqualTo(LevelState.Success));
         Assert.That(session.Result.Outcome.IsSuccess, Is.True);
         Assert.That(session.Result.TryGetStars(out var stars), Is.True);
-        Assert.That(stars, Is.EqualTo(2));
+        Assert.That(stars, Is.EqualTo(StarFlags.Goal));
         Assert.That(session.RemainingTime, Is.Zero);
     }
 
@@ -133,14 +133,14 @@ public sealed class LevelSessionTests
 
         for (var i = 0; i < 20; i++)
         {
-            session.RecordProtectedTouch();
+            session.RecordProtectedTouch(bed: 0);
             session.EndTick(0.1f);
         }
 
         Assert.That(session.Protection.Hits, Is.EqualTo(1));
 
         session.EndTick(1.5f);
-        session.RecordProtectedTouch();
+        session.RecordProtectedTouch(bed: 0);
 
         Assert.That(session.Protection.Hits, Is.EqualTo(2));
     }
@@ -159,7 +159,7 @@ public sealed class LevelSessionTests
     }
 
     [Test]
-    public void ProtectedHits_DoNotFailOnboardingLevels()
+    public void ProtectedHits_DoNotFailInWarnMode()
     {
         var session = CreateStartedSession(timeLimit: 30f, failOnProtectedHits: false, Quota(PlantKind.Grass, 5));
 
@@ -167,6 +167,141 @@ public sealed class LevelSessionTests
 
         Assert.That(session.State, Is.EqualTo(LevelState.Playing));
         Assert.That(session.Protection.Hits, Is.EqualTo(6));
+    }
+
+    [Test]
+    public void ProtectedHits_DoNotFailOnboardingLevelsEvenInFailMode()
+    {
+        var session = CreateStartedSession(
+              LevelType.Tutorial
+            , timeLimit: 30f
+            , failOnProtectedHits: true
+            , Quota(PlantKind.Grass, 5)
+        );
+
+        TouchProtectedTimes(session, 6);
+
+        Assert.That(session.State, Is.EqualTo(LevelState.Playing));
+        Assert.That(session.Protection.Hits, Is.EqualTo(6));
+    }
+
+    [Test]
+    public void TutorialLevel_IsUntimedAndNeverTimesOut()
+    {
+        var session = CreateStartedSession(LevelType.Tutorial, 5f, false, Quota(PlantKind.Grass, 5));
+
+        session.EndTick(100f);
+
+        Assert.That(session.Rules.IsTimed, Is.False);
+        Assert.That(session.Rules.CanLose, Is.False);
+        Assert.That(session.State, Is.EqualTo(LevelState.Playing));
+        Assert.That(session.RemainingTime, Is.Zero);
+    }
+
+    [Test]
+    public void RelaxLevel_IsUntimedAndNeverTimesOut()
+    {
+        var session = CreateStartedSession(LevelType.Relax, 5f, false, Quota(PlantKind.Grass, 5));
+
+        session.EndTick(100f);
+
+        Assert.That(session.State, Is.EqualTo(LevelState.Playing));
+    }
+
+    [Test]
+    public void UntimedCleanWin_EarnsGoalAndCleanWithoutCheckingTime()
+    {
+        var session = CreateStartedSession(LevelType.Tutorial, 5f, false, Quota(PlantKind.Grass, 1));
+
+        session.EndTick(100f);
+        session.RecordHarvest(PlantKind.Grass, xp: 1);
+        session.EndTick(0.1f);
+
+        Assert.That(session.Result.Stars, Is.EqualTo(StarFlags.Goal | StarFlags.Clean));
+    }
+
+    [Test]
+    public void UntimedWinWithHit_LosesTheCleanStar()
+    {
+        var session = CreateStartedSession(LevelType.Tutorial, 5f, false, Quota(PlantKind.Grass, 1));
+
+        session.RecordProtectedTouch(bed: 0);
+        session.RecordHarvest(PlantKind.Grass, xp: 1);
+        session.EndTick(0.1f);
+
+        Assert.That(session.Result.Stars, Is.EqualTo(StarFlags.Goal));
+    }
+
+    [Test]
+    public void TimerMultiplier_ScalesTheTimeLimit()
+    {
+        var level = _assets.CreateLevel(timeLimit: 10f, Quota(PlantKind.Grass, 5));
+        var rules = GameRulesValues.Default with { TimerMultiplier = 2f };
+        var session = new LevelSession(level, _assets.CreateMachine(), CUTTABLE_CELLS, _messages.Publisher, rules);
+
+        Assert.That(session.RemainingTime, Is.EqualTo(20f));
+        Assert.That(session.Rules.TimeLimit, Is.EqualTo(20f));
+    }
+
+    [Test]
+    public void TimerDisabled_MakesEveryLevelUntimed()
+    {
+        var level = _assets.CreateLevel(timeLimit: 10f, Quota(PlantKind.Grass, 5));
+        var rules = GameRulesValues.Default with { TimerEnabled = false };
+        var session = new LevelSession(level, _assets.CreateMachine(), CUTTABLE_CELLS, _messages.Publisher, rules);
+
+        session.TryBegin();
+        session.EndTick(100f);
+
+        Assert.That(session.State, Is.EqualTo(LevelState.Playing));
+    }
+
+    [Test]
+    public void AssistedWin_EarnsOnlyTheGoalStar()
+    {
+        var session = CreateStartedSession(timeLimit: 10f, failOnProtectedHits: false, Quota(PlantKind.Grass, 1));
+
+        session.IsAssisted = true;
+        session.RecordHarvest(PlantKind.Grass, xp: 1);
+        session.EndTick(1f);
+
+        Assert.That(session.Result.Stars, Is.EqualTo(StarFlags.Goal));
+        Assert.That(session.Result.IsAssisted, Is.True);
+    }
+
+    [Test]
+    public void SideStar_FallsBackToSweepingNinetyPercentWithoutASideQuota()
+    {
+        var session = CreateStartedSession(timeLimit: 10f, failOnProtectedHits: false, Quota(PlantKind.Grass, 1));
+
+        for (var i = 0; i < 90; i++)
+        {
+            session.RecordHarvest(PlantKind.Grass, xp: 0);
+        }
+
+        session.EndTick(1f);
+
+        Assert.That(session.Result.Stars, Is.EqualTo(StarFlags.Goal | StarFlags.Clean | StarFlags.Side));
+    }
+
+    [Test]
+    public void SideStar_NeedsTheSideQuotaWhenOneExists()
+    {
+        var session = CreateStartedSession(
+              timeLimit: 10f
+            , failOnProtectedHits: false
+            , Quota(PlantKind.Grass, 1)
+            , Quota(PlantKind.HarvestFlower, 1, isBonus: true)
+        );
+
+        for (var i = 0; i < 95; i++)
+        {
+            session.RecordHarvest(PlantKind.Grass, xp: 0);
+        }
+
+        session.EndTick(1f);
+
+        Assert.That(session.Result.Stars, Is.EqualTo(StarFlags.Goal | StarFlags.Clean));
     }
 
     [Test]
@@ -184,7 +319,7 @@ public sealed class LevelSessionTests
         session.EndTick(1f);
 
         Assert.That(session.Result.TryGetStars(out var stars), Is.True);
-        Assert.That(stars, Is.EqualTo(3));
+        Assert.That(stars, Is.EqualTo(StarFlags.Goal | StarFlags.Clean | StarFlags.Side));
     }
 
     [Test]
@@ -192,14 +327,14 @@ public sealed class LevelSessionTests
     {
         var session = CreateStartedSession(timeLimit: 10f, failOnProtectedHits: true, Quota(PlantKind.Grass, 1));
 
-        session.RecordProtectedTouch();
+        session.RecordProtectedTouch(bed: 0);
         session.EndTick(9f);
         session.RecordHarvest(PlantKind.Grass, xp: 1);
         session.EndTick(0.5f);
 
         Assert.That(session.State, Is.EqualTo(LevelState.Success));
         Assert.That(session.Result.TryGetStars(out var stars), Is.True);
-        Assert.That(stars, Is.EqualTo(1));
+        Assert.That(stars, Is.EqualTo(StarFlags.Goal));
     }
 
     [Test]
@@ -245,20 +380,39 @@ public sealed class LevelSessionTests
     {
         for (var i = 0; i < times; i++)
         {
-            session.RecordProtectedTouch();
+            session.RecordProtectedTouch(bed: 0);
             session.EndTick(1.5f);
         }
     }
 
     private LevelSession CreateSession(float timeLimit, bool failOnProtectedHits, params QuotaSettings[] quotas)
+        => CreateSession(LevelType.Normal, timeLimit, failOnProtectedHits, quotas);
+
+    private LevelSession CreateSession(
+          LevelType type
+        , float timeLimit
+        , bool failOnProtectedHits
+        , params QuotaSettings[] quotas
+    )
     {
-        var level = _assets.CreateLevel(timeLimit, failOnProtectedHits, quotas);
-        return new LevelSession(level, _assets.CreateMachine(), CUTTABLE_CELLS, _messages.Publisher);
+        var level = _assets.CreateLevel(type, timeLimit, quotas);
+        var rules = TestAssets.CreateRules(failOnProtectedHits);
+
+        return new LevelSession(level, _assets.CreateMachine(), CUTTABLE_CELLS, _messages.Publisher, rules);
     }
 
     private LevelSession CreateStartedSession(float timeLimit, bool failOnProtectedHits, params QuotaSettings[] quotas)
+        => CreateStartedSession(LevelType.Normal, timeLimit, failOnProtectedHits, quotas);
+
+    private LevelSession CreateStartedSession(
+          LevelType type
+        , float timeLimit
+        , bool failOnProtectedHits
+        , params QuotaSettings[] quotas
+    )
     {
-        var session = CreateSession(timeLimit, failOnProtectedHits, quotas);
+        var session = CreateSession(type, timeLimit, failOnProtectedHits, quotas);
+
         session.TryBegin();
         return session;
     }

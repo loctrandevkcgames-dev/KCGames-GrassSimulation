@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace GrassSimulation.Gameplay
@@ -43,13 +44,13 @@ namespace GrassSimulation.Gameplay
         private QuotaSettings[] _quotas = Array.Empty<QuotaSettings>();
 
         [SerializeField]
-        private bool _failOnProtectedHits;
+        private LevelType _type = LevelType.Normal;
 
         [SerializeField]
-        private int _protectedHitLimit = 3;
+        private int _maxTier = 1;
 
-        [SerializeField]
-        private float _protectedHitCooldown = 1f;
+        [NonSerialized]
+        private RectInt[] _beds;
 
         public LevelId Id => new(_id);
 
@@ -69,11 +70,11 @@ namespace GrassSimulation.Gameplay
 
         public ReadOnlySpan<QuotaSettings> Quotas => _quotas;
 
-        public bool FailOnProtectedHits => _failOnProtectedHits;
+        public LevelType Type => _type;
 
-        public int ProtectedHitLimit => _protectedHitLimit;
+        public int MaxTier => _maxTier;
 
-        public float ProtectedHitCooldown => _protectedHitCooldown;
+        public ReadOnlySpan<RectInt> Beds => _beds ??= CollectBeds();
 
         public FieldGrid CreateGrid()
         {
@@ -92,8 +93,9 @@ namespace GrassSimulation.Gameplay
             return grid;
         }
 
-        public bool TryGetProtectedBed(out RectInt cells)
+        private RectInt[] CollectBeds()
         {
+            var beds = new List<RectInt>();
             var zoneCount = _zones.Length;
 
             for (var i = 0; i < zoneCount; i++)
@@ -102,13 +104,16 @@ namespace GrassSimulation.Gameplay
 
                 if (zone.Kind == PlantKind.ProtectedFlower)
                 {
-                    cells = zone.Cells;
-                    return true;
+                    beds.Add(zone.Cells);
                 }
             }
 
-            cells = default;
-            return false;
+            return beds.ToArray();
+        }
+
+        private void OnValidate()
+        {
+            _beds = null;
         }
     }
 }

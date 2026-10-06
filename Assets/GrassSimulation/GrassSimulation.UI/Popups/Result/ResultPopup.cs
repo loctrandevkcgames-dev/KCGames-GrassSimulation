@@ -94,7 +94,7 @@ namespace GrassSimulation.UI
 
             if (isFirstShow && finished.TryGetStars(out var stars))
             {
-                UiAudio.Request(UiSound.Stars, stars);
+                UiAudio.Request(UiSound.Stars, StarRules.Count(stars));
             }
 
             Show(in finished, in snapshot, in last);

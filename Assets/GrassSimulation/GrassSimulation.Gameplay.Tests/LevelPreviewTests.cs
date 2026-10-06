@@ -23,7 +23,6 @@ public sealed class LevelPreviewTests
     {
         var level = _assets.CreateLevel(
               timeLimit: 90f
-            , failOnProtectedHits: false
             , Quota(kind: PlantKind.HarvestFlower, amount: 70)
             , Quota(kind: PlantKind.ThickGrass, amount: 30, isBonus: true)
         );
@@ -44,7 +43,6 @@ public sealed class LevelPreviewTests
     {
         var level = _assets.CreateLevel(
               timeLimit: 30f
-            , failOnProtectedHits: false
             , Quota(kind: PlantKind.Grass, amount: 1)
             , Quota(kind: PlantKind.Grass, amount: 2)
             , Quota(kind: PlantKind.Grass, amount: 3)

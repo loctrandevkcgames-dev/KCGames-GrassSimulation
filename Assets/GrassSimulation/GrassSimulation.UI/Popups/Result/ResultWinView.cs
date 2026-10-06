@@ -1,18 +1,16 @@
 using EncosyTower.Common;
 using EncosyTower.PubSub;
-using GrassSimulation.Audio;
 using GrassSimulation.Gameplay;
 using GrassSimulation.Progression;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 namespace GrassSimulation.UI
 {
     public sealed class ResultWinView : MonoBehaviour
     {
-        private const int COIN_SOUND_COUNT = 3;
-
         [SerializeField]
         private TMP_Text _titleText;
 
@@ -29,19 +27,16 @@ namespace GrassSimulation.UI
         private ResultRow _goalRow;
 
         [SerializeField]
-        private ResultRow _timeRow;
+        [FormerlySerializedAs("_timeRow")]
+        private ResultRow _flawlessRow;
 
         [SerializeField]
-        private ResultRow _cleanRow;
+        [FormerlySerializedAs("_cleanRow")]
+        private ResultRow _sideRow;
 
         [SerializeField]
-        private TMP_Text _coinLinesText;
-
-        [SerializeField]
-        private GameObject _coinTotal;
-
-        [SerializeField]
-        private TMP_Text _coinTotalText;
+        [FormerlySerializedAs("_coinLinesText")]
+        private TMP_Text _saveStatusText;
 
         [SerializeField]
         private Button _retrySaveButton;
@@ -68,7 +63,6 @@ namespace GrassSimulation.UI
         private TMP_Text _cleanupLabel;
 
         private MessagePublisher.Publisher<LevelCommandScope> _commands;
-        private bool _coinsPlayed;
 
         public void Init(in MessagePublisher.Publisher<LevelCommandScope> commands)
         {
@@ -92,75 +86,52 @@ namespace GrassSimulation.UI
             , in Option<Result<LevelSettlement, SettleError>> settlement
         )
         {
-            result.TryGetStars(out var stars);
+            var stars = result.Stars;
 
             for (var i = 0; i < _stars.Length; i++)
             {
-                _stars[i].sprite = i < stars ? _starOnSprite : _starOffSprite;
+                var star = (StarFlags)(1 << i);
+
+                _stars[i].sprite = ResultPopupFormat.HasStar(stars, star) ? _starOnSprite : _starOffSprite;
             }
 
             var bonus = ResultPopupFormat.GetBonus(in snapshot);
 
             _goalRow.Apply(ResultPopupFormat.CreateGoalRow());
-            _timeRow.Apply(ResultPopupFormat.CreateTimeRow(result.RemainingTime, snapshot.TimeLimit));
-            _cleanRow.Apply(ResultPopupFormat.CreateCleanRow(result.ProtectedHits, in bonus));
+            _flawlessRow.Apply(ResultPopupFormat.CreateCleanRow(in result, in snapshot));
+            _sideRow.Apply(ResultPopupFormat.CreateSideRow(in result, in snapshot, in bonus));
 
             _nextButton.gameObject.SetActive(ResultPopupFormat.HasNextLevel(snapshot.LevelIndex, snapshot.LevelCount));
 
-            ShowCoins(in settlement);
+            ShowSaveStatus(in settlement);
         }
 
-        private void OnEnable()
+        private void ShowSaveStatus(in Option<Result<LevelSettlement, SettleError>> settlement)
         {
-            _coinsPlayed = false;
-        }
-
-        private void ShowCoins(in Option<Result<LevelSettlement, SettleError>> settlement)
-        {
-            _coinTotal.SetActive(false);
             _retrySaveButton.gameObject.SetActive(false);
 
             if (settlement.TryGetValue(out var outcome) == false)
             {
-                ShowCoinLines(UiText.COINS_SAVING, UiPalette.CoinInk);
+                ShowStatus(UiText.SAVE_SAVING, UiPalette.Muted);
                 return;
             }
 
-            if (outcome.TryGetValue(out var settled))
+            if (outcome.IsError == false)
             {
-                ShowSettled(in settled);
+                ShowStatus(string.Empty, UiPalette.Muted);
                 return;
             }
 
             outcome.TryGetError(out var error);
 
-            ShowCoinLines(UiText.COINS_SAVE_FAILED, UiPalette.Warning);
+            ShowStatus(UiText.SAVE_FAILED, UiPalette.Warning);
             _retrySaveButton.gameObject.SetActive(error.CanRetry);
         }
 
-        private void ShowSettled(in LevelSettlement settled)
+        private void ShowStatus(string text, Color color)
         {
-            ShowCoinLines(ResultPopupFormat.FormatCoinBreakdown(in settled), UiPalette.CoinInk);
-
-            if (settled.CoinsGranted <= 0)
-            {
-                return;
-            }
-
-            _coinTotal.SetActive(true);
-            _coinTotalText.text = ResultPopupFormat.FormatCoinTotal(settled.CoinsGranted);
-
-            if (_coinsPlayed == false)
-            {
-                _coinsPlayed = true;
-                UiAudio.Request(UiSound.Coins, COIN_SOUND_COUNT);
-            }
-        }
-
-        private void ShowCoinLines(string text, Color color)
-        {
-            _coinLinesText.text = text;
-            _coinLinesText.color = color;
+            _saveStatusText.text = text;
+            _saveStatusText.color = color;
         }
 
         private void OnRetrySaveClicked()

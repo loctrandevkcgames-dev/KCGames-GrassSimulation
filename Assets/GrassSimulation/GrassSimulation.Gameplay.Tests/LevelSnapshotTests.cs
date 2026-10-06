@@ -166,6 +166,46 @@ public sealed class LevelSnapshotTests
     }
 
     [Test]
+    public void From_ReportsTheTierOfTheUpgradeBeingChosenAndItsUnlocks()
+    {
+        var level = _assets.CreateLevel(timeLimit: 10f, failOnProtectedHits: false, Quota(PlantKind.Grass, 99));
+        var session = CreateSession(level);
+        session.TryBegin();
+        var plants = new[] {
+            new PlantSettings { Kind = PlantKind.Grass, RequiredTier = 1 },
+            new PlantSettings { Kind = PlantKind.LowBush, RequiredTier = 2 },
+            new PlantSettings { Kind = PlantKind.HardBush, RequiredTier = 3 },
+        };
+
+        var unlocked = PlantKindMask.FromTier(plants, session.Growth.UpgradeTier);
+        var tierOne = LevelSnapshot.From(session, level, levelIndex: 0, levelCount: 1, unlockedKinds: unlocked);
+
+        Assert.That(tierOne.UpgradeTier, Is.EqualTo(1));
+        Assert.That(tierOne.UnlockedKinds.Count, Is.EqualTo(1));
+
+        session.RecordHarvest(PlantKind.Grass, xp: 260);
+        session.EndTick(0.01f);
+
+        var unlocked2 = PlantKindMask.FromTier(plants, session.Growth.UpgradeTier);
+        var twoPending = LevelSnapshot.From(session, level, levelIndex: 0, levelCount: 1, unlockedKinds: unlocked2);
+
+        Assert.That(twoPending.Tier, Is.EqualTo(3));
+        Assert.That(twoPending.PendingUpgrades, Is.EqualTo(2));
+        Assert.That(twoPending.UpgradeTier, Is.EqualTo(2));
+        Assert.That(twoPending.UnlockedKinds.Contains(PlantKind.LowBush), Is.True);
+        Assert.That(twoPending.UnlockedKinds.Contains(PlantKind.HardBush), Is.False);
+
+        session.TryChooseUpgrade(0);
+
+        var unlocked3 = PlantKindMask.FromTier(plants, session.Growth.UpgradeTier);
+        var onePending = LevelSnapshot.From(session, level, levelIndex: 0, levelCount: 1, unlockedKinds: unlocked3);
+
+        Assert.That(onePending.UpgradeTier, Is.EqualTo(3));
+        Assert.That(onePending.UnlockedKinds.Contains(PlantKind.HardBush), Is.True);
+        Assert.That(onePending.UnlockedKinds.Contains(PlantKind.LowBush), Is.False);
+    }
+
+    [Test]
     public void Request_ReturnsTheSnapshotThroughTheScopedHub()
     {
         var level = _assets.CreateLevel(timeLimit: 10f, failOnProtectedHits: false, Quota(PlantKind.Grass, 5));

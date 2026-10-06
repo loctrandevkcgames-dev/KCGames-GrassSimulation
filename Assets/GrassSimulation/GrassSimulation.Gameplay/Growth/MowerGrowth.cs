@@ -23,6 +23,8 @@ namespace GrassSimulation.Gameplay
 
         public int UpgradeOptionCount => _upgradeCounts.Length;
 
+        public int UpgradeTier => PendingUpgrades > 0 ? Tier - PendingUpgrades + 1 : Tier;
+
         public MachineStats Stats => ComputeStats(option: 0, extraTimes: 0);
 
         public int TierFloorXp

@@ -31,12 +31,20 @@ namespace GrassSimulation.Gameplay
         , MachineStats Upgrade0Stats
         , string Upgrade1Id
         , MachineStats Upgrade1Stats
+        , int UpgradeTier
+        , PlantKindMask UnlockedKinds
     )
     {
         public const int MAX_QUOTAS = 4;
         public const int MAX_UPGRADE_OPTIONS = 2;
 
-        public static LevelSnapshot From(LevelSession session, LevelDefinition level, int levelIndex, int levelCount)
+        public static LevelSnapshot From(
+              LevelSession session
+            , LevelDefinition level
+            , int levelIndex
+            , int levelCount
+            , PlantKindMask unlockedKinds = default
+        )
         {
             var growth = session.Growth;
             var objectives = session.Objectives;
@@ -72,6 +80,8 @@ namespace GrassSimulation.Gameplay
                 , ReadUpgradeStats(growth, option: 0, count: optionCount)
                 , ReadUpgradeId(growth, option: 1, count: optionCount)
                 , ReadUpgradeStats(growth, option: 1, count: optionCount)
+                , growth.UpgradeTier
+                , unlockedKinds
             );
         }
 

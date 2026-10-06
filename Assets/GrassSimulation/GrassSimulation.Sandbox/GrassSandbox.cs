@@ -92,6 +92,7 @@ namespace GrassSimulation.Sandbox
         private LevelSettlementHandler _settlementHandler;
         private LevelCommandRouter _commandRouter;
         private MessagePublisher.Publisher<LevelCommandScope> _commands;
+        private MessagePublisher.Publisher<GameplayScope> _gameplayEvents;
         private Result<LevelSettlement, SettleError> _lastSettlement;
         private bool _hasLastSettlement;
         private MaterialPropertyBlock _zoneProperties;
@@ -115,10 +116,19 @@ namespace GrassSimulation.Sandbox
         private bool _wasWipeHeld;
         private bool _wasHudToggleHeld;
         private bool _showDebugHud;
+        private bool _isHome;
         private FlowRequest _pendingFlow;
         private GUIStyle _hudStyle;
 
         public LevelSession Session => _session;
+
+        public void Begin()
+        {
+            if (_isHome == false)
+            {
+                _session?.TryBegin();
+            }
+        }
 
         public void Retry()
         {
@@ -182,8 +192,10 @@ namespace GrassSimulation.Sandbox
             LoadLevel(_progression.FindFirstIncomplete(_catalog));
 
             _commands = GlobalMessenger.Publisher.Scope<LevelCommandScope>();
+            _gameplayEvents = GlobalMessenger.Publisher.Scope<GameplayScope>();
             _commandRouter = new LevelCommandRouter(GlobalMessenger.Subscriber.Scope<LevelCommandScope>(), this);
             RegisterQueries();
+            SetHome(isHome: true);
         }
 
         private void OnDestroy()
@@ -203,8 +215,14 @@ namespace GrassSimulation.Sandbox
             switch (request)
             {
                 case FlowRequest.Retry:
+                {
+                    ResetRun();
+                    break;
+                }
+
                 case FlowRequest.GoHome:
                 {
+                    SetHome(isHome: true);
                     ResetRun();
                     break;
                 }
@@ -223,6 +241,7 @@ namespace GrassSimulation.Sandbox
                     if (canPlay)
                     {
                         LoadLevel(_progression.FindFirstIncomplete(_catalog));
+                        SetHome(isHome: false);
                     }
 
                     break;
@@ -241,6 +260,7 @@ namespace GrassSimulation.Sandbox
                     }
                     else
                     {
+                        SetHome(isHome: true);
                         ResetRun();
                     }
 
@@ -255,7 +275,15 @@ namespace GrassSimulation.Sandbox
             var progressionHub = GlobalProcessor.Instance.Scope<ProgressionScope>().WithRegistries(_registries);
 
             GetLevelSnapshotRequest.Register(in gameplayHub, ProvideLevelSnapshot);
+            GetLevelPreviewRequest.Register(in gameplayHub, ProvideLevelPreview);
             GetProgressSnapshotRequest.Register(in progressionHub, ProvideProgressSnapshot);
+        }
+
+        private LevelPreview ProvideLevelPreview(GetLevelPreviewRequest request)
+        {
+            var index = _catalog.ClampIndex(request.LevelIndex);
+
+            return LevelPreview.From(_catalog.Get(index), index);
         }
 
         private LevelSnapshot ProvideLevelSnapshot(GetLevelSnapshotRequest request)
@@ -274,6 +302,12 @@ namespace GrassSimulation.Sandbox
         {
             _lastSettlement = message.Outcome;
             _hasLastSettlement = true;
+        }
+
+        private void SetHome(bool isHome)
+        {
+            _isHome = isHome;
+            HomeChangedMsg.Publish(in _gameplayEvents, new HomeChangedMsg(isHome));
         }
 
         private void LoadLevel(int index)
@@ -820,7 +854,15 @@ namespace GrassSimulation.Sandbox
             {
                 case LevelState.Preview:
                 {
-                    StartRequestedMsg.Publish(in _commands, new StartRequestedMsg());
+                    if (_isHome)
+                    {
+                        PlayRequestedMsg.Publish(in _commands, new PlayRequestedMsg());
+                    }
+                    else
+                    {
+                        StartRequestedMsg.Publish(in _commands, new StartRequestedMsg());
+                    }
+
                     break;
                 }
 

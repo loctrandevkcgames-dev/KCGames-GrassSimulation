@@ -32,7 +32,7 @@ namespace GrassSimulation.Gameplay
 
         private void OnStart(StartRequestedMsg message)
         {
-            _host.Session?.TryBegin();
+            _host.Begin();
         }
 
         private void OnUpgrade(UpgradeRequestedMsg message)

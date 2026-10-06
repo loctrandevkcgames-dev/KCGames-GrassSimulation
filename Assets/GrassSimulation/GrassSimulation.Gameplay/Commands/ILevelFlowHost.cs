@@ -4,6 +4,8 @@ namespace GrassSimulation.Gameplay
     {
         LevelSession Session { get; }
 
+        void Begin();
+
         void Retry();
 
         void LoadNext();

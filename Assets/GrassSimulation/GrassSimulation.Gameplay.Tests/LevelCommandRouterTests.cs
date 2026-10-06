@@ -175,6 +175,8 @@ public sealed class LevelCommandRouterTests
 
         public List<string> Calls { get; } = new();
 
+        public void Begin() => Session.TryBegin();
+
         public void Retry()
         {
             Calls.Add(nameof(Retry));

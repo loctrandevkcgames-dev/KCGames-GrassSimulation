@@ -64,6 +64,8 @@ namespace GrassSimulation.UI
         public const string OPTION_SOUND = "Âm thanh";
         public const string OPTION_HAPTICS = "Rung";
         public const string OPTION_REDUCE_EFFECTS = "Giảm hiệu ứng";
+        public const string OPTION_MUSIC = "Nhạc nền";
+        public const string OPTION_SFX = "Âm hiệu ứng";
 
         public const string GAME_TITLE = "Grass Route";
         public const string GARDEN_NAME = "Khu vườn 1 · Sân sau";

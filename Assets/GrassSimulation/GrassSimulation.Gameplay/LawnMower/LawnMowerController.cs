@@ -1,3 +1,4 @@
+using System;
 using EncosyTower.UnityExtensions;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -6,7 +7,6 @@ namespace GrassSimulation.Gameplay
 {
     public sealed class LawnMowerController : MonoBehaviour
     {
-        private const float DEAD_ZONE = 0.1f;
         private const float MIN_TURN_SPEED = 0.05f;
 
         [SerializeField]
@@ -22,13 +22,24 @@ namespace GrassSimulation.Gameplay
         private float _turnDegreesPerSecond = 540f;
 
         [SerializeField]
-        private float _joystickRadiusPixels = 90f;
+        private float _joystickRadiusFraction = JoystickMath.RADIUS_WIDTH_FRACTION;
+
+        [SerializeField]
+        private float _joystickMinRadiusPixels = JoystickMath.MIN_RADIUS;
+
+        [SerializeField]
+        private Rect _joystickRegion = new Rect(x: 0f, y: 0f, width: 1f, height: 0.5f);
 
         private Vector3 _velocity;
-        private Vector2 _joystickOrigin;
-        private bool _isDragging;
+        private JoystickDrag _drag;
 
         public Vector3 Velocity => _velocity;
+
+        public bool IsDragging => _drag.IsDragging;
+
+        public bool IsMoving => _velocity.sqrMagnitude > MIN_TURN_SPEED * MIN_TURN_SPEED;
+
+        public Func<Vector2, bool> IsPointerBlocked { get; set; }
 
         public float MaxSpeed { get; set; } = 4f;
 
@@ -78,7 +89,12 @@ namespace GrassSimulation.Gameplay
         {
             transform.position = position;
             _velocity = Vector3.zero;
-            _isDragging = false;
+            _drag.Reset();
+        }
+
+        public JoystickState GetJoystickState()
+        {
+            return new JoystickState(_drag.IsDragging, _drag.Origin, _drag.Input, _drag.Radius, IsMoving);
         }
 
         public void Step(float deltaTime, Camera view)
@@ -142,28 +158,35 @@ namespace GrassSimulation.Gameplay
                 input = drag;
             }
 
-            return input.magnitude < DEAD_ZONE ? Vector2.zero : Vector2.ClampMagnitude(input, 1f);
+            return JoystickMath.ApplyDeadZone(input);
         }
 
         private Vector2 ReadPointerDrag()
         {
             var pointer = Pointer.current;
 
-            if (pointer == null || pointer.press.isPressed == false)
+            if (pointer == null)
             {
-                _isDragging = false;
+                _drag.Reset();
                 return Vector2.zero;
             }
 
-            var position = pointer.position.ReadValue();
+            var screenSize = new Vector2(Screen.width, Screen.height);
+            var radius = JoystickMath.GetRadius(
+                  referenceSize: Mathf.Min(screenSize.x, screenSize.y)
+                , sizeFraction: _joystickRadiusFraction
+                , minRadius: _joystickMinRadiusPixels
+            );
 
-            if (_isDragging == false)
-            {
-                _isDragging = true;
-                _joystickOrigin = position;
-            }
-
-            return (position - _joystickOrigin) / _joystickRadiusPixels;
+            return _drag.Update(
+                  isPressed: pointer.press.isPressed
+                , pointerId: pointer.deviceId
+                , position: pointer.position.ReadValue()
+                , screenSize: screenSize
+                , region: _joystickRegion
+                , isBlocked: IsPointerBlocked
+                , radius: radius
+            );
         }
     }
 }

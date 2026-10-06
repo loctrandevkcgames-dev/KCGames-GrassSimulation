@@ -3,7 +3,7 @@
 
 // Grass Route field contract shared by every GrassSimulation shader.
 //
-// The gameplay map is a grid of 0.25 x 0.25 m logic cells (GDD section 5). The CPU simulation owns the cells and
+// The gameplay map is a grid of 0.5 x 0.5 m logic cells (GDD section 5). The CPU simulation owns the cells and
 // mirrors their visual state into one small texture, one texel per cell, that all field shaders read.
 //
 // Global textures and vectors, set with Shader.SetGlobalTexture / Shader.SetGlobalVector:
@@ -18,8 +18,9 @@
 //
 //   _GrassLitter        Texture2D, RGBA32, linear, no mipmaps, same size and layout as _GrassCellState.
 //                       RGB  Leaf clippings colour of the cell's plant kind, premultiplied by A.
-//                       A    Clippings left on the ground 0..1. 0 = none (standing plants, or a cell that never had
-//                            plants), 1 = the cell's plants are fully cut. Never decays during a level.
+//                       A    Clippings left on the ground 0..1. 0 = none (standing plants), 1 = the cell's plants are
+//                            fully cut. Never decays during a level. A cell that never had plants is pre-mown lawn:
+//                            the CPU writes a lawn-coloured litter for it, so it reads as short grass, not bare soil.
 //
 //   _GrassLitterAccent  Texture2D, RGBA32, linear, no mipmaps, same layout as _GrassLitter.
 //                       RGB  Accent chip colour (flower petals, for example), premultiplied by _GrassLitter.A.

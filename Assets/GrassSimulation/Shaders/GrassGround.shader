@@ -2,8 +2,8 @@
 // show the mown colour with mower stripes, so every cut leaves a clean, readable trail (GDD sections 2 and 11).
 // Cut cells that had plants are covered with a layer of clippings in the colours of the plant kind that grew there:
 // a patchy mat plus scattered short leaf blades, mixed with round accent chips such as flower petals. Read from
-// _GrassLitter and _GrassLitterAccent, so never-planted ground stays bare soil. The clippings take a light or dark
-// mower stripe from the heading they were cut with (_GrassCutState), start brighter while fresh, sit in a soft shadow
+// _GrassLitter and _GrassLitterAccent; never-planted ground carries the CPU lawn tint (pre-mown lawn). The clippings
+// take a light or dark mower stripe from the heading they were cut with (_GrassCutState), start brighter while fresh, sit in a soft shadow
 // along standing plants, and light up under the celebration sweep (_GrassSweep).
 // Reads the cell state contract documented in Include/GrassField.hlsl. _CutColor is the cut trail skin colour.
 Shader "GrassSimulation/Ground"
@@ -335,7 +335,7 @@ Shader "GrassSimulation/Ground"
 
                 float2 positionXZ = input.positionWS.xz;
 
-                // Bilinear clearance gives the trail rounded edges instead of hard 0.25 m squares.
+                // Bilinear clearance gives the trail rounded edges instead of hard 0.5 m squares.
                 half clearance = SampleGrassCellStateSmooth(positionXZ).r;
                 half cutMask = smoothstep(_CutEdge - _CutEdgeSoftness, _CutEdge + _CutEdgeSoftness, clearance);
                 half edge = 1.0h - abs(cutMask * 2.0h - 1.0h);

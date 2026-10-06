@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using EncosyTower.Pooling;
 using EncosyTower.UnityExtensions;
 using UnityEngine;
 
@@ -81,10 +82,14 @@ namespace GrassSimulation.Gameplay
         private readonly List<CuttableProp> _props = new();
         private readonly List<PropDrop> _drops = new();
         private readonly int[] _brokenByKind = new int[KIND_COUNT];
+        private readonly Dictionary<GameObject, GameObjectPool> _dropPools = new();
+        private readonly Dictionary<CuttableProp, Material[]> _halfMaterials = new();
 
         private Transform _collector;
         private GameObject _layout;
         private Mesh _halfMesh;
+        private GameObject _halfTemplate;
+        private GameObjectPool _halfPool;
         private float _chipTimer;
 
         public IReadOnlyList<CuttableProp> Props => _props;
@@ -106,6 +111,14 @@ namespace GrassSimulation.Gameplay
         private static float Range(Vector2 range)
             => Random.Range(range.x, range.y);
 
+        private static void ReturnDrop(PropDrop drop)
+        {
+            if (drop.target.IsValid())
+            {
+                drop.pool.Return(drop.target.gameObject, ReturningStrategy.Default);
+            }
+        }
+
         public void Load(GameObject layout, Transform collector)
         {
             ResetAll();
@@ -117,6 +130,7 @@ namespace GrassSimulation.Gameplay
 
             _collector = collector;
             _props.Clear();
+            _halfMaterials.Clear();
             _layout = layout.IsValid() ? Instantiate(layout, transform) : null;
 
             if (_layout.IsValid())
@@ -141,7 +155,7 @@ namespace GrassSimulation.Gameplay
 
             for (var i = 0; i < dropCount; i++)
             {
-                Destroy(_drops[i].target.gameObject);
+                ReturnDrop(_drops[i]);
             }
 
             _drops.Clear();
@@ -225,6 +239,24 @@ namespace GrassSimulation.Gameplay
 
         private void OnDestroy()
         {
+            foreach (var pool in _dropPools.Values)
+            {
+                pool.Dispose();
+            }
+
+            _dropPools.Clear();
+
+            if (_halfPool != null)
+            {
+                _halfPool.Dispose();
+                _halfPool = null;
+            }
+
+            if (_halfTemplate.IsValid())
+            {
+                Destroy(_halfTemplate);
+            }
+
             if (_halfMesh.IsValid())
             {
                 Destroy(_halfMesh);
@@ -246,9 +278,62 @@ namespace GrassSimulation.Gameplay
                     continue;
                 }
 
-                Destroy(drop.target.gameObject);
+                ReturnDrop(drop);
                 _drops.RemoveAt(i);
             }
+        }
+
+        private GameObjectPool CreatePool(GameObject source, string poolName)
+        {
+            var root = new GameObject(poolName).transform;
+            root.SetParent(parent: transform, worldPositionStays: false);
+
+            return new GameObjectPool {
+                Prefab = new GameObjectPrefab { Source = source, Parent = root },
+                RentingStrategy = RentingStrategy.Activate,
+                ReturningStrategy = ReturningStrategy.Deactivate,
+                TrimCloneSuffix = true,
+            };
+        }
+
+        private GameObjectPool GetDropPool(GameObject prefab)
+        {
+            if (_dropPools.TryGetValue(prefab, out var pool) == false)
+            {
+                pool = CreatePool(prefab, $"Pool {prefab.name}");
+                _dropPools.Add(prefab, pool);
+            }
+
+            return pool;
+        }
+
+        private GameObjectPool GetHalfPool()
+        {
+            if (_halfPool != null)
+            {
+                return _halfPool;
+            }
+
+            _halfMesh = FruitHalfMesh.Create();
+            _halfTemplate = new GameObject("FruitHalfTemplate");
+            _halfTemplate.transform.SetParent(parent: transform, worldPositionStays: false);
+            _halfTemplate.SetActive(false);
+            _halfTemplate.AddComponent<MeshFilter>().sharedMesh = _halfMesh;
+            _halfTemplate.AddComponent<MeshRenderer>();
+
+            _halfPool = CreatePool(_halfTemplate, "Pool FruitHalf");
+            return _halfPool;
+        }
+
+        private Material[] GetHalfMaterials(CuttableProp prop)
+        {
+            if (_halfMaterials.TryGetValue(prop, out var materials) == false)
+            {
+                materials = new[] { prop.RindMaterial, prop.FleshMaterial };
+                _halfMaterials.Add(prop, materials);
+            }
+
+            return materials;
         }
 
         private bool AdvanceChipTimer(float deltaTime)
@@ -323,22 +408,18 @@ namespace GrassSimulation.Gameplay
 
         private void SpawnHalf(CuttableProp prop, Vector3 center, Vector3 side)
         {
-            if (_halfMesh.IsInvalid())
-            {
-                _halfMesh = FruitHalfMesh.Create();
-            }
-
-            var half = new GameObject("FruitHalf");
+            var pool = GetHalfPool();
+            var half = pool.RentGameObject(RentingStrategy.Default);
             var halfTransform = half.transform;
             var facing = Quaternion.FromToRotation(Vector3.right, side);
             halfTransform.SetPositionAndRotation(center + side * HALF_GAP, facing);
             halfTransform.localScale = prop.HalfSize;
-            half.AddComponent<MeshFilter>().sharedMesh = _halfMesh;
-            half.AddComponent<MeshRenderer>().sharedMaterials = new[] { prop.RindMaterial, prop.FleshMaterial };
+            half.GetComponent<MeshRenderer>().sharedMaterials = GetHalfMaterials(prop);
 
             var flipAxis = Vector3.Cross(side, Vector3.up);
 
             _drops.Add(new PropDrop {
+                pool = pool,
                 target = halfTransform,
                 velocity = side * Range(_halfSideSpeed) + Vector3.up * _halfUpSpeed,
                 startScale = prop.HalfSize,
@@ -372,14 +453,18 @@ namespace GrassSimulation.Gameplay
                 var angle = (i + Random.value * 0.5f) / count * Mathf.PI * 2f;
                 var outward = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
                 var velocity = outward * Range(_dropOutwardSpeed) + Vector3.up * Range(_dropUpwardSpeed);
-                var instance = Instantiate(prefab, prop.EffectPosition, Random.rotation);
-                instance.transform.localScale *= prop.DropScale;
+                var pool = GetDropPool(prefab);
+                var instance = pool.RentGameObject(RentingStrategy.Default).transform;
+                var scale = prefab.transform.localScale * prop.DropScale;
+                instance.SetPositionAndRotation(prop.EffectPosition, Random.rotation);
+                instance.localScale = scale;
 
                 _drops.Add(new PropDrop {
-                    target = instance.transform,
+                    pool = pool,
+                    target = instance,
                     velocity = velocity,
                     spin = Random.onUnitSphere * _dropSpinDegrees,
-                    startScale = instance.transform.localScale,
+                    startScale = scale,
                 });
             }
         }
@@ -442,6 +527,7 @@ namespace GrassSimulation.Gameplay
 
         private struct PropDrop
         {
+            public GameObjectPool pool;
             public Transform target;
             public Vector3 velocity;
             public Vector3 spin;

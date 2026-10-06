@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using EncosyTower.Pooling;
 using EncosyTower.UnityExtensions;
 using UnityEngine;
 
@@ -65,6 +66,9 @@ namespace GrassSimulation.Gameplay
 
         private readonly List<Slash> _slashes = new();
 
+        private GameObject _slashTemplate;
+        private GameObjectPool _slashPool;
+
         private static float Range(Vector2 range)
             => Random.Range(range.x, range.y);
 
@@ -85,6 +89,20 @@ namespace GrassSimulation.Gameplay
             SpawnSlash(center, direction, fruitSize);
         }
 
+        private void OnDestroy()
+        {
+            if (_slashPool != null)
+            {
+                _slashPool.Dispose();
+                _slashPool = null;
+            }
+
+            if (_slashTemplate.IsValid())
+            {
+                Destroy(_slashTemplate);
+            }
+        }
+
         private void Update()
         {
             var deltaTime = Time.deltaTime;
@@ -98,7 +116,7 @@ namespace GrassSimulation.Gameplay
                 {
                     if (slash.line.IsValid())
                     {
-                        Destroy(slash.line.gameObject);
+                        _slashPool.Return(slash.line.gameObject, ReturningStrategy.Default);
                     }
 
                     _slashes.RemoveAt(i);
@@ -170,8 +188,25 @@ namespace GrassSimulation.Gameplay
             var along = tilt * direction * (fruitSize * _slashLength * 0.5f);
             var middle = center + Vector3.up * _slashHeight;
 
-            var go = new GameObject("FruitSlash");
-            var line = go.AddComponent<LineRenderer>();
+            var line = GetSlashPool().RentGameObject(RentingStrategy.Default).GetComponent<LineRenderer>();
+
+            var slash = new Slash { line = line, start = middle - along, end = middle + along };
+            AnimateSlash(slash);
+            _slashes.Add(slash);
+        }
+
+        private GameObjectPool GetSlashPool()
+        {
+            if (_slashPool != null)
+            {
+                return _slashPool;
+            }
+
+            _slashTemplate = new GameObject("FruitSlashTemplate");
+            _slashTemplate.transform.SetParent(parent: transform, worldPositionStays: false);
+            _slashTemplate.SetActive(false);
+
+            var line = _slashTemplate.AddComponent<LineRenderer>();
             line.sharedMaterial = _slashMaterial;
             line.positionCount = SLASH_POINTS;
             line.useWorldSpace = true;
@@ -181,9 +216,17 @@ namespace GrassSimulation.Gameplay
             line.receiveShadows = false;
             line.widthCurve = new AnimationCurve(new Keyframe(0f, 0f), new Keyframe(0.5f, 1f), new Keyframe(1f, 0f));
 
-            var slash = new Slash { line = line, start = middle - along, end = middle + along };
-            AnimateSlash(slash);
-            _slashes.Add(slash);
+            var root = new GameObject("Pool FruitSlash").transform;
+            root.SetParent(parent: transform, worldPositionStays: false);
+
+            _slashPool = new GameObjectPool {
+                Prefab = new GameObjectPrefab { Source = _slashTemplate, Parent = root },
+                RentingStrategy = RentingStrategy.Activate,
+                ReturningStrategy = ReturningStrategy.Deactivate,
+                TrimCloneSuffix = true,
+            };
+
+            return _slashPool;
         }
 
         private void AnimateSlash(Slash slash)

@@ -1804,6 +1804,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e23ac46938541584fa77cf04dde95ffd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: GrassSimulation.UI::GrassSimulation.UI.PreviewScreen
+  _fieldWindow: {fileID: 6207350353409964071}
   _backButton: {fileID: 2445445855807338118}
   _titleText: {fileID: 301095477768179099}
   _goalsText: {fileID: 8425636157406977584}

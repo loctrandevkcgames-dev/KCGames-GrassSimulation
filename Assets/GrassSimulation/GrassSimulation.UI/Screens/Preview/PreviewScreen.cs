@@ -1,6 +1,7 @@
 using EncosyTower.PageFlows.MonoPages;
 using EncosyTower.Processing;
 using EncosyTower.PubSub;
+using EncosyTower.UnityExtensions;
 using GrassSimulation.Gameplay;
 using TMPro;
 using UnityEngine;
@@ -11,6 +12,9 @@ namespace GrassSimulation.UI
     public sealed class PreviewScreen : MonoPageBase<GrassPageFlowScopes>
     {
         private const float POLL_INTERVAL = 0.1f;
+
+        [SerializeField]
+        private RectTransform _fieldWindow;
 
         [SerializeField]
         private Button _backButton;
@@ -52,15 +56,21 @@ namespace GrassSimulation.UI
         private TMP_Text _startLabel;
 
         private MessagePublisher.Publisher<LevelCommandScope> _commands;
+        private MessagePublisher.Publisher<CameraScope> _cameraEvents;
         private Processor.Hub<GameplayScope> _hub;
         private ProcessingContext _processingContext;
+        private readonly Vector3[] _corners = new Vector3[4];
+        private Canvas _canvas;
+        private Rect _publishedViewport;
         private LevelId _appliedLevel;
         private float _pollTimer;
         private bool _hasApplied;
+        private bool _hasPublishedViewport;
 
         private void Awake()
         {
             _commands = GlobalMessenger.Publisher.Scope<LevelCommandScope>();
+            _cameraEvents = GlobalMessenger.Publisher.Scope<CameraScope>();
             _hub = GlobalProcessor.Instance.Scope<GameplayScope>();
             _processingContext = ProcessingContext.DropIfNoHandler(warnNoHandler: false);
 
@@ -75,12 +85,21 @@ namespace GrassSimulation.UI
         {
             _hasApplied = false;
             _pollTimer = 0f;
+            _hasPublishedViewport = false;
+            _canvas = _fieldWindow.GetComponentInParent<Canvas>();
+
+            if (_canvas.IsValid())
+            {
+                _canvas = _canvas.rootCanvas;
+            }
 
             Refresh();
         }
 
         private void Update()
         {
+            PublishViewportIfChanged();
+
             _pollTimer += Time.unscaledDeltaTime;
 
             if (_pollTimer < POLL_INTERVAL)
@@ -108,6 +127,35 @@ namespace GrassSimulation.UI
         {
             UiAudio.Tap();
             StartRequestedMsg.Publish(in _commands, new StartRequestedMsg());
+        }
+
+        private void PublishViewportIfChanged()
+        {
+            if (_canvas.IsInvalid())
+            {
+                return;
+            }
+
+            _fieldWindow.GetWorldCorners(_corners);
+
+            var camera = _canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : _canvas.worldCamera;
+            var min = RectTransformUtility.WorldToScreenPoint(camera, _corners[0]);
+            var max = RectTransformUtility.WorldToScreenPoint(camera, _corners[2]);
+            var screen = new Vector2(Screen.width, Screen.height);
+
+            if (PreviewViewport.TryFromScreen(min, max, screen, out var viewport) == false)
+            {
+                return;
+            }
+
+            if (_hasPublishedViewport && PreviewViewport.IsSame(_publishedViewport, viewport))
+            {
+                return;
+            }
+
+            _hasPublishedViewport = true;
+            _publishedViewport = viewport;
+            PreviewViewportChangedMsg.Publish(in _cameraEvents, new PreviewViewportChangedMsg(viewport));
         }
 
         private void Refresh()

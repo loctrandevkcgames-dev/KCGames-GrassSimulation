@@ -22,5 +22,17 @@ namespace GrassSimulation.UI
                 }
             }
         }
+
+        public static bool TryGetPopupKey(LevelState state, out string key)
+        {
+            if (state == LevelState.UpgradeChoice)
+            {
+                key = UiPageKeys.UPGRADE_POPUP;
+                return true;
+            }
+
+            key = null;
+            return false;
+        }
     }
 }

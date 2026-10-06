@@ -17,6 +17,9 @@ namespace GrassSimulation.UI
         private MonoPageCodex _codex;
         private string _shownKey;
         private string _pendingKey;
+        private string _shownPopupKey;
+        private string _wantedPopupKey;
+        private bool _isPopupBusy;
 
         public IPageFlowScopeCollectionApplier PageFlowScopeCollectionApplier => _flowScopesApplier;
 
@@ -52,6 +55,8 @@ namespace GrassSimulation.UI
 
         private void Route(LevelState state)
         {
+            RoutePopup(state);
+
             if (GrassPageRoutes.TryGetScreenKey(state, out var key) == false
                 || key == _shownKey
                 || key == _pendingKey
@@ -84,6 +89,60 @@ namespace GrassSimulation.UI
             finally
             {
                 _pendingKey = null;
+            }
+        }
+
+        private void RoutePopup(LevelState state)
+        {
+            GrassPageRoutes.TryGetPopupKey(state, out var key);
+
+            _wantedPopupKey = key;
+
+            if (_isPopupBusy == false && key != _shownPopupKey)
+            {
+                _ = SyncPopupAsync();
+            }
+        }
+
+        private async UnityTask SyncPopupAsync()
+        {
+            if (_flowScopesApplier.TryGet(out var scopes) == false)
+            {
+                return;
+            }
+
+            _isPopupBusy = true;
+
+            try
+            {
+                var publisher = _codex.FlowContext.Publisher.Scope(scopes.Popup);
+
+                while (_wantedPopupKey != _shownPopupKey)
+                {
+                    var context = new PageContext {
+                        ShowOptions = PageTransitionOptions.NoTransition,
+                        HideOptions = PageTransitionOptions.NoTransition,
+                    };
+
+                    if (_shownPopupKey != null)
+                    {
+                        await HideActivePageMessage.Async.Publish(in publisher, new HideActivePageMessage(context));
+
+                        _shownPopupKey = null;
+                    }
+                    else
+                    {
+                        var key = _wantedPopupKey;
+
+                        await ShowPageMessage.Async.Publish(in publisher, new ShowPageMessage(key, context));
+
+                        _shownPopupKey = key;
+                    }
+                }
+            }
+            finally
+            {
+                _isPopupBusy = false;
             }
         }
     }

@@ -260,7 +260,9 @@ namespace GrassSimulation.Sandbox
 
         private LevelSnapshot ProvideLevelSnapshot(GetLevelSnapshotRequest request)
         {
-            return LevelSnapshot.From(_session, _level, _levelIndex, _catalog.Count);
+            var unlockedKinds = PlantKindMask.FromTier(_plants, _session.Growth.UpgradeTier);
+
+            return LevelSnapshot.From(_session, _level, _levelIndex, _catalog.Count, unlockedKinds);
         }
 
         private ProgressSnapshot ProvideProgressSnapshot(GetProgressSnapshotRequest request)

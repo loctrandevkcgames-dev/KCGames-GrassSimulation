@@ -6,6 +6,7 @@
         "GrassSimulation.Progression",
         "EncosyTower.Core",
         "EncosyTower.PubSub",
+        "EncosyTower.Processing",
         "UnityEditor.TestRunner",
         "UnityEngine.TestRunner"
     ],

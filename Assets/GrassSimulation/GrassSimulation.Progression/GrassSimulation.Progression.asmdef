@@ -4,6 +4,7 @@
     "references": [
         "EncosyTower.Core",
         "EncosyTower.PubSub",
+        "EncosyTower.Processing",
         "GrassSimulation.Gameplay"
     ],
     "includePlatforms": [],

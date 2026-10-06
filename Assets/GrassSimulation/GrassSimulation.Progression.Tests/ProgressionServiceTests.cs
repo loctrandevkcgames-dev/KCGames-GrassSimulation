@@ -226,7 +226,7 @@ public sealed class ProgressionServiceTests
     [Test]
     public void FindFirstIncomplete_ReturnsTheFirstLevelNotCompleted()
     {
-        var catalog = CreateCatalog("level-01", "level-02", "level-03", out var objects);
+        var catalog = TestCatalogs.Create("level-01", "level-02", "level-03", out var objects);
 
         try
         {
@@ -246,7 +246,7 @@ public sealed class ProgressionServiceTests
         }
         finally
         {
-            DestroyAll(objects);
+            TestCatalogs.DestroyAll(objects);
         }
     }
 
@@ -265,49 +265,5 @@ public sealed class ProgressionServiceTests
         Assert.That(_service.IsCompleted(s_level), Is.False);
         Assert.That(_service.IsGranted(new RewardId.FirstWin(s_level)), Is.False);
         Assert.That(_service.IsGranted(new RewardId.Star(s_level, 1)), Is.False);
-    }
-
-    private static LevelCatalog CreateCatalog(string first, string second, string third, out Object[] objects)
-    {
-        var ids = new[] { first, second, third };
-        var catalog = ScriptableObject.CreateInstance<LevelCatalog>();
-        var levels = new Object[ids.Length];
-
-        for (var i = 0; i < ids.Length; i++)
-        {
-            var level = ScriptableObject.CreateInstance<LevelDefinition>();
-            var serializedLevel = new SerializedObject(level);
-
-            serializedLevel.FindProperty("_id").stringValue = ids[i];
-            serializedLevel.ApplyModifiedPropertiesWithoutUndo();
-            levels[i] = level;
-        }
-
-        var serializedCatalog = new SerializedObject(catalog);
-        var array = serializedCatalog.FindProperty("_levels");
-
-        array.arraySize = levels.Length;
-
-        for (var i = 0; i < levels.Length; i++)
-        {
-            array.GetArrayElementAtIndex(i).objectReferenceValue = levels[i];
-        }
-
-        serializedCatalog.ApplyModifiedPropertiesWithoutUndo();
-
-        objects = new Object[levels.Length + 1];
-        levels.CopyTo(objects, 0);
-        objects[levels.Length] = catalog;
-        return catalog;
-    }
-
-    private static void DestroyAll(Object[] objects)
-    {
-        var count = objects.Length;
-
-        for (var i = 0; i < count; i++)
-        {
-            Object.DestroyImmediate(objects[i]);
-        }
     }
 }

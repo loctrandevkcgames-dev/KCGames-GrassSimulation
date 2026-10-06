@@ -1,450 +1,423 @@
-# Thiết kế game cắt cỏ Grass Route
+# Grass Route
 
-*Phân tích tham chiếu Grass Master và thiết kế gameplay đề xuất*
+GDD v2.2 • Mobile màn hình dọc • 06/10/2026
 
-Phiên bản 1.0 • Ngày 05 tháng 10 năm 2026 • Ngôn ngữ tiếng Việt
+# 1 Mục tiêu và phạm vi
+Grass Route là game cắt cỏ. Người chơi lái máy để thu hoạch đúng loại cây, chọn đường đi để lấy XP và nâng cấp máy ngay trong lượt. Game cần mang lại ba cảm giác: cắt đã tay, điều khiển dễ hiểu, và mỗi lựa chọn đường đi đều có lợi ích rõ ràng.
 
-### Định hướng đề xuất
+Tài liệu này **chỉ mô tả gameplay**: luật chơi, hành vi của người chơi và kết quả mong đợi. Tài liệu không ghi số liệu cân bằng. Những chỗ cần số được đánh dấu **\[Cân bằng\]**; giá trị khởi tạo nằm ở file Cân bằng.
 
-Grass Route là game cắt cỏ góc nhìn từ trên xuống, nơi người chơi chọn đường di chuyển để thu hoạch mục tiêu và nâng máy ngay trong lượt chơi. Điểm cần kiểm chứng là cảm giác cắt có đủ hấp dẫn để chơi lại, và lựa chọn giữa cắt nhanh mục tiêu với tích lũy sức mạnh có tạo ra những đường đi khác nhau hay không.
+## Tài liệu liên quan
+| File | Nội dung |
+| :---- | :---- |
+| [Grass Route — Cân bằng D1](Grass-Route-Balance-D1.md) | Giá trị khởi tạo cho mọi chỗ \[Cân bằng\], bảng vệt cắt, remote config |
+| [Grass Route — Danh sách màn D1](Grass-Route-Levels-D1.md) | 50 màn, quota, timer và kiểm tra màn hợp lệ |
+| [Grass Route — Tracking events D1](Grass-Route-Tracking-D1.md) | Sự kiện, tham số và KPI cho test D1 |
+| Grass Route — Kế hoạch test D1 (Google Doc) | Mục tiêu, biến thể, cỡ mẫu, ngưỡng quyết định |
 
-Tài liệu dành cho Game Designer, Unity Developer, Artist và QA. Bản này mô tả luật chơi, thông số khởi tạo, cấu trúc nội dung, giao diện, phạm vi sản xuất và tiêu chí kiểm chứng. Các con số là giả thuyết thiết kế cần playtest, không phải thông số trích xuất từ game tham chiếu.
+## Ngoài phạm vi tài liệu này
+| Nội dung | Thuộc về |
+| :---- | :---- |
+| Tốc độ, bán kính, độ bền cây, mốc XP, timer, giới hạn lỗi | Tài liệu cân bằng |
+| Coin, giá máy/booster, phần thưởng, quảng cáo, IAP, skin | Tài liệu economy và monetization |
+| Art style, tỷ lệ hình ảnh, reveal sân vườn | Art direction (chốt cùng UA) |
+| Giải pháp kỹ thuật | Tài liệu technical của team dev |
 
-### Phạm vi và giả định
+Baseline không có combat, đối thủ, nhiên liệu, kho chứa cỏ, xây dựng, story quest hay multiplayer. Nền tảng là mobile Android/iOS, màn hình dọc, một người chơi.
 
-- Thiết kế nền cho mobile Android và iOS, màn hình dọc, một người chơi. Người dùng chưa chốt nền tảng cho ý tưởng này; phương án PC được đánh giá riêng ở cuối tài liệu.
+## Trạng thái quyết định
+| Hạng mục | Quyết định cho bản test D1 | Còn cần kiểm chứng |
+| :---- | :---- | :---- |
+| Core gameplay | Lái, tự cắt, thu hoạch quota, XP, nâng cấp | Cảm giác cắt, đường đi có ý nghĩa không |
+| Chế độ chính | Contract có timer; màn 1–3 không timer | Timer có nên là điều kiện thua (A/B sau) |
+| Máy | Standard và Wide; Heavy để sau | Wide có đổi hành vi chơi rõ không |
+| Booster | Turbo và Extra Time; Power Blade để sau | Booster có cứu được lượt thua không |
+| Chế độ phụ | Cleanup sau khi thắng; Zen và sân thử để sau | Người chơi có nhu cầu dọn tự do không |
+| Vùng bảo vệ | Chỉ cảnh báo, lỗi làm mất sao 2; chế độ thua để trong remote config | Có tạo quyết định hay chỉ gây mất vui |
+| XP cây cấp 4 | Không cho XP (hướng b) | — |
 
-- Bối cảnh sân vườn cách điệu. Thu hoạch cây trồng trong khu vực cho phép; bảo vệ hoa hoặc vật trang trí được đánh dấu riêng.
+# 2 Trải nghiệm và vòng lặp
+## Bốn yêu cầu trải nghiệm
+| Yêu cầu | Biểu hiện trong lượt |
+| :---- | :---- |
+| Cắt đã tay | Máy đi qua để lại vệt sạch rõ ràng; cây chưa cắt xong cho thấy tiến độ |
+| Điều khiển có kiểm soát | Rẽ, dừng và đi sát mép luống được mà máy không bị trôi khó đoán |
+| Đường đi có ý nghĩa | Chọn giữa đi thẳng lấy quota hoặc đi vòng lấy XP để mở vùng khó |
+| Tăng trưởng có ích | Lên cấp mở loại cây mới; mỗi lựa chọn nâng cấp thay đổi cách dọn sân |
 
-- Không cần story quest. Tiến trình đi qua các khu vườn và bài toán đường cắt.
+## Vòng lặp trong lượt
+Xem map và quota → chọn máy và booster → lái tới vùng cây cắt được → cắt và nhận XP → lên cấp, chọn nâng cấp → quay lại vùng khó hoặc đi đường tối ưu tới mục tiêu → hoàn thành hoặc thất bại → xem kết quả, thử chiến thuật khác.
 
-- Đây là GDD tiền sản xuất đủ để triển khai prototype. Chưa phải cam kết doanh thu, lịch phát hành hay chứng minh nhu cầu thị trường.
+## Vòng lặp giữa các lượt
+Thắng thì mở màn kế tiếp → mở máy có đặc tính khác → thử máy trên bố cục mới → quay lại màn cũ để lấy sao còn thiếu. Màn chính mở khi thắng màn trước, không cần đủ sao.
 
-### Cách đọc tài liệu
+## Một quyết định điển hình
+Quota yêu cầu hoa và bụi cấp 2\. Đi nhánh hoa thì có tiến độ quota ngay; đi nhánh cỏ thì lên cấp 2 sớm. Người chơi có thể lấy XP trước rồi cắt bụi và hoa, hoặc lấy hoa trước rồi nhặt thêm XP trên đường. Khoảng cách, mật độ cây và lựa chọn nâng cấp phải làm thứ tự này thực sự khác nhau.
 
-Trang 2 là phân tích có nguồn và giới hạn chứng cứ. Từ trang 3 trở đi là thiết kế mới. Ưu tiên đọc luật cắt, tăng trưởng và mẫu level trước khi làm hệ thống meta hoặc monetization.
+# 3 Luồng lượt chơi và kết quả
+| Trạng thái | Người chơi làm gì | Thời gian |
+| :---- | :---- | :---- |
+| Preview | Xem toàn map, quota, timer và mục tiêu phụ | Chưa chạy |
+| Loadout | Chọn máy đã sở hữu, chọn booster mang theo | Chưa chạy |
+| Playing | Lái, tự cắt, kích hoạt booster | Timer chạy |
+| Chọn nâng cấp | Chọn Lưỡi rộng hoặc Động cơ khỏe | Timer và booster dừng |
+| Pause | Tiếp tục, chơi lại, đổi cài đặt hoặc thoát | Timer và booster dừng |
+| Thắng | Xem sao; chọn màn tiếp hoặc dọn tiếp (Cleanup) | Dừng |
+| Thua | Xem nguyên nhân và quota còn thiếu; chơi lại hoặc đổi máy | Dừng |
+| Cleanup | Dọn tiếp chính sân vừa thắng | Không timer |
 
-| Phần | Nội dung |
-| --- | --- |
-| 2 | Tham chiếu và đánh giá thiết kế |
-| 3–7 | Concept, vòng lặp, điều khiển, luật cắt và tăng trưởng |
-| 8–11 | Mục tiêu, level, onboarding, progression và economy |
-| 12–15 | UI, cảm giác chơi, kỹ thuật, phạm vi, kiểm chứng và PC |
+**Thắng** khi hoàn thành tất cả quota chính. **Thua** khi hết giờ mà còn thiếu quota, hoặc khi vượt giới hạn lỗi bảo vệ nếu chế độ hoa bảo vệ gây thua đang bật. Nếu quota hoàn thành đúng lúc hết giờ thì tính thắng. Mục tiêu phụ không ảnh hưởng tới thắng thua.
 
-## 1 Phân tích game tham chiếu
+Thứ tự xét kết quả: (1) vượt giới hạn lỗi bảo vệ thì thua; (2) nếu chưa vượt giới hạn lỗi và quota đã đủ thì thắng; (3) nếu quota chưa đủ và hết giờ thì thua. Sau khi kết quả hiện ra, không cộng thêm XP hay cây.
 
-### Thông tin xác minh từ nguồn chính thức
+Khi người chơi rời ứng dụng rồi quay lại, game mở Pause. Nếu ứng dụng bị đóng giữa lượt, người chơi quay về màn chuẩn bị; baseline không có tiếp tục lượt dở. Booster đã dùng thì không hoàn lại.
 
-Grass Master – Cutting Game do SayGames Ltd phát hành. Trang Google Play mô tả lượt chơi có danh sách cây cần cắt, thời gian giới hạn và máy cắt tăng kích thước cùng tốc độ khi thu hoạch. Nội dung có nhiều loại thực vật và booster. Trang cửa hàng ghi có quảng cáo và mua hàng trong ứng dụng. Nguồn S1, truy cập ngày 05 tháng 10 năm 2026.
+**Chơi lại (Retry)** giữ nguyên map và máy đã chọn; reset sân, XP, cấp và timer. Booster chưa dùng vẫn còn trong kho; loại đã hết thì không tự trang bị lại. Có lựa chọn quay về Loadout để đổi chiến thuật.
 
-Một số review trên cùng trang phản ánh camera gần khiến né chướng ngại khó, tiến trình giữa màn chưa hấp dẫn và mong muốn chế độ tự do. Đây là ý kiến cá nhân, chưa đại diện cho toàn bộ người chơi. Chưa chơi bản cài đặt nên chưa xác minh economy, công thức tăng trưởng, tần suất quảng cáo hoặc luật chướng ngại hiện hành.
+# 4 Điều khiển và camera
+Chạm vào vùng trống ở nửa dưới màn hình để tạo joystick nổi. Kéo để chọn hướng và tốc độ: kéo ít thì đi chậm, kéo hết thì đi tốc độ tối đa. Thả tay thì máy giảm tốc rồi dừng. Máy tự cắt, không cần nút cắt.
 
-### Đánh giá dưới góc độ thiết kế
+Nút pause và nút booster nhận thao tác riêng; chạm vào nút không tạo joystick. Joystick chỉ hiện khi chạm, mờ dần rồi ẩn khi thả. Sau khi đóng Pause hoặc màn chọn nâng cấp, input trở về trung tính để máy không lao đi ngoài ý muốn.
 
-Suy luận từ cấu trúc được mô tả: giá trị cốt lõi nằm ở biến đổi mặt sân ngay khi đi qua và sức mạnh tăng trong một lượt chơi. Danh sách mục tiêu tạo lý do chọn vùng cắt; tăng trưởng tạo lý do đi vòng để chuẩn bị. Nếu vùng nào cũng mang giá trị gần giống nhau, lựa chọn đường đi sẽ yếu và gameplay dễ trở thành di chuyển liên tục đến khi thanh tiến độ đầy.
+Hành vi điều khiển mong muốn (giá trị cụ thể là **\[Cân bằng\]**):
 
-| Yếu tố | Nhận định thiết kế | Hướng xử lý trong bản mới |
-| --- | --- | --- |
-| Phản hồi cắt | Biến đổi dễ đọc là động lực tức thời | Mặt sân sạch rõ, VFX ngắn, âm thanh theo mật độ |
-| Tăng trưởng | Có thể tạo cảm giác vượt giới hạn | Mốc nâng cấp đổi vùng tiếp cận và cách cắt |
-| Mục tiêu | Có thể khiến người chơi cân nhắc thứ tự | Mục tiêu chính cộng mục tiêu phụ tùy chọn |
-| Timer | Tạo áp lực nhưng dễ xung đột thư giãn | Tách Contract có timer và Zen không timer |
-| Nội dung | Chỉ đổi màu cây sẽ thiếu quyết định mới | Thay bố cục, đường hẹp, ngưỡng máy và vùng bảo vệ |
+* Máy dừng nhanh hơn khởi động.
 
-### Những điểm cần kiểm tra nếu có video hoặc bản chơi
+* Máy xoay hình theo hướng đi đủ nhanh để người chơi đọc được hướng.
 
-Đo thời gian mỗi lượt; kiểm tra điều khiển, camera ở kích thước máy lớn nhất, cách xử lý cây chưa đủ cấp, cách phân bổ mục tiêu và điều kiện thua. Ghi lại sự khác biệt giữa màn đầu và màn sau thay vì suy đoán từ hình quảng cáo.
+* Có vùng chết ở tâm joystick để chạm nhẹ không làm máy trôi.
 
-S1 • Google Play • https://play.google.com/store/apps/details?id=com.grass.cut.game&hl=en
+* Cả ba máy dùng chung một kích thước thân, nên đi được những lối như nhau.
 
-## 2 Concept và trải nghiệm mục tiêu
+**Va chạm:** thân máy chạm đá, hàng rào hoặc biên map thì trượt dọc theo mép, không bật lùi. **Lưỡi cắt không xuyên qua đá và hàng rào**: phần lưỡi nằm sau vật cản không cắt và không chạm cây bên kia. Cây chưa đủ cấp không chặn đường; máy đi qua được nhưng không cắt. Khi chạm vào, cây đó hiện ngắn biểu tượng cấp khóa.
 
-### Ý tưởng trong một câu
+**Camera** nhìn nghiêng từ trên xuống. Máy nằm gần tâm hoặc hơi thấp hơn tâm màn hình; luôn thấy vùng phía trước và toàn bộ phạm vi cắt lớn nhất. Camera không zoom gần hơn khi nâng cấp và không quay hướng đột ngột gây chóng mặt. Preview nhìn toàn sân. Mini-map chưa thuộc phạm vi ban đầu.
 
-Điều khiển máy cắt qua một khu vườn để hoàn thành đơn thu hoạch; chọn giữa đường ngắn đến mục tiêu và đường vòng lấy nguyên liệu nâng máy, rồi tận dụng nâng cấp để cắt các vùng trước đó chưa xử lý được.
+# 5 Cây và luật cắt
+## Đơn vị thu hoạch
+Một đơn vị thu hoạch là một mục tiêu cắt được: cụm cỏ nhỏ, bông hoa, quả, cây rau hoặc một cây lớn. Cỏ và hoa tính theo cụm nhỏ; quả và cây lớn tính theo từng vật thể. Một dưa hấu tính là một dưa hấu; một cây táo tính là một cây, hoặc số quả được ghi rõ trong quota. Hình ảnh to hơn không có nghĩa là được tính nhiều đơn vị hơn.
 
-### Đối tượng và nhịp chơi
+## Cách cắt
+Cây nhận tiến độ cắt khi thỏa cả ba điều kiện: lưỡi chạm vùng cắt của cây, cây nằm trong khu được phép cắt, và cấp yêu cầu của cây không cao hơn cấp cắt hiện tại. Tiến độ tăng theo thời gian lưỡi tiếp xúc nhân sức cắt, chia độ bền của cây. Cây chỉ cộng quota và XP **một lần khi cắt xong**. Cây cắt dở giữ tiến độ tới hết lượt.
 
-Giả định đối tượng là người thích thao tác đơn giản, thấy tiến độ trực quan và tối ưu nhẹ. Một màn Contract dự kiến 90–150 giây; một phiên 5–10 phút. Các con số này hướng dẫn bố trí nội dung ban đầu, chưa phải dữ liệu hành vi thực tế.
+Hệ quả người chơi phải hiểu được: cây càng bền thì càng cần đi chậm, đi qua nhiều lần, hoặc có sức cắt cao. Khi đi nhanh, vệt cắt xong thực tế sẽ hẹp hơn phạm vi lưỡi, vì phần mép lưỡi chạm cây ít thời gian hơn phần giữa. Game phải cho người chơi thấy điều này:
 
-| Trụ cột | Biểu hiện phải thấy khi chơi | Tiêu chí kiểm chứng |
-| --- | --- | --- |
-| Cắt có cảm giác tốt | Vệt sạch theo đúng vùng lưỡi cắt, mật độ âm thanh tương ứng | Người chơi muốn tiếp tục cắt khi mục tiêu gần xong |
-| Đường đi có ý nghĩa | Đường vòng đổi lấy XP; máy rộng hơn bị hạn chế ở lối hẹp | Cùng một level có ít nhất hai cách hoàn thành khả thi |
-| Tăng trưởng dễ đọc | Cây chưa cắt được có biểu tượng cấp, mốc nâng hiện trước | Người mới giải thích được tại sao cần nâng máy |
-| Thử lại nhanh | Thông báo nguyên nhân thất bại và nút chơi lại rõ | Vào lại màn trong khoảng 3 giây sau khi bấm |
+* Cây cắt dở phải khác rõ với cây cắt xong (đổi hình, rung, vết cắt, tán lá giảm).
 
-### Điểm khác biệt được đề xuất
+* Khi lưỡi đang chạm cây bền mà máy đi quá nhanh để cắt xong, có tín hiệu báo cần đi chậm lại.
 
-Khi lên cấp, người chơi chọn lưỡi rộng hoặc động cơ khỏe. Lưỡi rộng tăng khả năng dọn diện tích, nhưng cần tránh đường hẹp và vùng bảo vệ. Động cơ khỏe tăng tốc độ cắt cây cứng, phù hợp đường mục tiêu có mật độ cao. Máy không phình toàn bộ thân để tránh va chạm khó đoán; nâng cấp thay đổi vùng lưỡi cắt và hiệu suất.
+* **Cần thử nghiệm:** máy tự giảm tốc khi đang cắt cây bền, so với để người chơi tự chỉnh.
 
-Chế độ Zen mở sau onboarding cho phép dọn sạch một khu vườn với cùng hệ thống cắt, không timer và không thưởng tiền lặp vô hạn. Nó đáp ứng nhu cầu thư giãn mà không buộc mọi level Contract phải mất áp lực.
+Cỏ thường phải cắt xong liên tục ở tốc độ tối đa. Cỏ dày và cây cấp cao hơn thì không bắt buộc.
 
-### Giới hạn phạm vi
+## Bảng cây
+| Loại cây | Cấp yêu cầu | Độ bền | XP | Vai trò |
+| :---- | :---- | :---- | :---- | :---- |
+| Cỏ thường | 1 | Rất thấp | Thấp | Nguồn XP đầu lượt |
+| Hoa / nấm nhỏ | 1 | Thấp | Thấp | Thu hoạch đúng loại |
+| Cỏ dày | 2 | Trung bình | Trung bình | Nguồn XP sau cấp 2 |
+| Bụi thấp | 2 | Trung bình | Trung bình | Mục tiêu cần chuẩn bị bằng XP |
+| Cà rốt / bắp cải / dâu lớn | 2 | Trung bình | Trung bình | Mỗi vật thể là một mục tiêu |
+| Bụi lớn / bụi cứng | 3 | Cao | Cao | Cần sức cắt |
+| Dưa hấu / bí ngô | 3 | Cao | Cao | Đích nổi bật trong sân |
+| Cây ăn quả lớn | 4 | Rất cao | Không | Rất lớn; cắt tại gốc |
+| Quả khổng lồ | 4 | Rất cao | Không | Phần thưởng thị giác |
+| Hoa bảo vệ | Không cắt được | — | Không | Luống phải tránh |
 
-Prototype không có đối thủ, combat, multiplayer, nhiên liệu, kho chứa cỏ, bán hàng theo chuyến hoặc xây dựng nông trại. Các hệ thống đó làm lệch trọng tâm kiểm chứng đường cắt. Tên Grass Route là tên làm việc, chưa kiểm tra thương hiệu.
+Giá trị cụ thể của độ bền và XP là **\[Cân bằng\]**. Bảng chỉ quy định thứ tự tương đối.
 
-## 3 Vòng lặp chơi và trạng thái màn
+**XP cây cấp 4 (đã chốt hướng b):** cây cấp 4 không cho XP, chỉ cho quota và hiệu ứng hoàn thành. Lý do: cấp 4 là cấp cao nhất nên XP này vô dụng, và cách này không phụ thuộc vào Power Blade.
 
-### Vòng lặp trong một màn
+## Kích thước và khả năng đọc
+| Tầng | Kích thước so với máy |
+| :---- | :---- |
+| 1 | Cụm thấp |
+| 2 | Khối vừa, thấy rõ cạnh máy |
+| 3 | Lớn hơn thân máy |
+| 4 | Rất lớn, nhìn thấy từ xa như đích đến |
 
-Xem mục tiêu và bố cục → chọn đường xuất phát → cắt cây đủ cấp → nhận XP và tăng tiến độ → chọn nâng cấp ở mốc XP → mở khả năng xử lý vùng mới → hoàn thành mục tiêu hoặc hết giờ → nhận kết quả và thử đường tốt hơn.
+Các tầng phải khác nhau bằng silhouette và tỷ lệ, không chỉ bằng màu. Cây cao không được che máy, HUD quota hay đường tiếp cận; vùng gốc phải luôn nhìn rõ.
 
-### Luồng bắt đầu và kết thúc
+## Thu hoạch quả và cây ăn quả
+* **Quả nằm trên sân:** máy cắt trực tiếp, quả biến mất khi thu hoạch xong; không cần nhặt riêng.
 
-| Trạng thái | Luật | Điều kiện chuyển |
-| --- | --- | --- |
-| Preview | Hiển thị toàn map, mục tiêu, timer; chưa có input di chuyển | Bấm bắt đầu |
-| Playing | Timer chạy, cắt tự động khi lưỡi chạm cây | Đủ XP hoặc điều kiện kết thúc |
-| UpgradeChoice | Dừng timer và simulation; hai lựa chọn kèm tác dụng | Chọn một nâng cấp |
-| Success | Khóa thưởng một lần; timer dừng, cho thấy mục tiêu hoàn thành | Bấm nhận thưởng hoặc dọn tiếp |
-| Failure | Dừng simulation; ghi mục tiêu còn thiếu và nguyên nhân | Chơi lại hoặc về chọn màn |
-| Cleanup | Sau thắng, dọn tự do; không phát sinh tiền hoặc XP meta | Bấm kết thúc |
+* **Quả trên cây:** cắt xong cây thì nhận trọn số quả đã báo trước, không phải chờ hay nhặt quả rơi. Ví dụ cây táo báo ×5: cắt xong cộng 5 táo một lần.
 
-### Quy tắc phân xử
+* Quota cây và quota quả là hai kiểu nhiệm vụ khác nhau. Trong baseline, một cây chỉ đóng góp cho một loại quota.
 
-Một tick simulation xử lý di chuyển, cắt, cập nhật mục tiêu, rồi kiểm tra thắng trước kiểm tra hết giờ. Nếu cùng tick hoàn thành mục tiêu và timer về 0, kết quả là thắng. Khi mở nâng cấp, toàn bộ thời gian gameplay dừng; quay lại ứng dụng sau background cũng mở pause. Màn kết quả không cho tiếp tục nhận cỏ hoặc cộng thưởng lần hai.
+## Cây lớn và vùng cắt
+Cây lớn chỉ cắt được ở vùng gốc, không cắt được bằng cách chạm tán lá từ xa. Thân cây chưa đủ cấp không gây thua và không chặn máy, chỉ hiện tín hiệu khóa. Kích thước thân và gốc cây không được bít con đường duy nhất. Khi cắt xong, cây đổ ngắn hoặc tan thành mảnh cách điệu, để lại mặt sân sạch; không gây sát thương và không chặn đường.
 
-### Một tình huống chơi mẫu
+## Hoa bảo vệ
+Hoa bảo vệ phải khác rõ với hoa thu hoạch bằng luống, silhouette và icon, không chỉ bằng màu.
 
-Người chơi cần 70 đơn vị hoa đỏ và 25 bụi cây. Máy cấp 1 chưa cắt được bụi. Đường trực tiếp dẫn đến hoa đỏ, nhưng XP ở đó chưa đủ lên cấp. Một nhánh cỏ thường ở bên trái cung cấp XP an toàn. Người chơi cắt nhánh này, lên cấp 2 rồi quay sang bụi cây, hoặc cắt hoa trước và bổ sung XP trên đường nối. Lựa chọn tốt phụ thuộc khoảng cách và độ rộng lưỡi đã chọn.
+**Định nghĩa lỗi:** một **luống** hoa bảo vệ là một đơn vị tính lỗi, dù luống có bao nhiêu bông. Mỗi luống được viền rõ trên sân.
 
-### Vòng lặp giữa các màn
+* Lưỡi chạm một luống thì tính một lỗi.
 
-Hoàn thành đơn → mở khu vườn kế tiếp → nhận tiền mua ngoại hình và tiến độ bộ sưu tập → thử cơ chế mới → quay lại màn để đạt mục tiêu phụ. Phần meta không tăng sức mạnh bắt buộc; độ khó màn dựa trên công cụ trong lượt để designer có thể cân bằng đường đi.
+* Tiếp xúc liên tục với cùng luống chỉ tính một lần. Rời luống một khoảng thời gian rồi quay lại mới tính lỗi mới. **\[Cân bằng\]**
 
-## 4 Điều khiển camera và luật di chuyển
+* Một lần đi qua chạm nhiều luống thì mỗi luống tính một lỗi. Level design phải tránh đặt các luống sát nhau tới mức phạm vi cắt lớn nhất chạm nhiều luống trên lối đi chính.
 
-### Input nền tảng mobile
+* Lưỡi không xuyên qua đá và hàng rào, nên luống có rào bao quanh được an toàn.
 
-Dùng joystick nổi: chạm vào vùng trống ở nửa dưới màn hình để tạo tâm joystick, kéo theo hướng muốn đi. Biên độ nhỏ điều khiển tốc độ chậm; biên độ tối đa cho tốc độ đầy đủ. Thả tay thì máy giảm tốc về đứng yên. Cắt là tự động, không cần nút thao tác thứ hai.
+Hoa bảo vệ có hai chế độ: **chỉ cảnh báo** (mặc định bản test D1: lỗi làm mất sao 2\) và **gây thua** (vượt giới hạn lỗi thì thua; giới hạn là **\[Cân bằng\]**). Chế độ được chọn bằng remote config. Khi chạm luống, hiện cảnh báo ngắn tại chỗ chạm và số lỗi hiện tại. Hoa bảo vệ không cho XP hay quota. Power Blade cũng không cắt được hoa bảo vệ.
 
-| Thông số prototype | Giá trị khởi tạo | Ý nghĩa |
-| --- | --- | --- |
-| Tốc độ tối đa | 4,0 m/s | Tăng sau khi kiểm tra khả năng kiểm soát |
-| Gia tốc và giảm tốc | 12 và 18 m/s² | Dừng nhanh hơn khởi động |
-| Tốc độ xoay hình máy | 540 độ/s | Hướng di chuyển theo input; model xoay theo sau |
-| Joystick dead zone | 10% bán kính | Giảm trôi do ngón tay |
-| Bán kính thân máy | 0,30 m | Collision cố định suốt màn |
-| Bán kính cắt ban đầu | 0,65 m | Vùng cắt tách khỏi vùng collision |
+# 6 Cấp máy và hai lựa chọn nâng cấp
+XP chỉ tồn tại trong lượt, reset khi chơi lại hoặc sang màn mới. Cả ba máy đều bắt đầu ở cấp 1\. Mỗi lần lên cấp, người chơi chọn một trong hai nâng cấp; chọn hướng nào thì cũng mở cùng nhóm cây.
 
-### Camera
+| Cấp | Nhóm cây mở | Quyền chọn |
+| :---- | :---- | :---- |
+| 1 | Cỏ thường, hoa thu hoạch | Máy gốc |
+| 2 | Cỏ dày, bụi thấp, rau/quả vừa | Một trong hai nâng |
+| 3 | Bụi lớn, dưa hấu, bí ngô | Một trong hai nâng |
+| 4 | Cây ăn quả lớn, quả khổng lồ | Một trong hai nâng |
 
-Góc nhìn 3D nghiêng khoảng 55–65 độ, orthographic, máy gần trung tâm nhưng ưu tiên nhìn phía trước hướng di chuyển. Bản prototype dùng framing cố định theo level, không zoom sát hơn khi nâng máy. Lưỡi tối đa và vùng cảnh báo phía trước phải cùng nằm trong khung nhìn. Preview cho thấy toàn map, còn mini-map chỉ thêm nếu playtest cho thấy người chơi mất phương hướng.
+Mốc XP của từng cấp là **\[Cân bằng\]**.
 
-### Va chạm và khả năng đọc đường
+| Nâng cấp | Tác dụng | Đánh đổi |
+| :---- | :---- | :---- |
+| Lưỡi rộng | Tăng bán kính cắt | Dọn diện tích tốt hơn; dễ chạm luống bảo vệ hơn |
+| Động cơ khỏe | Tăng sức cắt và tốc độ | Cắt cây bền nhanh hơn, vệt cắt xong rộng hơn khi đi nhanh; phạm vi lưỡi không đổi |
 
-Thân máy va vào đá, hàng rào và rìa map thì trượt dọc bề mặt, không bật lùi. Cây chưa đủ cấp không chặn thân; lưỡi chạy qua nhưng không cắt. Những cây này xuất hiện biểu tượng khóa ngắn khi tiếp xúc. Khi nâng lưỡi, model và vòng phạm vi chuyển kích thước trong khoảng 0,25 giây, timer vẫn dừng đến khi đóng lựa chọn.
+Người chơi có thể chọn lặp một hướng hoặc phối hợp hai hướng. Lưỡi rộng không làm thân máy to ra. Chỉ số nâng cấp cộng vào chỉ số gốc của máy, sau đó mới áp dụng booster. Không có nâng cấp vĩnh viễn trong baseline.
 
-### Quy tắc chống khó chịu
+Nếu người chơi nhận đủ XP vượt nhiều mốc cùng lúc, game xử lý lần lượt từng cấp và từng lựa chọn; lượt chơi dừng trong suốt chuỗi này và người chơi không mất quyền chọn nào.
 
-- Không lấy màu làm tín hiệu duy nhất; loại cây có silhouette và icon riêng.
+# 7 Ba máy và Loadout
+| Máy | Bán kính cắt | Tốc độ | Sức cắt | Phù hợp |
+| :---- | :---- | :---- | :---- | :---- |
+| Standard | Trung bình | Trung bình | Trung bình | Cân bằng; có sẵn từ đầu |
+| Wide | Rộng | Chậm hơn | Trung bình | Sân rộng; chuyển vùng chậm, dễ chạm luống bảo vệ |
+| Heavy | Hẹp hơn | Trung bình | Cao | Sân nhiều cây bền; phủ diện tích hẹp hơn |
 
-- Không đặt mục tiêu sau một hành lang hẹp hơn đường kính thân máy cộng 0,25 m.
+Chỉ số cụ thể là **\[Cân bằng\]**. Ba máy dùng chung kích thước thân, nên không được mô tả máy nào đi được lối mà máy khác không đi được. Wide và Heavy mở dần theo tiến trình màn chơi; cách sở hữu thuộc tài liệu economy.
 
-- Không cho VFX cỏ che vùng bảo vệ hoặc mục tiêu còn thiếu.
+Không đổi máy giữa lượt. Loadout hiển thị chỉ số dạng so sánh, đánh đổi của từng máy và kho booster.
 
-- Nút pause và nâng cấp không nằm trong vùng joystick. Có tùy chọn tắt rung và giảm hiệu ứng.
+**Sân thử:** cho dùng cả máy chưa sở hữu trên cùng một bố cục để so sánh. Sân có cỏ, bụi và luống hoa bảo vệ, có tùy chọn đặt cấp để thử cây khó. Sân thử không tính tiến trình và không tiêu booster.
 
-## 5 Luật cắt mục tiêu và dữ liệu cây
+# 8 Booster và lượt Assisted
+| Booster | Hiệu ứng | Vai trò |
+| :---- | :---- | :---- |
+| Turbo | Tạm thời tăng tốc độ và sức cắt; không vượt cấp | Dọn nhanh hoặc chuyển vùng |
+| Power Blade | Tạm thời tăng sức cắt và cấp cắt thêm một cấp | Cắt một nhóm cây cao hơn cấp thực |
+| Extra Time | Cộng thêm thời gian ngay lập tức | Cứu phần quota còn thiếu |
 
-### Đơn vị gameplay
+Thời lượng và mức tăng là **\[Cân bằng\]**.
 
-Map được chia thành các ô logic 0,25 × 0,25 m. Một ô chứa tối đa một đơn vị cây có loại, cấp yêu cầu, độ bền và XP. Số cây hiển thị có thể nhiều hơn số ô logic; toàn bộ cụm trong ô biến mất khi ô bị cắt. Mục tiêu đếm ô logic, không đếm từng lá hoặc từng instance trang trí.
+**Luật dùng booster:**
 
-### Điều kiện cắt
+* Ở Loadout, mỗi loại booster mang tối đa một cái. Mang theo không bị tiêu; chỉ tiêu khi kích hoạt. Mỗi loại dùng tối đa một lần trong lượt.
 
-Ô nằm trong swept area của lưỡi giữa vị trí trước và hiện tại, nằm trong khu được phép cắt và có RequiredTier ≤ MachineTier thì nhận tiến độ cắt. Swept area giúp máy đi nhanh vẫn cắt liên tục. Mỗi ô nhận thời gian tiếp xúc thực tế trong tick, không nhận toàn bộ tick nếu chỉ lướt qua cạnh.
+* Turbo và Power Blade không chạy cùng lúc. Khi một loại đang chạy, loại kia bị khóa tạm; bấm vào lúc bị khóa không tiêu booster.
 
-CutProgress tăng theo Δt × CuttingPower ÷ Toughness. Khi đạt 1, ô được đánh dấu Cut trước khi phát event. Mỗi ô chỉ cộng mục tiêu và XP một lần. Cây chưa cắt xong giữ tiến độ trong màn và đổi hình nhẹ để người chơi biết đã xử lý; restart khôi phục toàn bộ dữ liệu ban đầu.
+* Extra Time dùng được cả khi Turbo hoặc Power Blade đang chạy.
 
-| Loại | Cấp | Độ bền | XP mỗi ô | Vai trò |
-| --- | --- | --- | --- | --- |
-| Cỏ thường | 1 | 0,12 | 1 | Nguồn tăng trưởng dễ lấy |
-| Hoa thu hoạch | 1 | 0,18 | 1 | Mục tiêu định tuyến |
-| Cỏ dày | 2 | 0,30 | 2 | Tăng trưởng hiệu quả sau cấp 2 |
-| Bụi thấp | 2 | 0,45 | 3 | Mục tiêu buộc chuẩn bị |
-| Bụi cứng | 3 | 0,65 | 4 | Đích cuối của màn nâng cao |
-| Hoa bảo vệ | Không cắt | — | 0 | Ràng buộc đường cắt |
+* Chỉ kích hoạt được trong lúc Playing, trước khi có kết quả. Không dùng để hồi sinh sau khi thua.
 
-### Phạm vi mẫu và kiểm soát số liệu
+* Pause và màn chọn nâng cấp làm thời lượng booster dừng lại. Kết thúc lượt, chơi lại hoặc vào Cleanup thì xóa hiệu ứng đang chạy.
 
-CuttingPower khởi tạo là 1,0. Ví dụ cỏ thường cần khoảng 0,12 giây tiếp xúc, bụi thấp cần 0,45 giây ở cấp đủ điều kiện. Đây là thời gian mẫu; phải cân với vận tốc và footprint để đường đi bình thường không để lại cỏ vụn khó chịu. Designer xem heatmap phần cắt dở trước khi tăng tốc máy.
+* Khi Power Blade hết, cấp cắt trở về cấp thực. XP đã kiếm vẫn giữ; nếu XP giúp lên cấp thực trong lúc booster chạy thì cấp đó được giữ.
 
-### Hoàn thành và phần cỏ sót
+* Không dùng booster trong Zen, Cleanup và sân thử.
 
-Mục tiêu thắng là số lượng thu hoạch cụ thể, không yêu cầu xóa mọi pixel. Các ô sát biên được bố trí trong phạm vi lưỡi có thể chạm. Cleanup hiển thị tỷ lệ diện tích đã cắt; khi còn dưới 1% ô hợp lệ và mỗi cụm còn lại không quá 4 ô, có nút dọn nốt tùy chọn, không tính vào điểm kỹ năng.
+**Assisted:** kích hoạt bất kỳ booster nào sẽ đánh dấu lượt là Assisted. Lượt Assisted vẫn mở màn tiếp nhưng chỉ nhận sao 1\. Dùng máy Wide hoặc Heavy không làm lượt bị tính Assisted. Không tăng độ khó màn chơi để buộc người chơi dùng booster.
 
-## 6 Tăng trưởng và lựa chọn nâng cấp
+# 9 Thiết kế màn và onboarding
+Mỗi Contract có từ một tới vài quota chính, tối đa một quota phụ, và một quyết định nổi bật. Màn 1–3 là màn hướng dẫn, không có timer và không thể thua. Thời lượng màn là **\[Cân bằng\]**; chỉ chỉnh timer sau khi đường thắng và cảm giác điều khiển đã ổn, không dùng việc thiếu thời gian để che bố cục yếu.
 
-### Mốc cấp trong lượt chơi
+## Thứ tự giới thiệu cơ chế
+| Bước | Giới thiệu | Điều người chơi cần hiểu |
+| :---- | :---- | :---- |
+| 1 | Lái và cắt cỏ | Di chuyển làm sân sạch và quota tăng |
+| 2 | Hoa thu hoạch | Phải tìm đúng loại mục tiêu |
+| 3 | Cấp 2 | Lấy XP trước rồi quay lại cắt bụi; mở Extra Time |
+| 4 | Hai đường đi | Đi vòng có ích; mở Turbo |
+| 5 | Hoa bảo vệ | Lưỡi chạm luống thì bị lỗi |
+| 6 | Sân rộng, luống hẹp | Lưỡi rộng dọn nhanh hơn nhưng dễ chạm luống bảo vệ; mở Wide |
+| 7 | Củng cố | Thứ tự vùng, kiểm soát tốc độ, chọn nâng cấp |
+| 8 | Cấp 3 và quả lớn | Chuẩn bị XP cho dưa hấu/bí ngô; mở Power Blade (sau bản D1) |
+| 9 | Tổng hợp và giới thiệu cấp 4 | Cây rất lớn là đích cuối; mở Heavy (sau bản D1) |
 
-XP chỉ dùng trong màn và reset khi vào màn mới. Cấp máy quyết định nhóm cây được phép cắt. Khi đạt mốc, cấp tăng trước khi mở bảng lựa chọn; mọi phương án đều mở cùng nhóm cây để không tạo tình huống chọn sai và kẹt mục tiêu.
+Hoa bảo vệ được đặt trước bài học Lưỡi rộng, để rủi ro của Lưỡi rộng có thật khi người chơi học nó. Mỗi bước có thể kéo dài nhiều màn; số màn mỗi bước là **\[Cân bằng\]**.
 
-| Cấp đạt được | XP tích lũy | Khả năng mở | Lựa chọn |
-| --- | --- | --- | --- |
-| 1 | 0 | Cỏ và hoa thu hoạch | Máy nền |
-| 2 | 100 | Cỏ dày và bụi thấp | Lưỡi rộng hoặc động cơ khỏe |
-| 3 | 260 | Bụi cứng | Lưỡi rộng hoặc động cơ khỏe |
-| 4 | 480 | Tối ưu tốc độ dọn | Lưỡi rộng hoặc động cơ khỏe |
+**Tutorial theo hành động:** người chơi tự làm đúng thì bỏ qua hướng dẫn tương ứng. Màn đầu có một chỉ dẫn kéo để lái; không khóa input để hiện nhiều đoạn chữ. Nếu người chơi đứng yên một lúc thì hiện gợi ý ngắn.
 
-### Hai hướng nâng cấp
+## Điều kiện để một màn hợp lệ
+* Mọi quota có dư số cây so với yêu cầu trên sân (mức dư là **\[Cân bằng\]**).
 
-Lưỡi rộng tăng bán kính cắt thêm 0,15 m, tối đa 1,10 m. Động cơ khỏe tăng CuttingPower thêm 0,30 và tốc độ tối đa thêm 0,25 m/s, tối đa 4,75 m/s. Có thể chọn lặp lại cùng hướng hoặc phối hợp. Không nâng ngẫu nhiên và không giới thiệu ba chỉ số mới cùng lúc.
+* Cấp tối đa mà màn cho phép đạt được phải khớp với bước onboarding. Màn chưa giới thiệu cấp 3 thì tổng XP trên sân không được đủ để lên cấp 3\.
 
-Lưỡi rộng phù hợp thảm cỏ thoáng, nhưng dễ chạm hoa bảo vệ. Động cơ phù hợp bụi cứng hoặc tuyến vòng dài. Không ép lựa chọn chỉ bằng số lớn hơn: level phải có bố cục khiến cả hai hướng đạt lợi ích thực tế. Nếu playtest luôn chọn một hướng, điều chỉnh geometry và mật độ trước khi thêm nhiều nâng cấp.
+* XP để lên cấp 2 có trong vùng cấp 1 đi tới được; XP lên cấp 3 lấy được từ vùng cấp 1 và 2\.
 
-### Ràng buộc để màn luôn giải được
+* XP để lên cấp 4 phải lấy đủ từ cây cấp 1–3. Không đặt nguồn XP bắt buộc trong cây cấp 4\. Luôn có đường lên cấp mà không cần booster.
 
-- XP cần đạt cấp 2 phải có trong vùng cấp 1 tiếp cận được từ điểm xuất phát.
+* Lối chính đủ rộng cho thân máy đi qua thoải mái. Không giấu cây bắt buộc ở chỗ lưỡi không chạm tới.
 
-- XP cần đạt cấp 3 phải có trong tổng vùng cấp 1 và 2; không đặt toàn bộ XP cần thiết trong vùng cấp 3.
+* Ở lối chính, phạm vi cắt lớn nhất có thể đạt trong màn không được buộc người chơi chạm luống bảo vệ.
 
-- Mỗi loại mục tiêu có ít nhất 110% quota trong map để người chơi có lựa chọn vị trí.
+* Mọi màn chính có đường thắng bằng Standard không booster; phải thử với nâng Lưỡi rộng, nâng Động cơ khỏe và phối hợp.
 
-- Kiểm tra đường hợp lệ với bán kính lưỡi lớn nhất, đặc biệt ở màn có hoa bảo vệ.
+* Có map rộng thể hiện lợi ích của Wide, và map nhiều cây bền thể hiện lợi ích của Heavy khi đã đủ cấp.
 
-- Validator kiểm tra ngưỡng XP và số lượng cây; designer vẫn phải chạy cả hai build để xác nhận timer.
+* Mỗi cơ chế mới có màn củng cố trước khi sang cơ chế tiếp theo. Không có vật cản bất ngờ trên con đường duy nhất.
 
-### Booster trong prototype
+## Sau onboarding: ba chương
+Sau bước 9 không thêm cơ chế mới. Các màn tiếp theo ghép lại những cơ chế đã học theo ba chương, mỗi chương có một chủ đề bố cục riêng:
 
-Chưa có booster trong vòng lặp mặc định. Một công cụ debug có thể bật CuttingPower ×1,5 trong 8 giây để kiểm tra tác động. Chỉ đưa booster thành nội dung sau khi nhịp nền đã chơi tốt; booster không được che lỗi level hoặc thay thế yêu cầu lựa chọn đường đi.
+| Chương | Chủ đề | Điểm nhấn gameplay |
+| :---- | :---- | :---- |
+| A | Vườn rau | Rau xếp luống dài, dưa và bí; sân rộng hợp với Wide |
+| B | Vườn hoa | Nhiều luống bảo vệ, lối hẹp; cân nhắc Lưỡi rộng và chọn máy |
+| C | Vườn cây ăn quả | Cây táo và quả khổng lồ ở xa; đường dài, cần tích XP lên cấp 4 |
 
-## 7 Mục tiêu chế độ và mức thử thách
+Không bắt buộc màn nào cũng phải lên được cấp 4; màn ngắn cấp 1–3 vẫn được dùng để đổi nhịp.
 
-### Chế độ Contract
+## Loại màn
+| Loại | Hành vi |
+| :---- | :---- |
+| Hướng dẫn | Màn 1–3. Không timer, không thể thua |
+| Thường | Luật Contract đầy đủ |
+| Khó | Timer chặt hơn (hệ số là **\[Cân bằng\]**), thường có ba quota. Đặt ở cuối mỗi nhịp năm màn |
+| Thư giãn | Không timer, không thể thua, bố cục ngắn. Xen giữa các màn khó để người chơi nghỉ |
 
-Mỗi màn có 1–3 quota thu hoạch. Thắng khi toàn bộ quota đạt và số lỗi bảo vệ không vượt giới hạn. Thua khi hết giờ hoặc vượt số lỗi. Màn 1–3 không có thua do bảo vệ; từ màn giới thiệu hoa bảo vệ mới áp dụng luật này.
+Màn Khó và Thư giãn được báo ở Preview. Màn Thư giãn không có timer nên sao 2 chỉ xét điều kiện không có lỗi bảo vệ.
 
-### Hoa bảo vệ và xử lý lỗi
+## Mẫu bố cục: màn "Hai đường đi"
+Sân hình chữ nhật, xuất phát ở góc tây nam.
 
-Hoa bảo vệ được đặt trong các luống riêng có viền và icon. Khi vùng lưỡi chạm một ô bảo vệ, tính một lỗi, phát feedback đỏ và hiển thị số lỗi còn được phép. Một cụm tiếp xúc liên tục chỉ tính một lỗi; cụm đó chỉ được tính lỗi lại sau khi lưỡi rời hoàn toàn ít nhất 1 giây. Hoa không cho XP và không biến mất. Giới hạn mặc định là 3 lỗi; lỗi thứ 4 kết thúc màn.
+* **Vùng A (tây):** cỏ thường, là nguồn XP lên cấp 2\.
 
-Để tránh cảm giác bị phạt bất ngờ, phạm vi lưỡi phải đọc được ở vùng bảo vệ. Màn đầu của cơ chế có khoảng trống đủ cho máy cấp 1 và giải thích cách đi chậm. Nếu player không nhận ra nguyên nhân lỗi, bỏ cơ chế khỏi bản đầu thay vì tăng số lỗi cho phép.
+* **Vùng B (đông):** hoa đỏ, quota chính.
 
-| Biến thể | Thắng | Áp lực | Thời điểm dùng |
-| --- | --- | --- | --- |
-| Thu hoạch cơ bản | Đạt quota | Timer rộng | Onboarding |
-| Chọn tuyến | Quota nằm ở nhiều nhánh | Khoảng cách và XP | Màn 4 trở đi |
-| Bảo vệ luống hoa | Quota cộng số lỗi trong giới hạn | Độ rộng lưỡi và tốc độ | Sau khi hiểu tăng trưởng |
-| Zen | Dọn diện tích tự chọn | Không timer hoặc lỗi thất bại | Mở sau màn 3 |
+* **Vùng C (bắc):** bụi thấp, quota chính, cần cấp 2\.
 
-### Đánh giá kết quả
+* **Đường nối phía bắc:** cỏ dày, quota phụ.
 
-Một sao cho hoàn thành mục tiêu chính. Sao thứ hai khi còn ít nhất 20% thời gian khởi tạo. Sao thứ ba khi không mắc lỗi và thu đủ một quota phụ do designer đặt. Quota phụ có thể là một loại cây ngoài đường chính; phải hiển thị từ preview. Sao không cộng dồn sức mạnh, chỉ dùng mở ngoại hình hoặc bộ sưu tập.
+Hai tuyến hợp lệ: **A → C → B** (lên cấp 2 trước khi tới bụi) và **B → A → C** (lấy hoa trước, rồi lấy XP cho đủ cấp). Cả hai tuyến đều phải có đường đi được và đủ thời gian. Tổng XP trên sân không đủ để lên cấp 3\. Số lượng cây và timer là **\[Cân bằng\]**; designer đo bằng chơi thực tế trước khi chốt.
 
-### Chơi lại và khả năng hoàn thiện
+# 10 Sao và chế độ phụ
+| Sao | Điều kiện | Lượt Assisted |
+| :---- | :---- | :---- |
+| Sao 1 | Hoàn thành quota chính | Được nhận |
+| Sao 2 | Thắng, không có lỗi bảo vệ, và còn dư thời gian theo ngưỡng màn | Không nhận |
+| Sao 3 | Thắng và hoàn thành quota phụ đã báo ở Preview | Không nhận |
 
-Sau thắng có thể vào Cleanup, hoặc quay lại để tối ưu sao. Thất bại cho thấy loại cây còn thiếu và vị trí vùng còn mục tiêu trên preview. Retry giữ seed và bố cục để người chơi học được từ lần trước. Không đổi quota ngẫu nhiên khi bấm chơi lại.
+Ngưỡng thời gian dư là **\[Cân bằng\]**. Màn không có hoa bảo vệ thì mặc định đạt điều kiện không lỗi. Màn không có quota phụ thì sao 3 dùng một mục tiêu phụ riêng, ghi rõ ở Preview; không dùng tiêu chí ẩn. Mỗi sao được tính độc lập, không cần có sao 2 mới lấy được sao 3\. Mở màn tiếp chỉ cần sao 1\.
 
-## 8 Level design và mẫu màn có thể triển khai
+## Cleanup
+Cleanup mở sau khi thắng, cho dọn tiếp chính sân vừa thắng. Chế độ này giữ nguyên sân và các nâng cấp đã chọn, bỏ timer, không tính tiến trình hay sao. Cấp cắt được nâng lên **cấp cao nhất mà người chơi đã được giới thiệu trong onboarding**, không tự động lên cấp 4, để không cắt trước những cây mà người chơi chưa "giành được". Cây cao hơn mức này vẫn hiện tín hiệu khóa. Khi vào chế độ, có giải thích ngắn. Không có lựa chọn nâng cấp thêm.
 
-### Quy trình thiết kế level
+## Zen
+Zen mở sau khi người chơi đã học xong cấp 2\. Zen dùng các sân tự do đã mở trong tiến trình, với máy đã chọn và cấp cắt tối đa theo cùng luật như Cleanup. Không có XP, quota, timer hay thất bại.
 
-Chốt quyết định muốn kiểm tra → bố trí điểm xuất phát và vùng mục tiêu → đặt nguồn XP trước vùng khóa → thêm một đường thay thế → chạy build rộng và build khỏe → đặt timer dựa trên đường hoàn thành có sai số → kiểm tra quota, camera và đường tiếp cận. Không dùng số lượng cỏ làm thước đo độ khó duy nhất.
+## Dọn nốt
+Mục tiêu dọn là diện tích cây cắt được, không tính luống bảo vệ hay nền đá. Khi phần còn lại đủ nhỏ và rải rác (ngưỡng là **\[Cân bằng\]**), hiện nút "dọn nốt" tùy chọn. Nút này không ảnh hưởng tới sao Contract.
 
-| Màn | Cơ chế mới | Quyết định chính | Timer mẫu |
-| --- | --- | --- | --- |
-| 1 | Di chuyển và cắt | Theo một dải cỏ rõ | 90 s |
-| 2 | Quota hoa | Đến đúng vùng cần thu hoạch | 100 s |
-| 3 | Cấp 2 | Lấy XP trước khi cắt bụi | 110 s |
-| 4 | Hai tuyến | Đi vòng tăng máy hay đi thẳng | 120 s |
-| 5 | Áp dụng lưỡi rộng | Dọn thảm lớn hoặc tuyến hẹp | 120 s |
-| 6 | Hoa bảo vệ | Đi chậm và tránh chạm lưỡi | 130 s |
-| 7–8 | Phối hợp đã học | Thứ tự vùng mục tiêu | 130–140 s |
-| 9–10 | Cấp 3 và quota phụ | Chuẩn bị trước vùng cứng | 140–150 s |
+# 11 HUD và phản hồi gameplay
+**Tài liệu tham khảo UI/UX:** [https\://claude.ai/artifact/NXex2acfyUmZ4RPE7Li77a](https://claude.ai/artifact/NXex2acfyUmZ4RPE7Li77a)
 
-### Level mẫu 04 Sân vườn hai nhánh
+Sân chơi chiếm toàn màn hình, không chia sân thành khung nhỏ giữa các panel. HUD nhỏ, nằm sát mép; không hiện tiêu đề level hay bảng chỉ số thường trực. Mô tả quota phụ và luật chi tiết nằm ở Preview và Pause.
 
-Map 18 × 14 m, ô logic 0,25 m. Điểm xuất phát (2; 2). Vùng A ở phía tây có 120 ô cỏ thường; vùng B ở phía đông có 90 ô hoa đỏ; vùng C ở phía bắc có 40 ô bụi thấp. Mục tiêu chính là 70 hoa đỏ và 25 bụi thấp. Mốc cấp 2 là 100 XP; timer 120 giây. Quota phụ là 30 trong số 34 ô cỏ dày ở đường nối phía bắc.
+| Thành phần | Hiển thị |
+| :---- | :---- |
+| Quota chính | Icon loại cây và số còn thiếu ở góc trên trái; xong thì đổi thành dấu tick |
+| Timer | Nhỏ, ở giữa phía trên; cảnh báo nhẹ khi sắp hết giờ |
+| XP và cấp | Thanh mảnh kèm nhãn cấp, không có panel riêng |
+| Pause | Góc trên phải, ngoài vùng lái |
+| Booster | Ba icon ở dưới phải; phân biệt rõ trạng thái sẵn sàng, đang chạy, khóa tạm, đã dùng |
+| Joystick | Chỉ hiện khi chạm vùng lái; ẩn khi thả |
+| Lỗi bảo vệ | Cảnh báo ngắn tại luống và số lỗi hiện tại |
 
-Tuyến A → C → B cung cấp cấp 2 trước khi tới bụi. Tuyến B → A → C xử lý hoa sớm và có thể lên cấp trên đoạn A trước C. Mỗi vùng có lối vào đủ rộng; không cần cấp 3 để thắng. Đây là layout khởi tạo, chưa chứng minh hai tuyến tương đương cho đến khi graybox và đo thời gian.
+HUD che càng ít sân càng tốt; phải kiểm tra trên màn hình nhỏ. Icon nhỏ nhưng vùng chạm đủ rộng; chữ và mục tiêu đọc được trên mọi nền. Có tùy chọn chuyển cụm booster sang trái. Zen và Cleanup không hiện những thông tin không dùng tới như timer hay booster.
 
-### Điều chỉnh độ khó
+## Phản hồi
+* Cỏ cắt xong đổi ngay sang nền sạch. Mảnh cỏ bay thấp, không che đường.
 
-Giảm timer chỉ sau khi đường đi và phạm vi cắt đã rõ. Tăng khoảng cách, phân tán mục tiêu hoặc thêm vùng bảo vệ từng yếu tố một. Màn sau một cơ chế mới là màn củng cố, không thêm luật khác ngay. Không spawn vật cản ngẫu nhiên vào đường đã được xác nhận là tuyến hoàn thành duy nhất.
+* Cây cắt dở hiện tiến độ rõ ràng; có tín hiệu khi máy đi quá nhanh để cắt xong cây bền (xem mục 5).
 
-## 9 Onboarding và tiến trình nội dung
+* Âm cắt thay đổi nhẹ theo mật độ cây; không có âm gắt cho từng cây.
 
-### Ba màn đầu
+* Đạt một quota: âm xác nhận và icon bật nhẹ một lần.
 
-| Mốc | Hướng dẫn | Hành vi cần quan sát |
-| --- | --- | --- |
-| 0–10 giây đầu | Một chỉ dẫn kéo để lái, dải cỏ trước máy | Người chơi tự di chuyển và thấy cỏ biến mất |
-| Màn 1 | Một mục tiêu cỏ và thanh đếm | Hiểu rằng cắt làm tiến độ tăng |
-| Màn 2 | Hoa có icon tương ứng quota | Tìm đúng loại thay vì cắt toàn map |
-| Màn 3 | Bụi khóa và XP ở nhánh gần | Lên cấp rồi quay lại vùng đã khóa |
-| Nâng lần đầu | Hai lựa chọn có preview phạm vi hoặc tốc độ | Hiểu lựa chọn tác động ngay trong màn |
+* Nâng cấp: cho thấy phạm vi hoặc khả năng đã thay đổi.
 
-Hướng dẫn xuất hiện theo sự kiện, không theo timer cố định. Nếu người chơi đã tự làm đúng thì bỏ qua chỉ dẫn tương ứng. Không khóa input để trình bày nhiều đoạn văn. Khi đứng yên 8 giây ở màn đầu, hiện gợi ý nhỏ; người chơi vẫn có thể bỏ qua.
+* Turbo và Power Blade có hiệu ứng khác nhau. Extra Time hiện "+thời gian" ngay tại timer rồi biến mất, không có popup.
 
-### Cấu trúc nội dung bản đầu
+* Cây lớn cắt xong có hiệu ứng hoàn thành rõ hơn, nhưng không che đường hay khóa điều khiển.
 
-Đề xuất bản đầu có 30 màn thủ công trong 3 chủ đề sân vườn. Mỗi nhóm 10 màn có mở đầu giới thiệu, màn củng cố và màn tổng hợp. Thay chủ đề đi kèm một thay đổi bố cục có ý nghĩa, ví dụ sân nhỏ nhiều lối nối, công viên có vùng rộng, vườn cảnh có luống bảo vệ.
+Không dùng màu làm tín hiệu duy nhất cho cây khóa, hoa bảo vệ hay booster. Có cài đặt tắt rung, giảm hiệu ứng và chỉnh nhạc/SFX riêng. Các yêu cầu về khả năng đọc ở trên áp dụng cho mọi art style.
 
-Tiến trình tuyến tính theo thắng màn, không khóa đường chính bằng số sao. Các sao mở mục tiêu phụ về ngoại hình. Zen dùng 3 map tái sử dụng từ Contract nhưng loại quota, timer và thất bại; không cần sản xuất một hệ level riêng ngay từ đầu.
+# 12 Prototype và các câu hỏi cần chốt
+## Phạm vi bản test D1
+Bản test D1 chỉ build những gì cần để đo core gameplay và giữ chân ngày đầu:
 
-### Meta nhẹ
+| Có trong bản D1 | Để sau |
+| :---- | :---- |
+| Máy Standard và Wide (Wide mở miễn phí sau màn 10\) | Máy Heavy |
+| Hai hướng nâng cấp, cấp 1–4 | — |
+| Turbo và Extra Time (tặng khi mở, không có shop) | Power Blade, shop, coin |
+| Sao, Cleanup | Zen, sân thử |
+| 50 màn: 24 màn onboarding \+ 26 màn ba chương | Meta dài hạn, sự kiện, màn sau 50 |
+| Remote config cho hoa bảo vệ, timer, tự giảm tốc | Quảng cáo, IAP |
 
-Người chơi mở skin máy, màu vệt cắt và bộ trang trí album sân vườn. Skin phải giữ footprint gameplay. Album ghi số màn hoàn thành và sao, giúp người chơi nhìn thấy tiến độ dài hạn mà không kéo sang quản lý kinh doanh.
+Danh sách màn ở file Danh sách màn D1; kế hoạch đo và ngưỡng quyết định ở file Kế hoạch test D1.
 
-### Nội dung sau bản đầu
+## Phạm vi prototype
+Prototype thử các hệ thống trong tài liệu này với 5–10 màn và một sân tự do. Có ít nhất một màn rút gọn đi từ cấp 1 lên cấp 4 để kiểm chứng cảm giác chinh phục cây rất lớn. Chỉ dùng số loại cây tối thiểu: cỏ, hoa, bụi, rau/quả vừa, quả lớn và cây ăn quả lớn.
 
-Chỉ thêm hệ thống ngày hoặc challenge seed sau khi 30 màn nền có nhịp tốt. Một challenge cố định có thể so thành tích bằng thời gian còn lại trong cùng cấu hình máy; chưa cần bảng xếp hạng trực tuyến. Tránh sinh procedural hoàn toàn trước khi có validator đảm bảo ngưỡng cấp và quota.
+| Giả thuyết | Quan sát | Nếu yếu thì sửa |
+| :---- | :---- | :---- |
+| Điều khiển dễ hiểu | Người mới tự lái và cắt được ngay đầu màn 1 | Input và tín hiệu |
+| Cấp cây rõ ràng | Người chơi hiểu cây bị khóa và hiểu cấp 4 mở cây rất lớn | Onboarding và bố trí XP |
+| Cắt cây bền đọc được | Người chơi tự đi chậm hoặc quay lại khi cây chưa cắt xong | Phản hồi cắt dở, thử tự giảm tốc |
+| Chơi tiếp tự nguyện | Người chơi muốn chơi thêm sau vài màn | Cảm giác cắt và nhịp mục tiêu |
+| Máy và nâng cấp có ý nghĩa | Người chơi giải thích được vì sao đổi máy, đổi tuyến | Bố cục, trước khi thêm hệ thống |
+| Thất bại công bằng | Người thua nói được nguyên nhân và muốn thử lại | Camera, timer hoặc luật bảo vệ |
 
-## 10 Economy và monetization đề xuất
+Ngưỡng đạt cho mỗi giả thuyết được đặt ở kế hoạch playtest. Ghi lại: thời gian, quota còn thiếu, lỗi bảo vệ, máy, nâng cấp, booster, số lần chơi lại và lý do dừng chơi.
 
-### Một tiền tệ mềm
+**Thử riêng từng biến:** cùng một map, thử có và không có timer; thử hoa bảo vệ gây thua và chỉ cảnh báo. Không thay đổi hai yếu tố cùng lúc. Nếu chọn hướng không timer làm campaign chính thì phải thiết kế lại sao và booster (Extra Time mất vai trò), không chỉ ẩn timer.
 
-Coin dùng mua ngoại hình. Không có phí vào màn, không trừ coin khi thua và không mua chỉ số bắt buộc. Chiến thắng lần đầu cho 100 coin; mỗi sao thưởng thêm 25 coin một lần. Chơi lại không phát coin cơ bản; chỉ phát phần sao mới đạt. Zen không tạo coin để tránh farm vô hạn.
+## Các câu hỏi cần chốt
+Đã chốt cho bản test D1: hoa bảo vệ chỉ cảnh báo, cây cấp 4 không cho XP, tự giảm tốc tắt mặc định. Còn mở:
 
-| Nguồn hoặc chi | Giá trị mẫu | Quy tắc |
-| --- | --- | --- |
-| Thắng lần đầu | 100 coin | Một lần theo LevelId |
-| Mỗi sao mới | 25 coin | Tổng tối đa 75 coin mỗi màn |
-| Skin nhóm A | 600 coin | Khoảng 4 màn nếu đạt trung bình 2 sao |
-| Skin nhóm B | 1.200 coin | Khoảng 8 màn cùng giả định |
-| 30 màn đạt 3 sao | 5.250 coin tối đa | Ngân sách tổng để đặt số lượng vật phẩm |
+1. Lời hứa chính của game là cắt đã tay, chọn máy/tuyến, hay khám phá sân vườn? Nên chốt câu này trước khi mở rộng hệ thống.
 
-Ví dụ thắng 2 sao lần đầu nhận 150 coin. Lần sau đạt sao thứ ba chỉ nhận thêm 25 coin. Giao dịch thưởng phải có ID duy nhất theo màn và lần nhận; crash sau màn kết quả không được nhân đôi hoặc mất thưởng. Giá skin cần kiểm tra xem người chơi có thấy mục tiêu đủ gần trong buổi chơi đầu hay không.
+2. Timer giữ làm điều kiện thắng/thua hay chuyển thành thử thách tùy chọn? Đo bằng A/B sau khi D1 đạt.
 
-### Monetization nếu phát triển mobile
+3. Hoa bảo vệ tạo ra quyết định thú vị, hay chỉ làm mất vui? So sánh hai chế độ sau khi D1 đạt.
 
-Prototype không quảng cáo. Nếu nhịp chơi và retention nội bộ đủ tốt, bản phát hành có thể thử rewarded ad tự chọn để nhận thêm một khoản coin sau chiến thắng hoặc thử skin. Không đưa quảng cáo vào lúc chọn nâng cấp, timer đang chạy hoặc retry ngay sau thất bại. Không dùng revive bắt buộc để bù một màn khó quá mức.
+4. Ba máy và hai hướng nâng cấp có làm hành vi chơi thay đổi đủ rõ không?
 
-Interstitial là phương án thử nghiệm sau, chưa phải yêu cầu mặc định. Nếu dùng, chỉ đặt giữa các màn với cooldown và bảo vệ onboarding; phải đo số người thoát và tỷ lệ bắt đầu màn kế tiếp. Gói tắt quảng cáo cần nói rõ loại quảng cáo được tắt. Không dự toán doanh thu khi chưa có dữ liệu người chơi và chi phí thu hút.
+5. Máy có nên tự giảm tốc khi đang cắt cây bền không? Thử trong playtest nội bộ.
 
-### Chống lệch thiết kế
+## Ghi chú thay đổi bản 2.2
+* Bản test D1 tăng từ 24 lên 50 màn: thêm 26 màn sau onboarding chia ba chương (Vườn rau, Vườn hoa, Vườn cây ăn quả), không thêm cơ chế mới.
 
-Không bán nâng cấp khiến quota chỉ giải được sau mua. Tăng trưởng trong màn phải giữ cùng ngưỡng ở build có và không quảng cáo. Nếu monetization làm người chơi thường xuyên bỏ nhịp cắt hoặc bỏ retry, ưu tiên sửa vị trí xuất hiện thay vì thêm phần thưởng lớn hơn.
+* Thêm bốn loại màn: Hướng dẫn, Thường, Khó, Thư giãn. Màn Thư giãn không timer; sao 2 chỉ xét lỗi bảo vệ.
 
-## 11 Giao diện âm thanh và cảm giác chơi
+## Ghi chú thay đổi bản 2.1
+* Chốt quyết định cho bản test D1: hoa bảo vệ chỉ cảnh báo (chế độ thua để trong remote config), cây cấp 4 không cho XP, màn 1–3 không timer.
 
-### Thông tin theo màn hình
+* Thêm phạm vi bản test D1: bỏ Heavy, Power Blade, Zen, sân thử, shop và coin khỏi bản build đầu.
 
-| Màn hình | Nội dung bắt buộc | Hành động chính |
-| --- | --- | --- |
-| Home | Tiến độ khu vườn, màn tiếp theo, Zen, tùy chọn | Chơi |
-| Preview | Quota, timer, quota phụ và toàn map | Bắt đầu |
-| Gameplay | Quota kèm icon, timer, XP, cấp và pause | Joystick |
-| Nâng cấp | Hai tác dụng có số liệu và preview | Chọn một |
-| Kết quả | Thắng hoặc lý do thua, sao, coin mới nhận | Màn tiếp hoặc retry |
-| Pause | Tiếp tục, chơi lại, thoát, âm thanh và rung | Tiếp tục |
+* Thêm danh sách tài liệu liên quan: Cân bằng, Danh sách màn, Tracking events, Kế hoạch test D1.
 
-### Thứ bậc HUD
+## Ghi chú thay đổi bản 2.0
+* Thu gọn phạm vi: chỉ giữ gameplay. Bỏ coin, giá, phần thưởng, quảng cáo, IAP và skin (chuyển sang tài liệu economy). Bỏ toàn bộ số liệu cân bằng, thay bằng mô tả tương đối và đánh dấu **\[Cân bằng\]**.
 
-Quota chính đặt ở đầu màn. Timer cần đọc được nhưng không che vùng đi; chỉ đổi trạng thái cảnh báo ở 15 giây cuối. XP nằm gần dưới HUD với mốc cấp tiếp theo. Không hiển thị coin chạy liên tục trong gameplay vì coin được quyết toán ở cuối. Mục tiêu đã đủ chuyển sang dấu hoàn thành, không biến mất đột ngột.
+* Hoa bảo vệ: định nghĩa một luống là một đơn vị tính lỗi; lưỡi không xuyên qua đá và hàng rào; thêm điều kiện màn để lối chính không buộc chạm luống.
 
-### Chuỗi feedback khi cắt
+* Luật cắt: nói rõ vệt cắt thực tế hẹp hơn phạm vi lưỡi khi đi nhanh với cây bền; thêm yêu cầu phản hồi và câu hỏi về tự giảm tốc. Giới hạn cam kết "vệt sạch liên tục" chỉ áp dụng cho cỏ thường.
 
-Lưỡi tiếp xúc → cây rung ngắn → ô đủ tiến độ đổi sang nền sạch trong cùng tick → một số mảnh cỏ bay thấp → âm cắt theo mật độ → quota cập nhật → XP tiến tới mốc. Không tạo popup cho mọi ô. Gom event thành feedback theo cụm trong khoảng 0,1 giây để âm thanh, VFX và rung không quá tải.
+* XP cây cấp 4: nêu rõ ngoại lệ Power Blade và hai hướng cần chốt.
 
-| Sự kiện | Feedback mẫu | Giới hạn |
-| --- | --- | --- |
-| Cắt liên tục | Loop cắt thay đổi pitch nhẹ theo mật độ | Crossfade để không bật tắt gắt |
-| Đạt quota | Icon bật nhẹ và âm xác nhận | Chỉ một lần mỗi quota |
-| Lên cấp | Máy mở rộng, vòng lưỡi hiện ngắn | Không che vùng mục tiêu |
-| Chạm vùng bảo vệ | Đỏ trên cụm và đếm lỗi | Không rung kéo dài |
-| Thắng | Toàn sân xuất hiện ngắn và bảng sao | Cho bỏ qua animation |
+* Bỏ cột giới hạn nâng cấp (vì không bao giờ có tác dụng). Sửa mô tả đánh đổi của Động cơ khỏe.
 
-### Art direction và accessibility
+* Cleanup và Zen: cấp cắt chỉ lên tới cấp đã được giới thiệu, không tự động lên cấp 4\.
 
-Mặt đất sạch tương phản với cây chưa cắt. Cỏ thường thấp, hoa có đầu bông, bụi có khối rõ. Hoa bảo vệ dùng luống và biểu tượng khiên; màu đỏ đơn lẻ không đủ. Ưu tiên 60 FPS trên máy mục tiêu, cho giảm VFX và rung. Âm nền nhẹ, âm cắt không chói, có thanh chỉnh riêng SFX và music.
+* Onboarding: đưa hoa bảo vệ lên trước bài học Lưỡi rộng; thêm điều kiện màn không cho lên vượt cấp đã giới thiệu. Bảng màn đổi thành thứ tự bước.
 
-## 12 Yêu cầu triển khai Unity và QA
-
-### Hệ thống tối thiểu
-
-Input điều khiển vận tốc; Motor giải quyết collision; CuttingSystem truy vấn ô và xử lý tiến độ; GrowthSystem quản XP và lựa chọn; ObjectiveSystem đếm quota; LevelSession điều phối trạng thái; RewardService quyết toán; SaveService lưu tiến trình. UI quan sát event, không tự quyết định cắt hoặc thưởng.
-
-### Dữ liệu có thể chỉnh trong editor
-
-| Dữ liệu | Trường bắt buộc |
-| --- | --- |
-| PlantDefinition | Id, RequiredTier, Toughness, XpValue, ObjectiveTag, prefab hoặc render data |
-| LevelDefinition | Id, seed, bounds, spawn, timer, quota chính và phụ, errorLimit, map cells |
-| MachineConfig | CollisionRadius, CutRadius, Speed, Acceleration, CuttingPower, XP thresholds |
-| UpgradeDefinition | Id, radiusDelta, powerDelta, speedDelta, cap |
-| ProgressSave | Version, unlockedLevel, bestStars, grantedRewards, coins, ownedSkins, settings |
-
-### Hiệu năng và lưu trữ
-
-Dùng spatial grid để chỉ xét ô gần swept area; không tạo collider riêng cho mọi lá cỏ. Có thể dùng mesh theo chunk hoặc GPU instancing, cập nhật trạng thái cắt theo chunk. Pool VFX, hạn chế event từng ô ra UI. Burst hoặc Job System chỉ thêm sau khi profiler xác định nút thắt; không để kiến trúc tối ưu trì hoãn prototype.
-
-Mục tiêu khởi tạo là 60 FPS trên một thiết bị Android tầm trung được team chọn cụ thể; frame budget 16,7 ms, đo trong map dày nhất và máy rộng nhất. Save tiến trình sau kết quả bằng ghi file tạm rồi thay thế. Bản đầu không cần resume giữa màn; khi app bị đóng, khởi động lại màn nhưng giữ thưởng đã xác nhận.
-
-### Các ca QA bắt buộc
-
-- Đi tốc độ tối đa không bỏ sọc cỏ giữa hai tick; cắt trùng không cộng XP hai lần.
-
-- Đạt quota đúng tick hết giờ được thắng; bảng nâng cấp và pause không trừ timer.
-
-- Mọi quota chính có đủ cây và XP để mở cấp cần thiết; thử cả hai hướng nâng.
-
-- Nhấn nhận thưởng nhiều lần, restart app ở màn kết quả và mở save cũ không nhân đôi coin.
-
-- Hoa bảo vệ tiếp xúc liên tục chỉ ghi một lỗi; quay lại sau cooldown đúng luật.
-
-- UI không chồng joystick trên tỷ lệ màn hình mục tiêu; camera thấy được rìa lưỡi tối đa.
-
-## 13 Phạm vi sản xuất và tiêu chí quyết định
-
-### Các giai đoạn theo kết quả
-
-| Giai đoạn | Deliverable | Điều kiện chuyển |
-| --- | --- | --- |
-| Prototype | 3 map graybox, joystick, cắt, quota, timer, cấp và hai lựa chọn | Người mới hiểu vòng lặp và muốn thử lại |
-| Vertical slice | 10 màn, 1 chủ đề art, HUD, âm thanh, save, 3 skin, Zen | Cảm giác cắt ổn, đường đi đa dạng, hiệu năng đạt |
-| Bản đầu | 30 màn, 3 chủ đề, economy ngoại hình, QA thiết bị | Không kẹt level, không lỗi thưởng, nội dung đã playtest |
-
-Ước lượng tham khảo cho team gồm một Unity Developer, một GD kiêm level design và artist hỗ trợ: prototype 1–2 tuần, vertical slice thêm 3–5 tuần, bản đầu thêm 4–8 tuần. Đây là khoảng lập kế hoạch chưa xét năng lực team, asset sẵn có hoặc lịch bán thời gian; cần ước lượng lại sau prototype.
-
-### Playtest và telemetry
-
-Đợt đầu quan sát 8–12 người chưa biết luật; mỗi người chơi ít nhất 3 màn. Hỏi họ định đi đâu và vì sao sau lượt chơi, tránh chỉ hỏi game có vui không. Ghi level_start, first_cut, tier_up, upgrade_selected, objective_complete, protected_hit, level_end, retry và session_end. Level_end kèm duration, result, remainingQuota, chosenBuild và errors; không cần dữ liệu định danh để kiểm tra gameplay.
-
-| Giả thuyết | Ngưỡng nội bộ ban đầu | Nếu không đạt |
-| --- | --- | --- |
-| Điều khiển dễ hiểu | Ít nhất 8/10 người tự cắt trong 15 s | Sửa input và feedback trước nội dung |
-| Tăng trưởng rõ | Ít nhất 7/10 giải thích đúng cây khóa sau màn 3 | Sửa tín hiệu cấp và bố trí XP |
-| Lựa chọn có ý nghĩa | Cả hai build được dùng và có đường thắng | Sửa map nếu một build luôn vượt trội |
-| Có động lực chơi lại | Ít nhất 6/10 tự chọn thêm một lượt | Xem lại cảm giác cắt và quyết định đường |
-| Khó nhưng công bằng | Người thua chỉ được nguyên nhân cụ thể | Sửa camera, quota hoặc luật lỗi |
-
-Các ngưỡng trên là tiêu chí nội bộ trên mẫu nhỏ, không phải benchmark thị trường. Chỉ mở rộng sản xuất nếu vấn đề nằm ở nội dung có thể cải thiện. Nếu sau hai vòng chỉnh sửa người chơi vẫn chỉ di chuyển theo vùng gần nhất và không quan tâm nâng máy, cần thay trọng tâm gameplay trước khi làm 30 màn.
-
-## 14 Rủi ro phương án PC và quyết định còn mở
-
-### Rủi ro ưu tiên
-
-| Rủi ro | Dấu hiệu | Biện pháp |
-| --- | --- | --- |
-| Cắt trở nên đơn điệu | Player không đổi chiến thuật giữa các map | Đặt tradeoff XP, mục tiêu và footprint |
-| Tăng máy làm khó điều khiển | Lỗi bảo vệ tăng vọt sau chọn rộng | Giữ collision cố định, preview lưỡi rõ |
-| Cỏ sót gây khó chịu | Lượt cuối chỉ tìm vài ô khó thấy | Quota có dư, cleanup có hỗ trợ |
-| Thư giãn xung đột timer | Player muốn cắt tiếp nhưng bị kết thúc | Cho Cleanup sau thắng và Zen riêng |
-| Scope tăng quá sớm | Chưa test cắt đã làm farm hoặc shop phức tạp | Khóa phạm vi ở prototype và slice |
-
-### Nếu chọn PC và Steam
-
-Không nên chỉ đổi joystick sang WASD rồi giữ toàn bộ nhịp mobile. Với PC, đề xuất game tối ưu đường cắt theo khu vườn, phiên 15–30 phút, map lớn hơn và loadout trước lượt chơi. Camera cần nhìn rộng, hỗ trợ chuột hoặc gamepad; mức độ sâu đến từ geometry và công cụ như lưỡi rộng, lưỡi chính xác và động cơ xử lý cây cứng.
-
-Mô hình sản phẩm đề xuất là trả tiền một lần, bỏ quảng cáo và economy phục vụ quảng cáo. Trọng tâm có thể là bộ màn thủ công có nhiều huy chương, Zen và chia sẻ thành tích. Chưa đưa procedural hoặc level editor vào bản đầu. Quy mô nội dung, mức giá và định vị thị trường phải được nghiên cứu riêng; tài liệu hiện tại không xác nhận bản mobile đã đủ nội dung để bán trên Steam.
-
-### Các quyết định cần chốt sau prototype
-
-- Nền tảng chính của dự án này là mobile hay PC. Chọn một hướng trước vertical slice.
-
-- Giữ timer làm mục tiêu chính hay chỉ là huy chương tốc độ, dựa trên hành vi playtest.
-
-- Hoa bảo vệ có tạo quyết định tốt hay chỉ gây mất vui; có thể loại khỏi bản đầu.
-
-- Hai nâng cấp có tạo tuyến chơi khác nhau hay cần đổi một lựa chọn.
-
-- Danh sách thiết bị mục tiêu, nguồn asset, nhân lực và ngân sách thực tế.
-
-### Việc nên triển khai đầu tiên
-
-Làm một sân graybox có cỏ thường, hoa mục tiêu và bụi cấp 2. Hoàn thiện input, swept cutting, XP và hai lựa chọn nâng trước. Dùng level mẫu 04 để kiểm tra hai đường thắng. Khi người chơi nhận ra tại sao đi vòng giúp lượt chơi hiệu quả hơn, mới đầu tư art và hệ thống tiến trình.
-
-Toàn bộ luật và thông số từ trang 3 đến trang này là đề xuất thiết kế độc lập. Nguồn tham chiếu S1 chỉ dùng cho phần mô tả game trên trang 2; không dùng để khẳng định khả năng thương mại của Grass Route.
+* Mẫu màn 04 chuyển thành mẫu bố cục không có số.

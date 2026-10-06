@@ -17007,7 +17007,7 @@ GameObject:
   - component: {fileID: 1629049825}
   - component: {fileID: 1629049824}
   m_Layer: 5
-  m_Name: UiRoot
+  m_Name: Canvas
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -17091,7 +17091,7 @@ MonoBehaviour:
   m_UiScaleMode: 1
   m_ReferencePixelsPerUnit: 100
   m_ScaleFactor: 1
-  m_ReferenceResolution: {x: 390, y: 844}
+  m_ReferenceResolution: {x: 1080, y: 1920}
   m_ScreenMatchMode: 0
   m_MatchWidthOrHeight: 0
   m_PhysicalUnit: 3
@@ -22500,6 +22500,7 @@ SceneRoots:
   m_Roots:
   - {fileID: 899344536}
   - {fileID: 1581607474}
+  - {fileID: 1629049829}
   - {fileID: 687041106}
   - {fileID: 1776663716}
   - {fileID: 425614671}
@@ -22511,5 +22512,4 @@ SceneRoots:
   - {fileID: 387600428}
   - {fileID: 1161807235}
   - {fileID: 1697150042}
-  - {fileID: 1629049829}
   - {fileID: 735453817}

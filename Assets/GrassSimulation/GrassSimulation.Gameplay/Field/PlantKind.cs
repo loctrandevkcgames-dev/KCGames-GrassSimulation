@@ -12,5 +12,11 @@ namespace GrassSimulation.Gameplay
         LowBush,
         HardBush,
         ProtectedFlower,
+        BushLow,
+        Vegetable,
+        BushBig,
+        Melon,
+        FruitTree,
+        GiantFruit,
     }
 }

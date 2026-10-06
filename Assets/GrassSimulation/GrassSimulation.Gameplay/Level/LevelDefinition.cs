@@ -11,13 +11,13 @@ namespace GrassSimulation.Gameplay
         private string _id = "level-00";
 
         [SerializeField]
-        private int _cellsX = 72;
+        private int _cellsX = 36;
 
         [SerializeField]
-        private int _cellsZ = 56;
+        private int _cellsZ = 28;
 
         [SerializeField]
-        private float _cellSize = 0.25f;
+        private float _cellSize = 0.5f;
 
         [SerializeField]
         private int _seed;
@@ -35,7 +35,13 @@ namespace GrassSimulation.Gameplay
         private float _spawnClearing = 1f;
 
         [SerializeField]
-        private GameObject _propLayout;
+        private byte[] _bakedKinds = Array.Empty<byte>();
+
+        [SerializeField]
+        private PlantPlacement[] _plants = Array.Empty<PlantPlacement>();
+
+        [SerializeField]
+        private ObstaclePlacement[] _obstacles = Array.Empty<ObstaclePlacement>();
 
         [SerializeField]
         private float _timeLimit = 120f;
@@ -64,7 +70,9 @@ namespace GrassSimulation.Gameplay
 
         public Vector2 Spawn => _spawn;
 
-        public GameObject PropLayout => _propLayout;
+        public ReadOnlySpan<PlantPlacement> Plants => _plants;
+
+        public ReadOnlySpan<ObstaclePlacement> Obstacles => _obstacles;
 
         public float TimeLimit => _timeLimit;
 
@@ -79,6 +87,61 @@ namespace GrassSimulation.Gameplay
         public FieldGrid CreateGrid()
         {
             var grid = new FieldGrid(_cellsX, _cellsZ, _cellSize);
+
+            if (_bakedKinds.Length == grid.Count)
+            {
+                ApplyBakedKinds(grid);
+            }
+            else
+            {
+                ApplyZones(grid);
+            }
+
+            grid.ClearCircle(_spawn, _spawnClearing);
+            ClearUnderObstacles(grid);
+            return grid;
+        }
+
+        public ObstacleField CreateObstacles(FieldGrid grid)
+        {
+            var obstacles = new ObstacleField();
+            var count = _obstacles.Length;
+
+            for (var i = 0; i < count; i++)
+            {
+                obstacles.Add(ObstacleShape.From(in _obstacles[i], grid.Origin));
+            }
+
+            return obstacles;
+        }
+
+        public PlantObjectField CreatePlantObjects(FieldGrid grid, ReadOnlySpan<PlantDefinition> plants)
+        {
+            var objects = new PlantObjectField(plants);
+            var count = _plants.Length;
+
+            for (var i = 0; i < count; i++)
+            {
+                var placement = _plants[i];
+
+                objects.Add(placement.Kind, placement.Position + grid.Origin, placement.FruitCount);
+            }
+
+            return objects;
+        }
+
+        private void ApplyBakedKinds(FieldGrid grid)
+        {
+            var count = _bakedKinds.Length;
+
+            for (var i = 0; i < count; i++)
+            {
+                grid.SetKind(i, (PlantKind)_bakedKinds[i]);
+            }
+        }
+
+        private void ApplyZones(FieldGrid grid)
+        {
             grid.Fill(new RectInt(0, 0, _cellsX, _cellsZ), _baseKind);
 
             var zoneCount = _zones.Length;
@@ -88,9 +151,18 @@ namespace GrassSimulation.Gameplay
                 var zone = _zones[i];
                 grid.Fill(zone.Cells, zone.Kind);
             }
+        }
 
-            grid.ClearCircle(_spawn, _spawnClearing);
-            return grid;
+        private void ClearUnderObstacles(FieldGrid grid)
+        {
+            var count = _obstacles.Length;
+
+            for (var i = 0; i < count; i++)
+            {
+                var shape = ObstacleShape.From(in _obstacles[i], Vector2.zero);
+
+                grid.ClearCapsule(shape.A, shape.B, shape.Radius);
+            }
         }
 
         private RectInt[] CollectBeds()

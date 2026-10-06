@@ -113,7 +113,12 @@ namespace GrassSimulation.Gameplay
 
         public void Record(PlantKind kind)
         {
-            _harvestedByKind[(int)kind]++;
+            Record(kind, units: 1);
+        }
+
+        public void Record(PlantKind kind, int units)
+        {
+            _harvestedByKind[(int)kind] += units;
         }
 
         public void Reset()

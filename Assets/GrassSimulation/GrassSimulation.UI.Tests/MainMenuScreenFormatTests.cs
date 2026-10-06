@@ -63,7 +63,7 @@ public sealed class MainMenuScreenFormatTests
     }
 
     [TestCase(PlantKind.HarvestFlower, 70, "70 hoa đỏ")]
-    [TestCase(PlantKind.LowBush, 25, "25 bụi thấp")]
+    [TestCase(PlantKind.LowBush, 25, "25 bụi rậm")]
     public void FormatQuotaChip_ShowsAmountAndLowercaseLabel(PlantKind kind, int amount, string expected)
     {
         Assert.That(MainMenuScreenFormat.FormatQuotaChip(kind, amount), Is.EqualTo(expected));

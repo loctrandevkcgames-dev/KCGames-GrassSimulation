@@ -83,7 +83,7 @@ namespace GrassSimulation.Audio
             _subscriptions.Add(LevelFinishedMsg.Subscribe(in gameplay, OnLevelFinished));
             _subscriptions.Add(LevelStateChangedMsg.Subscribe(in gameplay, OnLevelStateChanged));
             _subscriptions.Add(HomeChangedMsg.Subscribe(in gameplay, OnHomeChanged));
-            _subscriptions.Add(PropBrokenMsg.Subscribe(in gameplay, OnPropBroken));
+            _subscriptions.Add(PlantHarvestedMsg.Subscribe(in gameplay, OnPlantHarvested));
             _subscriptions.Add(HarvestBatchedMsg.Subscribe(in gameplay, OnHarvestBatched));
             _subscriptions.Add(QuotaCompletedMsg.Subscribe(in gameplay, OnQuotaCompleted));
             _subscriptions.Add(TierUpMsg.Subscribe(in gameplay, OnTierUp));
@@ -298,9 +298,9 @@ namespace GrassSimulation.Audio
             RefreshMusic();
         }
 
-        private void OnPropBroken(PropBrokenMsg message)
+        private void OnPlantHarvested(PlantHarvestedMsg message)
         {
-            PlayCue(message.IsSplit ? SoundId.FruitPop : SoundId.BushTrim, Time.unscaledTime);
+            PlayCue(message.IsFruit ? SoundId.FruitPop : SoundId.BushTrim, Time.unscaledTime);
         }
 
         private void OnHarvestBatched(HarvestBatchedMsg message)

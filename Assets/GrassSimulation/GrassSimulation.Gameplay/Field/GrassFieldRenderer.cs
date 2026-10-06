@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using EncosyTower.PubSub;
 using EncosyTower.UnityExtensions;
@@ -9,7 +10,7 @@ namespace GrassSimulation.Gameplay
 {
     public sealed class GrassFieldRenderer : MonoBehaviour
     {
-        private const int CHUNK_CELLS = 16;
+        private const int CHUNK_CELLS = 8;
 
         private readonly List<GameObject> _chunks = new();
         private readonly List<Mesh> _meshes = new();
@@ -40,7 +41,7 @@ namespace GrassSimulation.Gameplay
             _subscriptions.Add(TierUpMsg.Subscribe(in subscriber, OnTierUp));
         }
 
-        public void Build(FieldGrid grid, PlantSettings[] plants, int seed)
+        public void Build(FieldGrid grid, ReadOnlySpan<PlantDefinition> plants, int seed)
         {
             var cellsX = grid.CellsX;
             var cellsZ = grid.CellsZ;
@@ -68,6 +69,11 @@ namespace GrassSimulation.Gameplay
                     for (var i = 0; i < plantCount; i++)
                     {
                         var plant = plants[i];
+
+                        if (plant.Representation == PlantRepresentation.Object)
+                        {
+                            continue;
+                        }
 
                         if (builder.TryBuildChunk(grid, chunk, in plant, random, out var mesh))
                         {

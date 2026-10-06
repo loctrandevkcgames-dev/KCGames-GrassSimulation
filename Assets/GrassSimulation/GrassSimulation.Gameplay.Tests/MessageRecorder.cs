@@ -26,6 +26,8 @@ internal sealed class MessageRecorder : IDisposable
         _subscriptions.Add(ProtectedHitMsg.Subscribe(in subscriber, ProtectedHits.Add));
         _subscriptions.Add(HarvestBatchedMsg.Subscribe(in subscriber, HarvestBatches.Add));
         _subscriptions.Add(LevelStateChangedMsg.Subscribe(in subscriber, StateChanges.Add));
+        _subscriptions.Add(LockedPlantTouchedMsg.Subscribe(in subscriber, LockedTouches.Add));
+        _subscriptions.Add(SlowHintMsg.Subscribe(in subscriber, SlowHints.Add));
     }
 
     public MessagePublisher.Publisher<GameplayScope> Publisher { get; }
@@ -47,6 +49,10 @@ internal sealed class MessageRecorder : IDisposable
     public List<HarvestBatchedMsg> HarvestBatches { get; } = new();
 
     public List<LevelStateChangedMsg> StateChanges { get; } = new();
+
+    public List<LockedPlantTouchedMsg> LockedTouches { get; } = new();
+
+    public List<SlowHintMsg> SlowHints { get; } = new();
 
     public void Dispose()
     {

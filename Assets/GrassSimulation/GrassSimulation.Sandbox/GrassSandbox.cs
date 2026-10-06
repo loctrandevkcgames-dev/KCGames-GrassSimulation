@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.IO;
 using EncosyTower.Common;
@@ -16,8 +15,7 @@ namespace GrassSimulation.Sandbox
     public sealed class GrassSandbox : MonoBehaviour, ILevelFlowHost
     {
         private const float MIN_SEGMENT = 1e-4f;
-        private const float ZONE_FLASH_DECAY = 2f;
-        private const float ZONE_MARGIN = 0.3f;
+        private const int DEBUG_XP = 100;
         private const float HUD_LINES_PER_SCREEN = 36f;
         private const float HUD_WIDTH_IN_LINES = 26f;
         private const float HUD_HEIGHT_IN_LINES = 19f;
@@ -49,7 +47,13 @@ namespace GrassSimulation.Sandbox
         private TireTrackRenderer _tireTracks;
 
         [SerializeField]
-        private CuttablePropController _props;
+        private PlantObjectPresenter _plantObjects;
+
+        [SerializeField]
+        private ObstacleView _obstacleView;
+
+        [SerializeField]
+        private PlantContactIcons _contactIcons;
 
         [SerializeField]
         private MachineConfig _machine;
@@ -82,7 +86,13 @@ namespace GrassSimulation.Sandbox
         private float _chutePuffPerCell = 0.35f;
 
         [SerializeField]
-        private PlantSettings[] _plants = Array.Empty<PlantSettings>();
+        private Color _lawnColor = new(0.42f, 0.7f, 0.27f);
+
+        [SerializeField]
+        private float _lawnAmount = 0.9f;
+
+        [SerializeField]
+        private PlantCatalog _plantCatalog;
 
         [SerializeField]
         private float _warningDistance = 0.5f;
@@ -116,9 +126,10 @@ namespace GrassSimulation.Sandbox
 
         private readonly Color[] _clippingColorByKind = new Color[PlantKindExtensions.Length];
         private readonly List<int> _harvestedCells = new();
+        private readonly List<PlantHarvest> _harvestedObjects = new();
+        private readonly PlantContactReport _contacts = new();
         private readonly List<ISubscription> _subscriptions = new();
         private readonly List<ProcessRegistry> _registries = new();
-        private readonly List<Renderer> _zoneRenderers = new();
         private readonly List<int> _touchedBeds = new();
         private readonly UiPointerProbe _uiProbe = new();
 
@@ -126,6 +137,9 @@ namespace GrassSimulation.Sandbox
         private FieldGrid _grid;
         private FieldFeedback _feedback;
         private GrassCutter _cutter;
+        private ObstacleField _obstacles;
+        private PlantObjectField _plantField;
+        private BedOutlines _bedOutlines;
         private LevelSession _session;
         private ProgressionService _progression;
         private LevelSettlementHandler _settlementHandler;
@@ -135,8 +149,6 @@ namespace GrassSimulation.Sandbox
         private MessagePublisher.Publisher<GameplayScope> _gameplayEvents;
         private Result<LevelSettlement, SettleError> _lastSettlement;
         private bool _hasLastSettlement;
-        private MaterialPropertyBlock _zoneProperties;
-        private float[] _zoneFlashes = Array.Empty<float>();
         private Vector3 _previousBlade;
         private Vector3 _cameraFocus;
         private CameraBlend _previewBlend;
@@ -145,6 +157,7 @@ namespace GrassSimulation.Sandbox
         private float _chuteBudget;
         private Color _chuteColor;
         private float _cutRadius;
+        private float _speedLimit = float.PositiveInfinity;
         private int _levelIndex;
         private bool _wasResetHeld;
         private bool _wasNextLevelHeld;
@@ -158,6 +171,7 @@ namespace GrassSimulation.Sandbox
         private bool _wasRetryHeld;
         private bool _wasWipeHeld;
         private bool _wasHudToggleHeld;
+        private bool _wasDebugXpHeld;
         private bool _showDebugHud;
         private bool _isHome;
         private bool _isStarting;
@@ -168,6 +182,8 @@ namespace GrassSimulation.Sandbox
         public LevelSession Session => _session;
 
         private GameRulesValues RulesValues => _rules.IsValid() ? _rules.Values : GameRulesValues.Default;
+
+        private bool IsTouchingLocked => _contacts.Locked.Count > 0;
 
         private int CleanupTier => _catalog.GetIntroducedTier(_levelIndex);
 
@@ -228,7 +244,7 @@ namespace GrassSimulation.Sandbox
 
         private void Start()
         {
-            _zoneProperties = new MaterialPropertyBlock();
+            _bedOutlines = new BedOutlines(_protectedZone);
             _followOrthoSize = _camera.IsValid() ? _camera.orthographicSize : FALLBACK_ORTHO_SIZE;
             _previewViewport = _previewFallbackViewport;
 
@@ -366,7 +382,7 @@ namespace GrassSimulation.Sandbox
 
         private LevelSnapshot ProvideLevelSnapshot(GetLevelSnapshotRequest request)
         {
-            var unlockedKinds = PlantKindMask.FromTier(_plants, _session.Growth.UpgradeTier);
+            var unlockedKinds = PlantKindMask.FromTier(_plantCatalog.Plants, _session.Growth.UpgradeTier);
 
             var cleanupTier = _session.State == LevelState.Cleanup ? CleanupTier : 0;
 
@@ -416,22 +432,26 @@ namespace GrassSimulation.Sandbox
             _levelIndex = _catalog.ClampIndex(index);
             _level = _catalog.Get(_levelIndex);
             _grid = _level.CreateGrid();
+            _obstacles = _level.CreateObstacles(_grid);
+            _plantField = _level.CreatePlantObjects(_grid, _plantCatalog.Plants);
             _feedback = new FieldFeedback(_grid.Count);
             SetLitterColors();
-            _cutter = new GrassCutter(_grid, _feedback, _plants, _level.Beds);
+            _cutter = new GrassCutter(_grid, _feedback, _plantCatalog.Plants, _level.Beds, _obstacles);
 
-            ClearPropCells();
-            PlaceProtectedZones();
+            BuildObjects();
+            _bedOutlines.Place(_grid, _level.Beds);
 
             _session = new LevelSession(
                   _level
                 , _machine
-                , _cutter.CountCuttableCells()
+                , _cutter.CountCuttableCells() + _plantField.Count
                 , GlobalMessenger.Publisher.Scope<GameplayScope>()
                 , RulesValues
             );
-            _field.Build(_grid, _plants, _level.Seed);
+            _field.Build(_grid, _plantCatalog.Plants, _level.Seed);
             _mower.Bounds = _grid.Bounds;
+            _mower.Obstacles = _obstacles;
+            _mower.BodyRadius = _machine.BodyRadius;
 
             ResetRun();
         }
@@ -457,27 +477,35 @@ namespace GrassSimulation.Sandbox
             {
                 var stats = _session.Growth.Stats;
 
-                _mower.MaxSpeed = stats.Speed;
+                _mower.MaxSpeed = Mathf.Min(stats.Speed, _speedLimit);
                 _mower.Step(deltaTime, _camera);
-                PushMowerOutOfProps();
                 StepTireTracks(deltaTime);
 
                 var radiusDelta = _machine.CutRadiusTweenSpeed * deltaTime;
                 _cutRadius = Mathf.MoveTowards(_cutRadius, stats.CutRadius, radiusDelta);
 
                 var blade = _mower.transform.position;
+
+                _contacts.Clear();
                 Cut(_previousBlade, blade, stats.CuttingPower, deltaTime);
-                CutProps(blade, stats.CuttingPower, deltaTime);
+                CutPlantObjects(_previousBlade, blade, stats.CuttingPower, deltaTime);
+                ApplyContacts();
                 _previousBlade = blade;
+            }
+            else
+            {
+                _contacts.Clear();
+                _speedLimit = float.PositiveInfinity;
             }
 
             _session.EndTick(deltaTime);
             AnimateMower();
             PushAudioFrame();
-            DecayFeedback(deltaTime);
+            TickObjects(deltaTime);
+            _feedback.Decay(deltaTime);
+            _bedOutlines.Step(deltaTime);
             WriteCellStates();
             UpdateBlade();
-            UpdateProtectedZones();
         }
 
         private void OnApplicationPause(bool isPaused)
@@ -536,11 +564,16 @@ namespace GrassSimulation.Sandbox
             HudLine($"Tier {growth.Tier}   XP {growth.Xp}{NextThresholdText()}   {ProtectedHitsText()}");
             HudLine($"Radius {stats.CutRadius:0.00} m   Power {stats.CuttingPower:0.00}   Speed {stats.Speed:0.00}");
             HudQuotas();
-            HudLine(PropsText());
+            HudLine(ObjectsText());
 
-            if (_props.IsValid() && _props.IsTouchingLocked)
+            if (IsTouchingLocked)
             {
-                HudLine($"<color=#ff8080>Needs tier {_props.LockedTier}</color>");
+                HudLine($"<color=#ff8080>Needs tier {_contacts.Locked[0].RequiredTier}</color>");
+            }
+
+            if (_contacts.Slow.Count > 0)
+            {
+                HudLine("<color=yellow>Slow down</color>");
             }
 
             if (_session.State == LevelState.UpgradeChoice)
@@ -655,49 +688,67 @@ namespace GrassSimulation.Sandbox
             return text;
         }
 
-        private string PropsText()
+        private string ObjectsText()
         {
-            if (_props.IsInvalid())
+            var plants = _plantCatalog.Plants;
+            var text = string.Empty;
+
+            for (var i = 0; i < plants.Length; i++)
             {
-                return string.Empty;
+                var kind = plants[i].Kind;
+                var total = CountObjects(kind);
+
+                if (total > 0)
+                {
+                    text += $"{kind} {_plantField.CountHarvested(kind)}/{total}  ";
+                }
             }
 
-            var berries = _props.Broken(PropKind.BerryBush);
-            var logs = _props.Broken(PropKind.Log);
-            var fruitTrees = _props.Broken(PropKind.FruitTree);
-            var trees = _props.Broken(PropKind.Tree);
-            var fruits = _props.Broken(PropKind.Fruit);
-            return $"Berry {berries}  Log {logs}  Apple tree {fruitTrees}  Tree {trees}  Fruit {fruits}";
+            return text;
         }
 
-        private void ClearPropCells()
+        private int CountObjects(PlantKind kind)
         {
-            if (_props.IsInvalid())
+            var total = 0;
+            var count = _plantField.Count;
+
+            for (var i = 0; i < count; i++)
             {
-                return;
+                if (_plantField.Get(i).Kind == kind)
+                {
+                    total++;
+                }
             }
 
-            _props.Load(_level.PropLayout, _mower.transform);
+            return total;
+        }
 
-            var props = _props.Props;
-            var propCount = props.Count;
-
-            for (var i = 0; i < propCount; i++)
+        private void BuildObjects()
+        {
+            if (_obstacleView.IsValid())
             {
-                var prop = props[i];
-                _grid.ClearCircle(_grid.ToLocal(prop.transform.position), prop.FootprintRadius);
+                _obstacleView.Build(_level.Obstacles, _grid.Origin);
+            }
+
+            if (_plantObjects.IsValid())
+            {
+                _plantObjects.Load(_plantField, _level.Plants, _grid.Origin);
             }
         }
 
-        private void PushMowerOutOfProps()
+        private void TickObjects(float deltaTime)
         {
-            if (_props.IsInvalid())
+            var rotation = _camera.IsValid() ? _camera.transform.rotation : Quaternion.identity;
+
+            if (_plantObjects.IsValid())
             {
-                return;
+                _plantObjects.Tick(deltaTime, _mower.transform.position, rotation);
             }
 
-            var mowerTransform = _mower.transform;
-            mowerTransform.position = _props.PushOut(mowerTransform.position, _machine.BodyRadius);
+            if (_contactIcons.IsValid())
+            {
+                _contactIcons.Tick(deltaTime, rotation);
+            }
         }
 
         private void BindMowerAnimator()
@@ -712,11 +763,6 @@ namespace GrassSimulation.Sandbox
 
         private void BindAudio()
         {
-            if (_props.IsValid())
-            {
-                _props.Bind(GlobalMessenger.Publisher.Scope<GameplayScope>());
-            }
-
             if (_audio.IsValid())
             {
                 _audio.Bind(
@@ -817,19 +863,85 @@ namespace GrassSimulation.Sandbox
             }
         }
 
-        private void CutProps(Vector3 blade, float cuttingPower, float deltaTime)
+        private void CutPlantObjects(Vector3 from, Vector3 to, float cuttingPower, float deltaTime)
         {
-            if (_props.IsInvalid())
+            var stroke = new CutStroke(
+                  from
+                , to
+                , _cutRadius
+                , CutTier
+                , cuttingPower
+                , deltaTime
+                , RulesValues.SlowHintThreshold
+            );
+
+            _plantField.Cut(stroke, _obstacles, _harvestedObjects, _contacts);
+
+            var harvestCount = _harvestedObjects.Count;
+
+            for (var i = 0; i < harvestCount; i++)
             {
-                return;
+                var harvest = _harvestedObjects[i];
+
+                _session.RecordHarvest(harvest.Kind, harvest.Xp, harvest.Units);
+                PublishPlantHarvested(in harvest);
+                PlayObjectHarvest(in harvest, to);
             }
 
-            var xp = _props.Cut(blade, _cutRadius, CutTier, cuttingPower, deltaTime);
+            _harvestedObjects.Clear();
+        }
 
-            if (xp > 0)
+        private void PublishPlantHarvested(in PlantHarvest harvest)
+        {
+            var isFruit = _plantField.GetPlant(harvest.Kind).IsFruit;
+
+            PlantHarvestedMsg.Publish(
+                  in _gameplayEvents
+                , new PlantHarvestedMsg(harvest.Kind, harvest.Xp, harvest.FruitCount, isFruit)
+            );
+        }
+
+        private void PlayObjectHarvest(in PlantHarvest harvest, Vector3 blade)
+        {
+            NotifyMowerCut(harvest.Units);
+
+            if (_plantObjects.IsValid())
             {
-                _session.RecordXp(xp);
+                _plantObjects.PlayHarvest(in harvest, blade);
             }
+        }
+
+        private void ApplyContacts()
+        {
+            var lockedCount = _contacts.Locked.Count;
+
+            for (var i = 0; i < lockedCount; i++)
+            {
+                var contact = _contacts.Locked[i];
+
+                _session.RecordLockedTouch(contact.Kind, contact.RequiredTier);
+
+                if (_contactIcons.IsValid())
+                {
+                    _contactIcons.ShowLocked(contact.Kind, contact.Position);
+                }
+            }
+
+            var slowCount = _contacts.Slow.Count;
+
+            for (var i = 0; i < slowCount; i++)
+            {
+                var contact = _contacts.Slow[i];
+
+                _session.RecordSlowHint(contact.Kind);
+
+                if (_contactIcons.IsValid())
+                {
+                    _contactIcons.ShowSlow(contact.Kind, contact.Position);
+                }
+            }
+
+            _speedLimit = RulesValues.AutoSlow ? _contacts.SpeedLimit : float.PositiveInfinity;
         }
 
         private void HudLine(string text)
@@ -844,11 +956,12 @@ namespace GrassSimulation.Sandbox
 
         private void IndexClippingColors()
         {
-            var plantCount = _plants.Length;
+            var plants = _plantCatalog.Plants;
+            var plantCount = plants.Length;
 
             for (var i = 0; i < plantCount; i++)
             {
-                var plant = _plants[i];
+                var plant = plants[i];
 
                 if (plant.Material.IsValid())
                 {
@@ -859,11 +972,21 @@ namespace GrassSimulation.Sandbox
 
         private void SetLitterColors()
         {
-            var plantCount = _plants.Length;
+            var plants = _plantCatalog.Plants;
+            var plantCount = plants.Length;
+
+            _feedback.SetLitterColors(PlantKind.None, _lawnColor, _lawnColor, accentShare: 0f);
+            _feedback.SetLawnAmount(_lawnAmount);
 
             for (var i = 0; i < plantCount; i++)
             {
-                var plant = _plants[i];
+                var plant = plants[i];
+
+                if (plant.Representation == PlantRepresentation.Object)
+                {
+                    continue;
+                }
+
                 var leafColor = _clippingColorByKind[(int)plant.Kind];
 
                 if (plant.HasHead)
@@ -882,62 +1005,25 @@ namespace GrassSimulation.Sandbox
             }
         }
 
-        private void PlaceProtectedZones()
-        {
-            if (_protectedZone.IsInvalid())
-            {
-                return;
-            }
-
-            var beds = _level.Beds;
-            var bedCount = beds.Length;
-
-            _zoneFlashes = new float[bedCount];
-
-            for (var i = _zoneRenderers.Count; i < bedCount; i++)
-            {
-                var zoneRenderer = i == 0
-                    ? _protectedZone
-                    : Instantiate(_protectedZone, _protectedZone.transform.parent);
-
-                _zoneRenderers.Add(zoneRenderer);
-            }
-
-            var cellSize = _grid.CellSize;
-
-            for (var i = 0; i < _zoneRenderers.Count; i++)
-            {
-                var isUsed = i < bedCount;
-
-                _zoneRenderers[i].gameObject.SetActive(isUsed);
-
-                if (isUsed == false)
-                {
-                    continue;
-                }
-
-                var bed = beds[i];
-                var min = _grid.Origin + new Vector2(bed.xMin, bed.yMin) * cellSize;
-                var size = new Vector2(bed.width, bed.height) * cellSize;
-                var center = min + size * 0.5f;
-                var zone = _zoneRenderers[i].transform;
-
-                zone.SetPositionAndRotation(new Vector3(center.x, 0.02f, center.y), Quaternion.Euler(90f, 0f, 0f));
-                zone.localScale = new Vector3(size.x + ZONE_MARGIN, size.y + ZONE_MARGIN, 1f);
-            }
-        }
-
         private void ResetRun()
         {
-            if (_props.IsValid())
+            if (_plantObjects.IsValid())
             {
-                _props.ResetAll();
+                _plantObjects.ResetAll();
+            }
+
+            if (_contactIcons.IsValid())
+            {
+                _contactIcons.Clear();
             }
 
             _grid.ResetProgress();
+            _plantField.ResetProgress();
             _feedback.Clear();
+            _bedOutlines.Clear();
+            _contacts.Clear();
+            _speedLimit = float.PositiveInfinity;
             _hasLastSettlement = false;
-            Array.Clear(_zoneFlashes, 0, _zoneFlashes.Length);
             _cutRadius = _machine.BaseCutRadius;
 
             var spawn = _grid.ToWorld(_level.Spawn);
@@ -973,7 +1059,7 @@ namespace GrassSimulation.Sandbox
             }
 
             var rotation = Quaternion.Euler(_cameraPitch, 0f, 0f);
-            var kick = _props.IsValid() ? _props.CameraKick : 0f;
+            var kick = _plantObjects.IsValid() ? _plantObjects.CameraKick : 0f;
             var shake = UnityEngine.Random.insideUnitSphere * (kick * _cameraShake);
             var pose = new CameraPose(_cameraFocus + shake, _followOrthoSize);
             var eased = _previewBlend.Eased;
@@ -1018,10 +1104,16 @@ namespace GrassSimulation.Sandbox
             var isShiftHeld = keyboard.leftShiftKey.isPressed || keyboard.rightShiftKey.isPressed;
             var wipePressed = IsNewPress(isShiftHeld && keyboard.deleteKey.isPressed, ref _wasWipeHeld);
             var hudTogglePressed = IsNewPress(keyboard.f1Key.isPressed, ref _wasHudToggleHeld);
+            var debugXpPressed = IsNewPress(keyboard.f7Key.isPressed, ref _wasDebugXpHeld);
 
             if (hudTogglePressed)
             {
                 _showDebugHud = !_showDebugHud;
+            }
+
+            if (debugXpPressed)
+            {
+                _session.RecordXp(DEBUG_XP);
             }
 
             if (wipePressed)
@@ -1134,9 +1226,17 @@ namespace GrassSimulation.Sandbox
 
         private void Cut(Vector3 from, Vector3 to, float cuttingPower, float deltaTime)
         {
-            var stroke = new CutStroke(from, to, _cutRadius, CutTier, cuttingPower, deltaTime);
+            var stroke = new CutStroke(
+                  from
+                , to
+                , _cutRadius
+                , CutTier
+                , cuttingPower
+                , deltaTime
+                , RulesValues.SlowHintThreshold
+            );
 
-            _cutter.Cut(stroke, _harvestedCells, _touchedBeds);
+            _cutter.Cut(stroke, _harvestedCells, _touchedBeds, _contacts);
 
             var harvestedCount = _harvestedCells.Count;
 
@@ -1158,16 +1258,16 @@ namespace GrassSimulation.Sandbox
             {
                 var bed = _touchedBeds[i];
 
-                if (_session.RecordProtectedTouch(bed) && bed < _zoneFlashes.Length)
+                if (_session.RecordProtectedTouch(bed))
                 {
-                    _zoneFlashes[bed] = 1f;
+                    _bedOutlines.Flash(bed);
                 }
             }
 
             _touchedBeds.Clear();
         }
 
-        private void EmitClippings(int index, in PlantSettings plant)
+        private void EmitClippings(int index, in PlantDefinition plant)
         {
             if (_clippings.IsInvalid())
             {
@@ -1185,16 +1285,6 @@ namespace GrassSimulation.Sandbox
             if (plant.HasHead)
             {
                 _clippings.Emit(position, away, plant.HeadColor, _petalsPerFlower, ClippingShape.Chip);
-            }
-        }
-
-        private void DecayFeedback(float deltaTime)
-        {
-            _feedback.Decay(deltaTime);
-
-            for (var i = 0; i < _zoneFlashes.Length; i++)
-            {
-                _zoneFlashes[i] = Mathf.Max(_zoneFlashes[i] - ZONE_FLASH_DECAY * deltaTime, 0f);
             }
         }
 
@@ -1231,20 +1321,6 @@ namespace GrassSimulation.Sandbox
             }
 
             return warning;
-        }
-
-        private void UpdateProtectedZones()
-        {
-            var bedCount = _zoneFlashes.Length;
-
-            for (var i = 0; i < bedCount && i < _zoneRenderers.Count; i++)
-            {
-                var zoneRenderer = _zoneRenderers[i];
-
-                zoneRenderer.GetPropertyBlock(_zoneProperties);
-                _zoneProperties.SetFloat(GrassFieldShaderIds.Flash, _zoneFlashes[i]);
-                zoneRenderer.SetPropertyBlock(_zoneProperties);
-            }
         }
 
         private enum FlowRequest

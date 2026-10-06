@@ -5,7 +5,8 @@
         "EncosyTower.Core",
         "EncosyTower.PubSub",
         "EncosyTower.Processing",
-        "Unity.InputSystem"
+        "Unity.InputSystem",
+        "Unity.TextMeshPro"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

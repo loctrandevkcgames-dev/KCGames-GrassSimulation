@@ -4,7 +4,7 @@ namespace GrassSimulation.Gameplay
 {
     public readonly record struct PlantKindMask(int Bits)
     {
-        public static PlantKindMask FromTier(ReadOnlySpan<PlantSettings> plants, int tier)
+        public static PlantKindMask FromTier(ReadOnlySpan<PlantDefinition> plants, int tier)
         {
             var mask = default(PlantKindMask);
 

@@ -44,7 +44,7 @@ public sealed class UpgradePopupFormatTests
         var mask = default(PlantKindMask).With(PlantKind.HardBush).With(PlantKind.LowBush);
 
         Assert.That(UpgradePopupFormat.TryFormatUnlocked(mask, out var text), Is.True);
-        Assert.That(text, Is.EqualTo("Đã mở khóa bụi thấp và bụi cứng"));
+        Assert.That(text, Is.EqualTo("Đã mở khóa bụi rậm và bụi cứng"));
     }
 
     [Test]
@@ -56,7 +56,7 @@ public sealed class UpgradePopupFormatTests
             .With(PlantKind.HardBush);
 
         Assert.That(UpgradePopupFormat.TryFormatUnlocked(mask, out var text), Is.True);
-        Assert.That(text, Is.EqualTo("Đã mở khóa hoa đỏ, bụi thấp và bụi cứng"));
+        Assert.That(text, Is.EqualTo("Đã mở khóa hoa đỏ, bụi rậm và bụi cứng"));
     }
 
     [Test]

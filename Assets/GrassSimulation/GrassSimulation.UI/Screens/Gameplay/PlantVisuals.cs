@@ -33,6 +33,12 @@ namespace GrassSimulation.UI
                 PlantKind.ProtectedFlower => PlantIcon.Flower,
                 PlantKind.LowBush => PlantIcon.Bush,
                 PlantKind.HardBush => PlantIcon.Bush,
+                PlantKind.BushLow => PlantIcon.Bush,
+                PlantKind.Vegetable => PlantIcon.Bush,
+                PlantKind.BushBig => PlantIcon.Bush,
+                PlantKind.Melon => PlantIcon.Bush,
+                PlantKind.FruitTree => PlantIcon.Bush,
+                PlantKind.GiantFruit => PlantIcon.Bush,
                 _ => PlantIcon.Grass,
             };
         }
@@ -45,6 +51,12 @@ namespace GrassSimulation.UI
                 PlantKind.LowBush => UiText.PLANT_LOW_BUSH,
                 PlantKind.HardBush => UiText.PLANT_HARD_BUSH,
                 PlantKind.ProtectedFlower => UiText.PLANT_PROTECTED_FLOWER,
+                PlantKind.BushLow => UiText.PLANT_BUSH_LOW,
+                PlantKind.Vegetable => UiText.PLANT_VEGETABLE,
+                PlantKind.BushBig => UiText.PLANT_BUSH_BIG,
+                PlantKind.Melon => UiText.PLANT_MELON,
+                PlantKind.FruitTree => UiText.PLANT_FRUIT_TREE,
+                PlantKind.GiantFruit => UiText.PLANT_GIANT_FRUIT,
                 _ => UiText.PLANT_GRASS,
             };
         }

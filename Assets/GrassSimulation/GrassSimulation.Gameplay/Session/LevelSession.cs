@@ -14,6 +14,8 @@ namespace GrassSimulation.Gameplay
         private readonly HarvestBatcher _harvestBatcher = new(HARVEST_BATCH_INTERVAL);
 
         private int _clearedCells;
+        private int _lockedKinds;
+        private int _slowKinds;
 
         public LevelSession(
               LevelDefinition level
@@ -123,26 +125,53 @@ namespace GrassSimulation.Gameplay
 
         public void RecordHarvest(PlantKind kind, int xp)
         {
+            RecordHarvest(kind, xp, units: 1);
+        }
+
+        public void RecordHarvest(PlantKind kind, int xp, int units)
+        {
             if (IsSimulating == false)
             {
                 return;
             }
 
-            _clearedCells++;
+            _clearedCells += units;
 
             if (State != LevelState.Playing)
             {
-                _harvestBatcher.Add(cells: 1, xp: 0, ElapsedTime);
+                _harvestBatcher.Add(cells: units, xp: 0, ElapsedTime);
                 return;
             }
 
-            Objectives.Record(kind);
-            _harvestBatcher.Add(cells: 1, xp, ElapsedTime);
+            Objectives.Record(kind, units);
+            _harvestBatcher.Add(cells: units, xp, ElapsedTime);
 
             var tiersGained = Growth.AddXp(xp);
 
-            PublishCompletedQuotas(kind);
+            PublishCompletedQuotas(kind, units);
             PublishTierUps(tiersGained);
+        }
+
+        public bool RecordLockedTouch(PlantKind kind, int requiredTier)
+        {
+            if (IsSimulating == false || MarkFirst(ref _lockedKinds, kind) == false)
+            {
+                return false;
+            }
+
+            LockedPlantTouchedMsg.Publish(in _publisher, new LockedPlantTouchedMsg(kind, requiredTier));
+            return true;
+        }
+
+        public bool RecordSlowHint(PlantKind kind)
+        {
+            if (IsSimulating == false || MarkFirst(ref _slowKinds, kind) == false)
+            {
+                return false;
+            }
+
+            SlowHintMsg.Publish(in _publisher, new SlowHintMsg(kind));
+            return true;
         }
 
         public void RecordXp(int xp)
@@ -286,7 +315,16 @@ namespace GrassSimulation.Gameplay
             }
         }
 
-        private void PublishCompletedQuotas(PlantKind kind)
+        private static bool MarkFirst(ref int mask, PlantKind kind)
+        {
+            var bit = 1 << (int)kind;
+            var isFirst = (mask & bit) == 0;
+
+            mask |= bit;
+            return isFirst;
+        }
+
+        private void PublishCompletedQuotas(PlantKind kind, int units)
         {
             var count = Objectives.QuotaCount;
             var harvested = Objectives.GetHarvested(kind);
@@ -295,7 +333,9 @@ namespace GrassSimulation.Gameplay
             {
                 ref readonly var quota = ref Objectives.GetQuota(i);
 
-                if (quota.Kind == kind && harvested == quota.Amount)
+                var isNewlyMet = harvested - units < quota.Amount && harvested >= quota.Amount;
+
+                if (quota.Kind == kind && isNewlyMet)
                 {
                     QuotaCompletedMsg.Publish(in _publisher, new QuotaCompletedMsg(i, kind, quota.IsBonus));
                 }
@@ -355,6 +395,8 @@ namespace GrassSimulation.Gameplay
             ElapsedTime = 0f;
             Result = default;
             _clearedCells = 0;
+            _lockedKinds = 0;
+            _slowKinds = 0;
             _harvestBatcher.Clear();
         }
     }

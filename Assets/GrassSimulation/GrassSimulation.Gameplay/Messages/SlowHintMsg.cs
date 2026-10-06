@@ -4,5 +4,5 @@ using EncosyTower.PubSub;
 namespace GrassSimulation.Gameplay
 {
     [PubSub(ApiMode.Sync, State = StateMode.Stateless, Scope = typeof(GameplayScope))]
-    public readonly partial record struct PropBrokenMsg(PropKind Kind, bool IsSplit);
+    public readonly partial record struct SlowHintMsg(PlantKind Kind);
 }

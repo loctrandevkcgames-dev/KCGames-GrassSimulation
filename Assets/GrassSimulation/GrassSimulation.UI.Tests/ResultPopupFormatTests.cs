@@ -211,7 +211,7 @@ public sealed class ResultPopupFormatTests
 
         var row = ResultPopupFormat.CreateQuotaRow(in quota);
 
-        Assert.That(row.Label, Is.EqualTo("Bụi thấp"));
+        Assert.That(row.Label, Is.EqualTo("Bụi rậm"));
         Assert.That(row.Value.TryGetValue(out var value), Is.True);
         Assert.That(value, Is.EqualTo("25 / 25"));
         Assert.That(row.ShowCheck, Is.True);

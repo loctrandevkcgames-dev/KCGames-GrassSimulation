@@ -28,6 +28,7 @@ namespace GrassSimulation.Gameplay
         private const float PUFF_SPREAD = 0.35f;
         private const float PUFF_SQUASH = 0.9f;
         private const float PUFF_BEND = 0.5f;
+        private const float REFERENCE_CELL_SIZE = 0.25f;
         private const float MIN_TINT = 0.88f;
         private const float TINT_RANGE = 0.3f;
 
@@ -53,7 +54,7 @@ namespace GrassSimulation.Gameplay
         public bool TryBuildChunk(
               FieldGrid grid
             , RectInt chunk
-            , in PlantSettings settings
+            , in PlantDefinition settings
             , System.Random random
             , out Mesh mesh
         )
@@ -130,7 +131,7 @@ namespace GrassSimulation.Gameplay
               Vector3 root
             , Vector4 clump
             , float cellSize
-            , in PlantSettings settings
+            , in PlantDefinition settings
             , System.Random random
         )
         {
@@ -158,7 +159,9 @@ namespace GrassSimulation.Gameplay
                 return;
             }
 
-            var headCount = Next(random) < EXTRA_HEAD_CHANCE ? 2 : 1;
+            var cellScale = cellSize / REFERENCE_CELL_SIZE;
+            var headsPerReferenceCell = Next(random) < EXTRA_HEAD_CHANCE ? 2 : 1;
+            var headCount = Mathf.Max(1, Mathf.RoundToInt(headsPerReferenceCell * cellScale * cellScale));
 
             for (var i = 0; i < headCount; i++)
             {
@@ -213,7 +216,7 @@ namespace GrassSimulation.Gameplay
             _triangles.Add(lastLeft + 2);
         }
 
-        private void AddHead(Vector3 center, in PlantSettings settings, System.Random random, Vector4 clump)
+        private void AddHead(Vector3 center, in PlantDefinition settings, System.Random random, Vector4 clump)
         {
             var headColor = settings.HeadColor;
             var startAngle = Next(random) * Mathf.PI * 2f;
@@ -269,7 +272,7 @@ namespace GrassSimulation.Gameplay
               Vector3 root
             , Vector4 clump
             , float cellSize
-            , in PlantSettings settings
+            , in PlantDefinition settings
             , System.Random random
         )
         {

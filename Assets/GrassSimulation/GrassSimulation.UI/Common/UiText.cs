@@ -97,8 +97,14 @@ namespace GrassSimulation.UI
         public const string PLANT_GRASS = "Cỏ";
         public const string PLANT_FLOWER = "Hoa đỏ";
         public const string PLANT_THICK_GRASS = "Cỏ dày";
-        public const string PLANT_LOW_BUSH = "Bụi thấp";
+        public const string PLANT_LOW_BUSH = "Bụi rậm";
         public const string PLANT_HARD_BUSH = "Bụi cứng";
         public const string PLANT_PROTECTED_FLOWER = "Hoa bảo vệ";
+        public const string PLANT_BUSH_LOW = "Bụi thấp";
+        public const string PLANT_VEGETABLE = "Rau củ";
+        public const string PLANT_BUSH_BIG = "Bụi lớn";
+        public const string PLANT_MELON = "Dưa hấu";
+        public const string PLANT_FRUIT_TREE = "Cây ăn quả";
+        public const string PLANT_GIANT_FRUIT = "Quả khổng lồ";
     }
 }

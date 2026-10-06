@@ -8,10 +8,10 @@ public sealed class PlantKindMaskTests
     public void FromTier_CollectsKindsRequiringExactlyThatTier()
     {
         var plants = new[] {
-            new PlantSettings { Kind = PlantKind.Grass, RequiredTier = 1 },
-            new PlantSettings { Kind = PlantKind.LowBush, RequiredTier = 2 },
-            new PlantSettings { Kind = PlantKind.HardBush, RequiredTier = 3 },
-            new PlantSettings { Kind = PlantKind.ThickGrass, RequiredTier = 3 },
+            new PlantDefinition { Kind = PlantKind.Grass, RequiredTier = 1 },
+            new PlantDefinition { Kind = PlantKind.LowBush, RequiredTier = 2 },
+            new PlantDefinition { Kind = PlantKind.HardBush, RequiredTier = 3 },
+            new PlantDefinition { Kind = PlantKind.ThickGrass, RequiredTier = 3 },
         };
 
         var mask = PlantKindMask.FromTier(plants, tier: 3);
@@ -25,7 +25,7 @@ public sealed class PlantKindMaskTests
     [Test]
     public void FromTier_IsEmptyWhenNothingUnlocksAtThatTier()
     {
-        var plants = new[] { new PlantSettings { Kind = PlantKind.Grass, RequiredTier = 1 } };
+        var plants = new[] { new PlantDefinition { Kind = PlantKind.Grass, RequiredTier = 1 } };
 
         Assert.That(PlantKindMask.FromTier(plants, tier: 2), Is.EqualTo(default(PlantKindMask)));
         Assert.That(PlantKindMask.FromTier(plants: default, tier: 1).Count, Is.Zero);
@@ -34,7 +34,7 @@ public sealed class PlantKindMaskTests
     [Test]
     public void FromTier_IgnoresPlantKindNone()
     {
-        var plants = new[] { new PlantSettings { Kind = PlantKind.None, RequiredTier = 0 } };
+        var plants = new[] { new PlantDefinition { Kind = PlantKind.None, RequiredTier = 0 } };
 
         Assert.That(PlantKindMask.FromTier(plants, tier: 0).Count, Is.Zero);
     }

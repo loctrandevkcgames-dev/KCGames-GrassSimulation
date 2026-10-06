@@ -45,6 +45,10 @@ namespace GrassSimulation.Gameplay
 
         public Rect Bounds { get; set; }
 
+        public float BodyRadius { get; set; }
+
+        public ObstacleField Obstacles { get; set; }
+
         private static Vector2 ReadKeyboard()
         {
             var keyboard = Keyboard.current;
@@ -112,7 +116,7 @@ namespace GrassSimulation.Gameplay
             var rate = isSpeedingUp ? _acceleration : _deceleration;
 
             _velocity = Vector3.MoveTowards(_velocity, targetVelocity, rate * deltaTime);
-            transform.position = Slide(transform.position + _velocity * deltaTime);
+            transform.position = SlideAlongObstacles(Slide(transform.position + _velocity * deltaTime));
 
             TurnModel(deltaTime);
         }
@@ -134,6 +138,20 @@ namespace GrassSimulation.Gameplay
             }
 
             return position;
+        }
+
+        private Vector3 SlideAlongObstacles(Vector3 position)
+        {
+            if (Obstacles == null || Obstacles.Count == 0)
+            {
+                return position;
+            }
+
+            var velocity = new Vector2(_velocity.x, _velocity.z);
+            var resolved = Obstacles.Resolve(new Vector2(position.x, position.z), BodyRadius, ref velocity);
+
+            _velocity = new Vector3(velocity.x, _velocity.y, velocity.y);
+            return Slide(new Vector3(resolved.x, position.y, resolved.y));
         }
 
         private void TurnModel(float deltaTime)

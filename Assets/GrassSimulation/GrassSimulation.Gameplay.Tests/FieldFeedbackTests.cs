@@ -26,6 +26,24 @@ public sealed class FieldFeedbackTests
     }
 
     [Test]
+    public void NeverPlantedCell_ShowsTheLawnTintWhenOneIsSet()
+    {
+        var grid = new FieldGrid(cellsX: 4, cellsZ: 4, CELL_SIZE);
+        var feedback = new FieldFeedback(grid.Count);
+
+        feedback.SetLitterColors(PlantKind.None, Color.green, Color.green, accentShare: 0f);
+        feedback.SetLawnAmount(0.5f);
+
+        using var buffers = new Buffers(grid.Count);
+        feedback.Write(grid, buffers.States, buffers.Litter, buffers.Accent, buffers.Cut);
+
+        Assert.That(buffers.States[0].r, Is.EqualTo(FULL));
+        Assert.That(buffers.Litter[0].a, Is.EqualTo(HALF).Within(1));
+        Assert.That(buffers.Litter[0].g, Is.GreaterThan(buffers.Litter[0].r));
+        Assert.That(buffers.Cut[0].a, Is.Zero);
+    }
+
+    [Test]
     public void FreshCut_PopsThenClippingsFadeIn()
     {
         var grid = new FieldGrid(cellsX: 4, cellsZ: 4, CELL_SIZE);

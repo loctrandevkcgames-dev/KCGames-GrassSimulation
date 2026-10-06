@@ -205,9 +205,9 @@ public sealed class LevelSnapshotTests
         var session = CreateSession(level);
         session.TryBegin();
         var plants = new[] {
-            new PlantSettings { Kind = PlantKind.Grass, RequiredTier = 1 },
-            new PlantSettings { Kind = PlantKind.LowBush, RequiredTier = 2 },
-            new PlantSettings { Kind = PlantKind.HardBush, RequiredTier = 3 },
+            new PlantDefinition { Kind = PlantKind.Grass, RequiredTier = 1 },
+            new PlantDefinition { Kind = PlantKind.LowBush, RequiredTier = 2 },
+            new PlantDefinition { Kind = PlantKind.HardBush, RequiredTier = 3 },
         };
 
         var unlocked = PlantKindMask.FromTier(plants, session.Growth.UpgradeTier);

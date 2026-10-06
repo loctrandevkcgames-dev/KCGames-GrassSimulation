@@ -39,6 +39,11 @@ namespace GrassSimulation.Gameplay
         public PlantKind GetKind(int index)
             => _kinds[index];
 
+        public void SetKind(int index, PlantKind kind)
+        {
+            _kinds[index] = kind;
+        }
+
         public float GetProgress(int index)
             => _progress[index];
 
@@ -75,14 +80,24 @@ namespace GrassSimulation.Gameplay
 
         public void ClearCircle(Vector2 center, float radius)
         {
+            ClearCapsule(center, center, radius);
+        }
+
+        public void ClearCapsule(Vector2 a, Vector2 b, float radius)
+        {
             var extent = Vector2.one * radius;
-            GetCellRange(center - extent, center + extent, out var xMin, out var zMin, out var xMax, out var zMax);
+            var min = Vector2.Min(a, b) - extent;
+            var max = Vector2.Max(a, b) + extent;
+
+            GetCellRange(min, max, out var xMin, out var zMin, out var xMax, out var zMax);
 
             for (var z = zMin; z <= zMax; z++)
             {
                 for (var x = xMin; x <= xMax; x++)
                 {
-                    if (Vector2.Distance(CellCenter(x, z), center) <= radius)
+                    var center = CellCenter(x, z);
+
+                    if (Vector2.Distance(CutMath.ClosestPoint(a, b, center), center) <= radius)
                     {
                         _kinds[IndexOf(x, z)] = PlantKind.None;
                     }

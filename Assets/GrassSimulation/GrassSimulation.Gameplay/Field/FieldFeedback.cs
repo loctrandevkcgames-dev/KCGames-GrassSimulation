@@ -26,6 +26,8 @@ namespace GrassSimulation.Gameplay
         private readonly Color[] _litterLeafByKind = new Color[PlantKindExtensions.Length];
         private readonly Color[] _litterAccentByKind = new Color[PlantKindExtensions.Length];
 
+        private float _lawnAmount;
+
         public FieldFeedback(int cellCount)
         {
             _shake = new float[cellCount];
@@ -59,6 +61,11 @@ namespace GrassSimulation.Gameplay
 
             _litterLeafByKind[(int)kind] = leaf;
             _litterAccentByKind[(int)kind] = new Color(accent.r, accent.g, accent.b, Mathf.Clamp01(accentShare));
+        }
+
+        public void SetLawnAmount(float amount)
+        {
+            _lawnAmount = Mathf.Clamp01(amount);
         }
 
         public void Shake(int index)
@@ -127,7 +134,7 @@ namespace GrassSimulation.Gameplay
 
                 var age = _cutAge[i];
                 var appear = Mathf.Clamp01(age / LITTER_APPEAR_SECONDS);
-                var amount = isEmpty ? 0f : Mathf.Clamp01(progress) * appear;
+                var amount = isEmpty ? _lawnAmount : Mathf.Clamp01(progress) * appear;
                 var accent = _litterAccentByKind[(int)kind];
                 litter[i] = ToPremultiplied(_litterLeafByKind[(int)kind], amount, amount);
                 litterAccent[i] = ToPremultiplied(accent, amount, accent.a * amount);

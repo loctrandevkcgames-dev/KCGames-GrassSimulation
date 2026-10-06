@@ -373,6 +373,71 @@ public sealed class LevelSessionTests
         Assert.That(session.Objectives.GetHarvested(PlantKind.Grass), Is.Zero);
     }
 
+    [Test]
+    public void ObjectHarvest_CountsItsUnitsTowardTheQuota()
+    {
+        var session = CreateStartedSession(timeLimit: 10f, failOnProtectedHits: false, Quota(PlantKind.Melon, 2));
+
+        session.RecordHarvest(PlantKind.Melon, xp: 8, units: 1);
+
+        Assert.That(session.Objectives.GetHarvested(PlantKind.Melon), Is.EqualTo(1));
+        Assert.That(session.Objectives.IsQuotaMet(0), Is.False);
+
+        session.RecordHarvest(PlantKind.Melon, xp: 8, units: 1);
+        session.EndTick(0.1f);
+
+        Assert.That(_messages.QuotasCompleted, Has.Count.EqualTo(1));
+        Assert.That(session.State, Is.EqualTo(LevelState.Success));
+    }
+
+    [Test]
+    public void ObjectHarvest_AddsItsXpToGrowth()
+    {
+        var session = CreateStartedSession(timeLimit: 10f, failOnProtectedHits: false, Quota(PlantKind.Melon, 5));
+
+        session.RecordHarvest(PlantKind.Melon, xp: 8, units: 1);
+        session.RecordHarvest(PlantKind.FruitTree, xp: 0, units: 1);
+
+        Assert.That(session.Growth.Xp, Is.EqualTo(8));
+        Assert.That(session.Objectives.GetHarvested(PlantKind.FruitTree), Is.EqualTo(1));
+    }
+
+    [Test]
+    public void LockedTouch_IsPublishedOncePerKindPerRun()
+    {
+        var session = CreateStartedSession(timeLimit: 10f, failOnProtectedHits: false, Quota(PlantKind.Grass, 5));
+
+        Assert.That(session.RecordLockedTouch(PlantKind.Melon, requiredTier: 3), Is.True);
+        Assert.That(session.RecordLockedTouch(PlantKind.Melon, requiredTier: 3), Is.False);
+        Assert.That(session.RecordLockedTouch(PlantKind.BushBig, requiredTier: 3), Is.True);
+        Assert.That(_messages.LockedTouches, Has.Count.EqualTo(2));
+
+        session.Reset();
+        session.TryBegin();
+
+        Assert.That(session.RecordLockedTouch(PlantKind.Melon, requiredTier: 3), Is.True);
+    }
+
+    [Test]
+    public void SlowHint_IsPublishedOncePerKindPerRun()
+    {
+        var session = CreateStartedSession(timeLimit: 10f, failOnProtectedHits: false, Quota(PlantKind.Grass, 5));
+
+        Assert.That(session.RecordSlowHint(PlantKind.Melon), Is.True);
+        Assert.That(session.RecordSlowHint(PlantKind.Melon), Is.False);
+        Assert.That(_messages.SlowHints, Has.Count.EqualTo(1));
+        Assert.That(_messages.SlowHints[0].Kind, Is.EqualTo(PlantKind.Melon));
+    }
+
+    [Test]
+    public void ContactFeedback_IsIgnoredBeforeTheRunStarts()
+    {
+        var session = CreateSession(timeLimit: 10f, failOnProtectedHits: false, Quota(PlantKind.Grass, 5));
+
+        Assert.That(session.RecordLockedTouch(PlantKind.Melon, requiredTier: 3), Is.False);
+        Assert.That(session.RecordSlowHint(PlantKind.Melon), Is.False);
+    }
+
     private static QuotaSettings Quota(PlantKind kind, int amount, bool isBonus = false)
         => new() { Kind = kind, Amount = amount, IsBonus = isBonus };
 

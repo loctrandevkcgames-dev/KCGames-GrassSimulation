@@ -20,7 +20,7 @@ namespace GrassSimulation.Gameplay
             _isEnabled = PlayerOptions.GetHaptics();
 
             _subscriptions.Add(HarvestBatchedMsg.Subscribe(in subscriber, OnHarvestBatched));
-            _subscriptions.Add(PropBrokenMsg.Subscribe(in subscriber, OnPropBroken));
+            _subscriptions.Add(PlantHarvestedMsg.Subscribe(in subscriber, OnPlantHarvested));
             _subscriptions.Add(QuotaCompletedMsg.Subscribe(in subscriber, OnQuotaCompleted));
             _subscriptions.Add(TierUpMsg.Subscribe(in subscriber, OnTierUp));
             _subscriptions.Add(ProtectedHitMsg.Subscribe(in subscriber, OnProtectedHit));
@@ -55,9 +55,9 @@ namespace GrassSimulation.Gameplay
             Play(HapticPulse.Tick);
         }
 
-        private void OnPropBroken(PropBrokenMsg message)
+        private void OnPlantHarvested(PlantHarvestedMsg message)
         {
-            Play(message.IsSplit ? HapticPulse.Medium : HapticPulse.Light);
+            Play(message.IsFruit ? HapticPulse.Medium : HapticPulse.Light);
         }
 
         private void OnQuotaCompleted(QuotaCompletedMsg message)

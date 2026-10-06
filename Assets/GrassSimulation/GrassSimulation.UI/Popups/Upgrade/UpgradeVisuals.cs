@@ -7,9 +7,9 @@ namespace GrassSimulation.UI
         public const string WIDE_BLADE = "WideBlade";
         public const string STRONG_ENGINE = "StrongEngine";
 
-        private const float WIDE_BLADE_ICON_SIZE = 84f;
-        private const float STRONG_ENGINE_ICON_SIZE = 46f;
-        private const float GENERIC_ICON_SIZE = 46f;
+        private const float WIDE_BLADE_ICON_SIZE = 84f * UiMetrics.SCALE;
+        private const float STRONG_ENGINE_ICON_SIZE = 46f * UiMetrics.SCALE;
+        private const float GENERIC_ICON_SIZE = 46f * UiMetrics.SCALE;
 
         private static readonly UpgradeVisual s_wideBlade = new(
               UiText.UPGRADE_WIDE_BLADE

@@ -6,7 +6,7 @@ namespace GrassSimulation.UI
 {
     public sealed class PauseSwitch : MonoBehaviour
     {
-        private const float KNOB_INSET = 3f;
+        private const float KNOB_INSET = 3f * UiMetrics.SCALE;
 
         [SerializeField]
         private PauseOption _option;

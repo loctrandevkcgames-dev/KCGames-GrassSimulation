@@ -432,7 +432,7 @@ GameObject:
   - component: {fileID: 5761893504865502863}
   - component: {fileID: 3622020632339418334}
   m_Layer: 0
-  m_Name: TimeTile
+  m_Name: FlawlessTile
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1820,8 +1820,8 @@ MonoBehaviour:
     _flower: {fileID: 21300000, guid: fd72c9a1b679c644d817981c718b0a0e, type: 3}
     _bush: {fileID: 21300000, guid: 917a6fa2bf13bb349aa5a5e8951a2d4a, type: 3}
   _goalTile: {fileID: 1385467435312303690}
-  _timeTile: {fileID: 3622020632339418334}
-  _cleanTile: {fileID: 3733780486609472911}
+  _flawlessTile: {fileID: 3622020632339418334}
+  _sideTile: {fileID: 3733780486609472911}
   _startButton: {fileID: 8881302847744172506}
   _startLabel: {fileID: 6020502924129609482}
 --- !u!1 &3090134316941989032
@@ -4582,7 +4582,7 @@ GameObject:
   - component: {fileID: 362918698358983125}
   - component: {fileID: 3733780486609472911}
   m_Layer: 0
-  m_Name: CleanTile
+  m_Name: SideTile
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

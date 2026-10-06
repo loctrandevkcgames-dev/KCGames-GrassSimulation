@@ -38,6 +38,7 @@ namespace GrassSimulation.Audio
 
         private SfxVoicePool _voices;
         private MowerHumPlayer _hum;
+        private GrassCutLoopPlayer _cutLoop;
         private MusicPlayer _music;
         private AmbiencePlayer _ambience;
         private MixerVolumes _volumes;
@@ -79,6 +80,7 @@ namespace GrassSimulation.Audio
             _subscriptions.Add(LevelStateChangedMsg.Subscribe(in gameplay, OnLevelStateChanged));
             _subscriptions.Add(HomeChangedMsg.Subscribe(in gameplay, OnHomeChanged));
             _subscriptions.Add(PropBrokenMsg.Subscribe(in gameplay, OnPropBroken));
+            _subscriptions.Add(HarvestBatchedMsg.Subscribe(in gameplay, OnHarvestBatched));
             _subscriptions.Add(QuotaCompletedMsg.Subscribe(in gameplay, OnQuotaCompleted));
             _subscriptions.Add(TierUpMsg.Subscribe(in gameplay, OnTierUp));
             _subscriptions.Add(UpgradeChosenMsg.Subscribe(in gameplay, OnUpgradeChosen));
@@ -98,6 +100,7 @@ namespace GrassSimulation.Audio
             var deltaTime = Time.unscaledDeltaTime;
 
             _hum.Step(IsRunning, MowerSpeed01, deltaTime);
+            _cutLoop.Step(IsRunning, deltaTime);
             _music.Step(now, deltaTime);
             _ambience.Step(deltaTime);
             StepSequences(now);
@@ -119,6 +122,7 @@ namespace GrassSimulation.Audio
 
             _voices = new SfxVoicePool(transform, VOICE_COUNT);
             _hum = new MowerHumPlayer(transform, _library.MowerHum, _loopsGroup);
+            _cutLoop = new GrassCutLoopPlayer(transform, _library.GrassCutLoop, _loopsGroup);
             _music = new MusicPlayer(transform, _library, _musicGroup);
             _ambience = new AmbiencePlayer(transform, _library.Ambience, _ambienceGroup);
             _gate = new CueGate(seed: (uint)System.Environment.TickCount | 1u);
@@ -293,6 +297,11 @@ namespace GrassSimulation.Audio
         private void OnPropBroken(PropBrokenMsg message)
         {
             PlayCue(message.IsSplit ? SoundId.FruitPop : SoundId.BushTrim, Time.unscaledTime);
+        }
+
+        private void OnHarvestBatched(HarvestBatchedMsg message)
+        {
+            _cutLoop.AddCells(message.Cells);
         }
 
         private void OnQuotaCompleted(QuotaCompletedMsg message)

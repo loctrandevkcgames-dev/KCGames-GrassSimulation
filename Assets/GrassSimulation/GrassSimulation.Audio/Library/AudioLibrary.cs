@@ -12,6 +12,9 @@ namespace GrassSimulation.Audio
         private MowerHumSettings _mowerHum;
 
         [SerializeField]
+        private GrassCutLoopSettings _grassCutLoop;
+
+        [SerializeField]
         private AudioClip _gameplayMusic;
 
         [SerializeField]
@@ -50,6 +53,8 @@ namespace GrassSimulation.Audio
         private SoundCue[] _byId;
 
         public MowerHumSettings MowerHum => _mowerHum;
+
+        public GrassCutLoopSettings GrassCutLoop => _grassCutLoop;
 
         public AudioClip GameplayMusic => _gameplayMusic;
 

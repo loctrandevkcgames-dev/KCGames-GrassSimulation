@@ -172,6 +172,12 @@ MonoBehaviour:
       type: 3}
     <Volume>k__BackingField: 0.25
     <Pitch>k__BackingField: {x: 0.9, y: 1.15}
+  _grassCutLoop:
+    <Clip>k__BackingField: {fileID: 8300000, guid: 3c5aa0912035d374da21035a7a717fae,
+      type: 3}
+    <Volume>k__BackingField: 0.35
+    <Pitch>k__BackingField: {x: 0.94, y: 1.08}
+    <FullCellsPerSecond>k__BackingField: 40
   _gameplayMusic: {fileID: 8300000, guid: f2c4221aa9a8fb548aa589ff0b4c238e, type: 3}
   _homeMusic: {fileID: 8300000, guid: 4259431c7fad2c54da2e8d1e8d61ea6b, type: 3}
   _zenMusic: {fileID: 8300000, guid: 04e9fedaee49c0e4da5dedd8726816cb, type: 3}

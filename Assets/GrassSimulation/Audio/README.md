@@ -11,6 +11,7 @@ Chỉnh tham số và chạy lại để tạo biến thể. Sau khi chọn xong
 | Sự kiện (message) | File chính | Ghi chú phát |
 | --- | --- | --- |
 | Máy chạy | `Sfx/Gameplay/sfx_mower_hum_loop` | Volume thấp (~0.25), pitch 0.9–1.15 theo vận tốc |
+| Cắt cỏ liên tục (`HarvestBatchedMsg`) | `Sfx/Gameplay/sfx_grass_cut_loop` | Volume ~0.35 và pitch 0.94–1.08 theo số ô cắt mỗi giây (đầy ở 40 ô/s), fade vào 0,12 s, ra 0,45 s |
 | Cắt bụi (`PropBrokenMsg`) | `sfx_bush_trim_00..02` | Chọn ngẫu nhiên, pitch 0.92–1.08, cooldown 80 ms |
 | Cắt trái cây (`FruitSliceEffects`) | `sfx_fruit_pop_00..02` | Ngẫu nhiên |
 | Đạt quota (`QuotaCompletedMsg`) | `sfx_quota_complete` | Một lần mỗi quota |

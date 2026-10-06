@@ -1,0 +1,19 @@
+{
+    "name": "GrassSimulation.Audio",
+    "rootNamespace": "GrassSimulation.Audio",
+    "references": [
+        "EncosyTower.Core",
+        "EncosyTower.PubSub",
+        "GrassSimulation.Gameplay",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

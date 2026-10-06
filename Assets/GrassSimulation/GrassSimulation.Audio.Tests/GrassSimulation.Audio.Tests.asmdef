@@ -1,0 +1,28 @@
+{
+    "name": "GrassSimulation.Audio.Tests",
+    "rootNamespace": "GrassSimulation.Audio.Tests",
+    "references": [
+        "EncosyTower.Core",
+        "EncosyTower.PubSub",
+        "GrassSimulation.Audio",
+        "GrassSimulation.Gameplay",
+        "Unity.Mathematics",
+        "UnityEditor.TestRunner",
+        "UnityEngine.TestRunner"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -67,6 +67,15 @@ namespace GrassSimulation.Sandbox
         private int _petalsPerFlower = 2;
 
         [SerializeField]
+        private float _petalLitterShare = 0.3f;
+
+        [SerializeField]
+        private float _leafLitterShare = 0.6f;
+
+        [SerializeField]
+        private float _leafLitterShade = 0.8f;
+
+        [SerializeField]
         private PlantSettings[] _plants = Array.Empty<PlantSettings>();
 
         [SerializeField]
@@ -372,6 +381,7 @@ namespace GrassSimulation.Sandbox
             _level = _catalog.Get(_levelIndex);
             _grid = _level.CreateGrid();
             _feedback = new FieldFeedback(_grid.Count);
+            SetLitterColors();
             _cutter = new GrassCutter(_grid, _feedback, _plants);
             _hasProtectedBed = _level.TryGetProtectedBed(out _protectedBed);
 
@@ -643,6 +653,8 @@ namespace GrassSimulation.Sandbox
             {
                 _mowerAnimator.Bind(GlobalMessenger.Subscriber.Scope<GameplayScope>());
             }
+
+            _field.Bind(GlobalMessenger.Subscriber.Scope<GameplayScope>());
         }
 
         private void BindAudio()
@@ -765,6 +777,31 @@ namespace GrassSimulation.Sandbox
                 if (plant.Material.IsValid())
                 {
                     _clippingColorByKind[(int)plant.Kind] = plant.Material.GetColor(GrassFieldShaderIds.TipColor);
+                }
+            }
+        }
+
+        private void SetLitterColors()
+        {
+            var plantCount = _plants.Length;
+
+            for (var i = 0; i < plantCount; i++)
+            {
+                var plant = _plants[i];
+                var leafColor = _clippingColorByKind[(int)plant.Kind];
+
+                if (plant.HasHead)
+                {
+                    _feedback.SetLitterColors(plant.Kind, leafColor, plant.HeadColor, _petalLitterShare);
+                }
+                else if (plant.Shape == PlantShape.Puff)
+                {
+                    var leafChip = leafColor * _leafLitterShade;
+                    _feedback.SetLitterColors(plant.Kind, leafColor, leafChip, _leafLitterShare);
+                }
+                else
+                {
+                    _feedback.SetLitterColors(plant.Kind, leafColor, leafColor, accentShare: 0f);
                 }
             }
         }
@@ -1049,7 +1086,7 @@ namespace GrassSimulation.Sandbox
 
         private void WriteCellStates()
         {
-            _feedback.Write(_grid, _field.CellStates);
+            _feedback.Write(_grid, _field.CellStates, _field.LitterStates, _field.LitterAccentStates, _field.CutStates);
             _field.MarkCellStatesDirty();
         }
 

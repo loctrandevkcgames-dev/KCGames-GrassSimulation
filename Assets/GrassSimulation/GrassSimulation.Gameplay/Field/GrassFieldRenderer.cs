@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using EncosyTower.PubSub;
 using EncosyTower.UnityExtensions;
 using Unity.Collections;
 using UnityEngine;
@@ -12,14 +13,32 @@ namespace GrassSimulation.Gameplay
 
         private readonly List<GameObject> _chunks = new();
         private readonly List<Mesh> _meshes = new();
+        private readonly List<ISubscription> _subscriptions = new();
 
         private Texture2D _stateTexture;
+        private Texture2D _litterTexture;
+        private Texture2D _litterAccentTexture;
+        private Texture2D _cutStateTexture;
         private Vector4 _fieldParams;
         private Vector4 _bladeParams;
         private Vector4 _bladeState;
+        private Vector4 _sweep;
         private bool _isStateDirty;
 
         public NativeArray<Color32> CellStates => _stateTexture.GetPixelData<Color32>(mipLevel: 0);
+
+        public NativeArray<Color32> LitterStates => _litterTexture.GetPixelData<Color32>(mipLevel: 0);
+
+        public NativeArray<Color32> LitterAccentStates => _litterAccentTexture.GetPixelData<Color32>(mipLevel: 0);
+
+        public NativeArray<Color32> CutStates => _cutStateTexture.GetPixelData<Color32>(mipLevel: 0);
+
+        public void Bind(MessageSubscriber.Subscriber<GameplayScope> subscriber)
+        {
+            _subscriptions.Unsubscribe();
+            _subscriptions.Add(QuotaCompletedMsg.Subscribe(in subscriber, OnQuotaCompleted));
+            _subscriptions.Add(TierUpMsg.Subscribe(in subscriber, OnTierUp));
+        }
 
         public void Build(FieldGrid grid, PlantSettings[] plants, int seed)
         {
@@ -29,9 +48,10 @@ namespace GrassSimulation.Gameplay
             var size = grid.Size;
 
             ClearChunks();
-            CreateStateTexture(cellsX, cellsZ);
+            CreateStateTextures(cellsX, cellsZ);
 
             _fieldParams = new Vector4(origin.x, origin.y, 1f / size.x, 1f / size.y);
+            _sweep = Vector4.zero;
 
             var builder = new GrassFieldMeshBuilder();
             var random = new System.Random(seed);
@@ -71,6 +91,11 @@ namespace GrassSimulation.Gameplay
             _bladeState = new Vector4(warning, 0f, 0f, 0f);
         }
 
+        public void PlaySweep(Vector3 origin)
+        {
+            _sweep = new Vector4(origin.x, origin.z, Time.timeSinceLevelLoad, 1f);
+        }
+
         private void LateUpdate()
         {
             if (_stateTexture.IsInvalid())
@@ -81,13 +106,20 @@ namespace GrassSimulation.Gameplay
             if (_isStateDirty)
             {
                 _stateTexture.Apply(updateMipmaps: false);
+                _litterTexture.Apply(updateMipmaps: false);
+                _litterAccentTexture.Apply(updateMipmaps: false);
+                _cutStateTexture.Apply(updateMipmaps: false);
                 _isStateDirty = false;
             }
 
             Shader.SetGlobalTexture(GrassFieldShaderIds.CellState, _stateTexture);
+            Shader.SetGlobalTexture(GrassFieldShaderIds.Litter, _litterTexture);
+            Shader.SetGlobalTexture(GrassFieldShaderIds.LitterAccent, _litterAccentTexture);
+            Shader.SetGlobalTexture(GrassFieldShaderIds.CutState, _cutStateTexture);
             Shader.SetGlobalVector(GrassFieldShaderIds.FieldParams, _fieldParams);
             Shader.SetGlobalVector(GrassFieldShaderIds.BladeParams, _bladeParams);
             Shader.SetGlobalVector(GrassFieldShaderIds.BladeState, _bladeState);
+            Shader.SetGlobalVector(GrassFieldShaderIds.Sweep, _sweep);
         }
 
         private void OnDisable()
@@ -95,30 +127,61 @@ namespace GrassSimulation.Gameplay
             Shader.SetGlobalVector(GrassFieldShaderIds.FieldParams, Vector4.zero);
             Shader.SetGlobalVector(GrassFieldShaderIds.BladeParams, Vector4.zero);
             Shader.SetGlobalVector(GrassFieldShaderIds.BladeState, Vector4.zero);
+            Shader.SetGlobalVector(GrassFieldShaderIds.Sweep, Vector4.zero);
         }
 
         private void OnDestroy()
         {
+            _subscriptions.Unsubscribe();
             ClearChunks();
-
-            if (_stateTexture.IsValid())
-            {
-                Destroy(_stateTexture);
-            }
+            DestroyStateTextures();
         }
 
-        private void CreateStateTexture(int cellsX, int cellsZ)
+        private void CreateStateTextures(int cellsX, int cellsZ)
         {
-            if (_stateTexture.IsValid())
-            {
-                Destroy(_stateTexture);
-            }
+            DestroyStateTextures();
 
             _stateTexture = new Texture2D(cellsX, cellsZ, TextureFormat.RGBA32, mipChain: false, linear: true) {
                 name = "GrassCellState",
                 filterMode = FilterMode.Point,
                 wrapMode = TextureWrapMode.Clamp,
             };
+
+            _litterTexture = CreateSmoothTexture(cellsX, cellsZ, "GrassLitter");
+            _litterAccentTexture = CreateSmoothTexture(cellsX, cellsZ, "GrassLitterAccent");
+            _cutStateTexture = CreateSmoothTexture(cellsX, cellsZ, "GrassCutState");
+        }
+
+        private static Texture2D CreateSmoothTexture(int cellsX, int cellsZ, string name)
+        {
+            return new Texture2D(cellsX, cellsZ, TextureFormat.RGBA32, mipChain: false, linear: true) {
+                name = name,
+                filterMode = FilterMode.Bilinear,
+                wrapMode = TextureWrapMode.Clamp,
+            };
+        }
+
+        private void DestroyStateTextures()
+        {
+            if (_stateTexture.IsValid())
+            {
+                Destroy(_stateTexture);
+            }
+
+            if (_litterTexture.IsValid())
+            {
+                Destroy(_litterTexture);
+            }
+
+            if (_litterAccentTexture.IsValid())
+            {
+                Destroy(_litterAccentTexture);
+            }
+
+            if (_cutStateTexture.IsValid())
+            {
+                Destroy(_cutStateTexture);
+            }
         }
 
         private void CreateChunk(Mesh mesh, Material material, Vector2 origin)
@@ -134,6 +197,24 @@ namespace GrassSimulation.Gameplay
 
             _chunks.Add(chunk);
             _meshes.Add(mesh);
+        }
+
+        private void OnQuotaCompleted(QuotaCompletedMsg message)
+        {
+            PlayCelebrationSweep();
+        }
+
+        private void OnTierUp(TierUpMsg message)
+        {
+            PlayCelebrationSweep();
+        }
+
+        private void PlayCelebrationSweep()
+        {
+            if (PlayerOptions.GetReduceEffects() == false)
+            {
+                PlaySweep(_bladeParams);
+            }
         }
 
         private void ClearChunks()

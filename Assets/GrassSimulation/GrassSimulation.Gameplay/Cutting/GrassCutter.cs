@@ -51,6 +51,9 @@ namespace GrassSimulation.Gameplay
             return Mathf.Max(exit - enter, 0f) / length;
         }
 
+        private static Vector2 Heading(in CutStroke stroke)
+            => new(stroke.To.x - stroke.From.x, stroke.To.z - stroke.From.z);
+
         public ref readonly PlantSettings GetPlant(PlantKind kind)
             => ref _plantByKind[(int)kind];
 
@@ -140,6 +143,7 @@ namespace GrassSimulation.Gameplay
             {
                 progress = 1f;
                 harvested.Add(index);
+                _feedback.MarkCut(index, Heading(stroke));
             }
 
             _grid.SetProgress(index, progress);

@@ -1,0 +1,20 @@
+{
+    "name": "GrassSimulation.Editor",
+    "rootNamespace": "GrassSimulation.Editor",
+    "references": [
+        "EncosyTower.Core",
+        "GrassSimulation.Gameplay",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -32,6 +32,9 @@ namespace GrassSimulation.UI
         private RectTransform _progressFill;
 
         [SerializeField]
+        private MainMenuGardenGrid _gardenGrid;
+
+        [SerializeField]
         private TMP_Text _nextHeaderText;
 
         [SerializeField]
@@ -154,6 +157,7 @@ namespace GrassSimulation.UI
             _progressText.text = MainMenuScreenFormat.FormatProgress(completedCount, levelCount, progress.TotalStars);
             _progressFill.anchorMax = new Vector2(x: fraction, y: 1f);
             _nextHeaderText.text = MainMenuScreenFormat.FormatNextHeader(completedCount, levelCount);
+            _gardenGrid.Apply(in progress);
         }
 
         private void ShowNextLevel(in ProgressSnapshot progress)

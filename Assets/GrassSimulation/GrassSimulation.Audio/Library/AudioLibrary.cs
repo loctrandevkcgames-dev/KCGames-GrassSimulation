@@ -9,30 +9,6 @@ namespace GrassSimulation.Audio
         private SoundCue[] _cues;
 
         [SerializeField]
-        private AudioClip _cutLoopLight;
-
-        [SerializeField]
-        private AudioClip _cutLoopMedium;
-
-        [SerializeField]
-        private AudioClip _cutLoopDense;
-
-        [SerializeField]
-        private CutLayerThresholds _cutThresholds = new(light: 6f, medium: 30f, dense: 90f);
-
-        [SerializeField]
-        private Vector2 _cutPitch = new(0.95f, 1.05f);
-
-        [SerializeField]
-        private float _cutDensitySmoothing = 0.1f;
-
-        [SerializeField]
-        private float _cutSilenceTimeout = 0.2f;
-
-        [SerializeField]
-        private int _snipClusterCells = 12;
-
-        [SerializeField]
         private MowerHumSettings _mowerHum;
 
         [SerializeField]
@@ -72,22 +48,6 @@ namespace GrassSimulation.Audio
         private float _sequenceAfterJingleSeconds = 0.6f;
 
         private SoundCue[] _byId;
-
-        public AudioClip CutLoopLight => _cutLoopLight;
-
-        public AudioClip CutLoopMedium => _cutLoopMedium;
-
-        public AudioClip CutLoopDense => _cutLoopDense;
-
-        public CutLayerThresholds CutThresholds => _cutThresholds;
-
-        public Vector2 CutPitch => _cutPitch;
-
-        public float CutDensitySmoothing => _cutDensitySmoothing;
-
-        public float CutSilenceTimeout => _cutSilenceTimeout;
-
-        public int SnipClusterCells => _snipClusterCells;
 
         public MowerHumSettings MowerHum => _mowerHum;
 

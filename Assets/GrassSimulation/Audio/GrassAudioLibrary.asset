@@ -15,17 +15,6 @@ MonoBehaviour:
   _cues:
   - <Id>k__BackingField: 0
     <Clips>k__BackingField:
-    - {fileID: 8300000, guid: c8806a7f84e58b64cad414dbfa5b715e, type: 3}
-    - {fileID: 8300000, guid: b6c8062ccd7aef7408d687f45c6ffee3, type: 3}
-    - {fileID: 8300000, guid: 31c03b5a98d66ab41a77eedae4278f37, type: 3}
-    - {fileID: 8300000, guid: 0c83702d72641cd4a952b928b3f42aae, type: 3}
-    <Volume>k__BackingField: 0.7
-    <Pitch>k__BackingField: {x: 0.92, y: 1.08}
-    <Cooldown>k__BackingField: 0.08
-    <Order>k__BackingField: 0
-    <Bus>k__BackingField: 3
-  - <Id>k__BackingField: 1
-    <Clips>k__BackingField:
     - {fileID: 8300000, guid: 99cef097ebcb20a408801035460074b9, type: 3}
     - {fileID: 8300000, guid: 2979f9689ac5ba64bb7067f6326d411f, type: 3}
     - {fileID: 8300000, guid: 658ba1add6335e0439a078a1bd6bb2bd, type: 3}
@@ -34,7 +23,7 @@ MonoBehaviour:
     <Cooldown>k__BackingField: 0.08
     <Order>k__BackingField: 0
     <Bus>k__BackingField: 3
-  - <Id>k__BackingField: 2
+  - <Id>k__BackingField: 1
     <Clips>k__BackingField:
     - {fileID: 8300000, guid: 6b89cc4ccd8260a48b91674234fca54d, type: 3}
     - {fileID: 8300000, guid: 0adc73ac1758a884580f7daf957ab086, type: 3}
@@ -44,7 +33,7 @@ MonoBehaviour:
     <Cooldown>k__BackingField: 0.05
     <Order>k__BackingField: 0
     <Bus>k__BackingField: 3
-  - <Id>k__BackingField: 3
+  - <Id>k__BackingField: 2
     <Clips>k__BackingField:
     - {fileID: 8300000, guid: 326a2adf4a1383c48aef26a7684df1c2, type: 3}
     <Volume>k__BackingField: 1
@@ -52,7 +41,7 @@ MonoBehaviour:
     <Cooldown>k__BackingField: 0
     <Order>k__BackingField: 0
     <Bus>k__BackingField: 3
-  - <Id>k__BackingField: 4
+  - <Id>k__BackingField: 3
     <Clips>k__BackingField:
     - {fileID: 8300000, guid: a3685aa0265f5134e98c4dddeeed6973, type: 3}
     <Volume>k__BackingField: 1
@@ -60,7 +49,7 @@ MonoBehaviour:
     <Cooldown>k__BackingField: 0.5
     <Order>k__BackingField: 0
     <Bus>k__BackingField: 3
-  - <Id>k__BackingField: 5
+  - <Id>k__BackingField: 4
     <Clips>k__BackingField:
     - {fileID: 8300000, guid: 907dcf85626c0b440bfd716ac226d7c4, type: 3}
     <Volume>k__BackingField: 0.9
@@ -68,7 +57,7 @@ MonoBehaviour:
     <Cooldown>k__BackingField: 0
     <Order>k__BackingField: 0
     <Bus>k__BackingField: 3
-  - <Id>k__BackingField: 6
+  - <Id>k__BackingField: 5
     <Clips>k__BackingField:
     - {fileID: 8300000, guid: 3360f53807d5b0e459d21390b64c73f8, type: 3}
     <Volume>k__BackingField: 0.9
@@ -76,7 +65,7 @@ MonoBehaviour:
     <Cooldown>k__BackingField: 0.3
     <Order>k__BackingField: 0
     <Bus>k__BackingField: 3
-  - <Id>k__BackingField: 7
+  - <Id>k__BackingField: 6
     <Clips>k__BackingField:
     - {fileID: 8300000, guid: fa67d94bc70fdfb43b382b49b549d5c4, type: 3}
     <Volume>k__BackingField: 1
@@ -84,7 +73,7 @@ MonoBehaviour:
     <Cooldown>k__BackingField: 0
     <Order>k__BackingField: 0
     <Bus>k__BackingField: 3
-  - <Id>k__BackingField: 8
+  - <Id>k__BackingField: 7
     <Clips>k__BackingField:
     - {fileID: 8300000, guid: 3546c21136d02fc42a009d6a5353fa3d, type: 3}
     <Volume>k__BackingField: 0.6
@@ -92,7 +81,7 @@ MonoBehaviour:
     <Cooldown>k__BackingField: 0
     <Order>k__BackingField: 0
     <Bus>k__BackingField: 3
-  - <Id>k__BackingField: 9
+  - <Id>k__BackingField: 8
     <Clips>k__BackingField:
     - {fileID: 8300000, guid: cb99bf32e20d13d45a8d546e0d66993c, type: 3}
     <Volume>k__BackingField: 0.8
@@ -100,7 +89,7 @@ MonoBehaviour:
     <Cooldown>k__BackingField: 0
     <Order>k__BackingField: 0
     <Bus>k__BackingField: 3
-  - <Id>k__BackingField: 10
+  - <Id>k__BackingField: 9
     <Clips>k__BackingField:
     - {fileID: 8300000, guid: 9b1bb2c84b4b26349b42ea6028d1ff16, type: 3}
     - {fileID: 8300000, guid: 1f3c5d18187ac43479dc7300614f1622, type: 3}
@@ -110,7 +99,7 @@ MonoBehaviour:
     <Cooldown>k__BackingField: 0
     <Order>k__BackingField: 2
     <Bus>k__BackingField: 3
-  - <Id>k__BackingField: 11
+  - <Id>k__BackingField: 10
     <Clips>k__BackingField:
     - {fileID: 8300000, guid: b1d600d01e0d1f147aebefab6d4a1dbd, type: 3}
     - {fileID: 8300000, guid: d2552b3f27b76ae489b118c92d1e72de, type: 3}
@@ -120,7 +109,7 @@ MonoBehaviour:
     <Cooldown>k__BackingField: 0
     <Order>k__BackingField: 2
     <Bus>k__BackingField: 4
-  - <Id>k__BackingField: 12
+  - <Id>k__BackingField: 11
     <Clips>k__BackingField:
     - {fileID: 8300000, guid: 18309a052eb599541b686791ee6aa8d2, type: 3}
     - {fileID: 8300000, guid: fa712b4162d42604d9cb6bd41dd2cd5a, type: 3}
@@ -130,7 +119,7 @@ MonoBehaviour:
     <Cooldown>k__BackingField: 0.03
     <Order>k__BackingField: 0
     <Bus>k__BackingField: 4
-  - <Id>k__BackingField: 13
+  - <Id>k__BackingField: 12
     <Clips>k__BackingField:
     - {fileID: 8300000, guid: 78763ccc3b06f9f498d031a85207eee6, type: 3}
     <Volume>k__BackingField: 0.8
@@ -138,7 +127,7 @@ MonoBehaviour:
     <Cooldown>k__BackingField: 0
     <Order>k__BackingField: 0
     <Bus>k__BackingField: 4
-  - <Id>k__BackingField: 14
+  - <Id>k__BackingField: 13
     <Clips>k__BackingField:
     - {fileID: 8300000, guid: bc1aedf15cabf234d937c7c6b4934217, type: 3}
     <Volume>k__BackingField: 0.8
@@ -146,7 +135,7 @@ MonoBehaviour:
     <Cooldown>k__BackingField: 0
     <Order>k__BackingField: 0
     <Bus>k__BackingField: 4
-  - <Id>k__BackingField: 15
+  - <Id>k__BackingField: 14
     <Clips>k__BackingField:
     - {fileID: 8300000, guid: 0154cf2c5197b8149826ad2198b2bd08, type: 3}
     <Volume>k__BackingField: 0.8
@@ -154,7 +143,7 @@ MonoBehaviour:
     <Cooldown>k__BackingField: 0
     <Order>k__BackingField: 0
     <Bus>k__BackingField: 4
-  - <Id>k__BackingField: 16
+  - <Id>k__BackingField: 15
     <Clips>k__BackingField:
     - {fileID: 8300000, guid: 0b9d54a3d84104b42bf53236f9f4e649, type: 3}
     <Volume>k__BackingField: 0.8
@@ -162,7 +151,7 @@ MonoBehaviour:
     <Cooldown>k__BackingField: 0
     <Order>k__BackingField: 0
     <Bus>k__BackingField: 4
-  - <Id>k__BackingField: 17
+  - <Id>k__BackingField: 16
     <Clips>k__BackingField:
     - {fileID: 8300000, guid: 3d678153f5bd8c24c81aff6203495bbc, type: 3}
     <Volume>k__BackingField: 1
@@ -170,7 +159,7 @@ MonoBehaviour:
     <Cooldown>k__BackingField: 0
     <Order>k__BackingField: 0
     <Bus>k__BackingField: 3
-  - <Id>k__BackingField: 18
+  - <Id>k__BackingField: 17
     <Clips>k__BackingField:
     - {fileID: 8300000, guid: 260abb1ee1536b1428b9e4374f075abc, type: 3}
     <Volume>k__BackingField: 1
@@ -178,17 +167,6 @@ MonoBehaviour:
     <Cooldown>k__BackingField: 0
     <Order>k__BackingField: 0
     <Bus>k__BackingField: 3
-  _cutLoopLight: {fileID: 8300000, guid: 86f1700981685004ea7f5ef8fb59f8a9, type: 3}
-  _cutLoopMedium: {fileID: 8300000, guid: 8eced5d1882c9a5439c09c83ceea77b6, type: 3}
-  _cutLoopDense: {fileID: 8300000, guid: e6ed382ba77466b4a8b0fbc316b17d3f, type: 3}
-  _cutThresholds:
-    <Light>k__BackingField: 6
-    <Medium>k__BackingField: 30
-    <Dense>k__BackingField: 90
-  _cutPitch: {x: 0.95, y: 1.05}
-  _cutDensitySmoothing: 0.1
-  _cutSilenceTimeout: 0.2
-  _snipClusterCells: 12
   _mowerHum:
     <Clip>k__BackingField: {fileID: 8300000, guid: d12ac2603c275a7478f1d9d4fa5efb07,
       type: 3}
@@ -211,3 +189,4 @@ MonoBehaviour:
   _duckReleaseSeconds: 0.5
   _timerAccentSeconds: 5
   _sequenceStepSeconds: 0.25
+  _sequenceAfterJingleSeconds: 0.6

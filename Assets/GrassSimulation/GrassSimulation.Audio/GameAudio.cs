@@ -11,7 +11,6 @@ namespace GrassSimulation.Audio
     {
         private const int VOICE_COUNT = 12;
         private const float AMBIENCE_FADE_SECONDS = 1f;
-        private const float MIN_THRESHOLD = 1e-4f;
 
         [SerializeField]
         private AudioLibrary _library;
@@ -38,13 +37,11 @@ namespace GrassSimulation.Audio
         private readonly CueSequenceScheduler _sequences = new();
 
         private SfxVoicePool _voices;
-        private CutLoopPlayer _cutLoops;
         private MowerHumPlayer _hum;
         private MusicPlayer _music;
         private AmbiencePlayer _ambience;
         private MixerVolumes _volumes;
         private CueGate _gate;
-        private CutDensityTracker _density;
         private LevelState _state = LevelState.Preview;
         private bool _isPaused;
         private bool _isHome = true;
@@ -62,11 +59,6 @@ namespace GrassSimulation.Audio
             => _isHome == false
             && _isPaused == false
             && (_state == LevelState.Playing || _state == LevelState.UpgradeChoice || _state == LevelState.Cleanup);
-
-        private bool IsSimulating
-            => _isHome == false
-            && _isPaused == false
-            && (_state == LevelState.Playing || _state == LevelState.Cleanup);
 
         public void Bind(
               MessageSubscriber.Subscriber<GameplayScope> gameplay
@@ -86,7 +78,6 @@ namespace GrassSimulation.Audio
             _subscriptions.Add(LevelFinishedMsg.Subscribe(in gameplay, OnLevelFinished));
             _subscriptions.Add(LevelStateChangedMsg.Subscribe(in gameplay, OnLevelStateChanged));
             _subscriptions.Add(HomeChangedMsg.Subscribe(in gameplay, OnHomeChanged));
-            _subscriptions.Add(HarvestBatchedMsg.Subscribe(in gameplay, OnHarvestBatched));
             _subscriptions.Add(PropBrokenMsg.Subscribe(in gameplay, OnPropBroken));
             _subscriptions.Add(QuotaCompletedMsg.Subscribe(in gameplay, OnQuotaCompleted));
             _subscriptions.Add(TierUpMsg.Subscribe(in gameplay, OnTierUp));
@@ -106,7 +97,6 @@ namespace GrassSimulation.Audio
             var now = Time.unscaledTime;
             var deltaTime = Time.unscaledDeltaTime;
 
-            StepCutLoops(now, deltaTime);
             _hum.Step(IsRunning, MowerSpeed01, deltaTime);
             _music.Step(now, deltaTime);
             _ambience.Step(deltaTime);
@@ -128,12 +118,10 @@ namespace GrassSimulation.Audio
             }
 
             _voices = new SfxVoicePool(transform, VOICE_COUNT);
-            _cutLoops = new CutLoopPlayer(transform, _library, _loopsGroup);
             _hum = new MowerHumPlayer(transform, _library.MowerHum, _loopsGroup);
             _music = new MusicPlayer(transform, _library, _musicGroup);
             _ambience = new AmbiencePlayer(transform, _library.Ambience, _ambienceGroup);
             _gate = new CueGate(seed: (uint)System.Environment.TickCount | 1u);
-            _density = new CutDensityTracker(_library.CutDensitySmoothing, _library.CutSilenceTimeout);
 
             if (_mixer.IsValid())
             {
@@ -146,18 +134,6 @@ namespace GrassSimulation.Audio
             }
 
             _ambience.Start(AMBIENCE_FADE_SECONDS);
-        }
-
-        private void StepCutLoops(float now, float deltaTime)
-        {
-            var isSimulating = IsSimulating;
-
-            var thresholds = _library.CutThresholds;
-            var density = _density.Step(now, deltaTime);
-            var weights = CutLayerMix.Evaluate(density, in thresholds);
-            var pitch = CutLayerMix.Pitch(density / Mathf.Max(thresholds.Dense, MIN_THRESHOLD), _library.CutPitch);
-
-            _cutLoops.Step(in weights, pitch, isSimulating, deltaTime);
         }
 
         private void StepTimer(float now)
@@ -278,7 +254,6 @@ namespace GrassSimulation.Audio
         private void OnLevelStarted(LevelStartedMsg message)
         {
             _levelStartedFrame = Time.frameCount;
-            _density.Clear();
             ResetSequences();
             PlayCue(SoundId.LevelStart, Time.unscaledTime);
             RefreshMusic();
@@ -313,18 +288,6 @@ namespace GrassSimulation.Audio
             _isHome = message.IsHome;
             ResetSequences();
             RefreshMusic();
-        }
-
-        private void OnHarvestBatched(HarvestBatchedMsg message)
-        {
-            var now = Time.unscaledTime;
-
-            _density.Push(message.Cells, now);
-
-            if (message.Cells >= _library.SnipClusterCells)
-            {
-                PlayCue(SoundId.GrassSnip, now);
-            }
         }
 
         private void OnPropBroken(PropBrokenMsg message)

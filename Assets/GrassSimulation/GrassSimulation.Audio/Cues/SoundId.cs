@@ -5,7 +5,6 @@ namespace GrassSimulation.Audio
     [EnumExtensions]
     public enum SoundId : byte
     {
-        GrassSnip,
         BushTrim,
         FruitPop,
         QuotaComplete,

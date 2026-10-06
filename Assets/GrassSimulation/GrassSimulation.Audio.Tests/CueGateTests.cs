@@ -12,9 +12,9 @@ public sealed class CueGateTests
     {
         var gate = new CueGate(seed: 7u);
 
-        Assert.That(gate.TryPick(SoundId.GrassSnip, 4, CueVariantOrder.RandomNoRepeat, s_noPitch, 0.08f, 1f, out _), Is.True);
-        Assert.That(gate.TryPick(SoundId.GrassSnip, 4, CueVariantOrder.RandomNoRepeat, s_noPitch, 0.08f, 1.05f, out _), Is.False);
-        Assert.That(gate.TryPick(SoundId.GrassSnip, 4, CueVariantOrder.RandomNoRepeat, s_noPitch, 0.08f, 1.09f, out _), Is.True);
+        Assert.That(gate.TryPick(SoundId.BushTrim, 4, CueVariantOrder.RandomNoRepeat, s_noPitch, 0.08f, 1f, out _), Is.True);
+        Assert.That(gate.TryPick(SoundId.BushTrim, 4, CueVariantOrder.RandomNoRepeat, s_noPitch, 0.08f, 1.05f, out _), Is.False);
+        Assert.That(gate.TryPick(SoundId.BushTrim, 4, CueVariantOrder.RandomNoRepeat, s_noPitch, 0.08f, 1.09f, out _), Is.True);
     }
 
     [Test]
@@ -22,7 +22,7 @@ public sealed class CueGateTests
     {
         var gate = new CueGate(seed: 7u);
 
-        Assert.That(gate.TryPick(SoundId.GrassSnip, 4, CueVariantOrder.RandomNoRepeat, s_noPitch, 1f, 1f, out _), Is.True);
+        Assert.That(gate.TryPick(SoundId.FruitPop, 4, CueVariantOrder.RandomNoRepeat, s_noPitch, 1f, 1f, out _), Is.True);
         Assert.That(gate.TryPick(SoundId.BushTrim, 3, CueVariantOrder.RandomNoRepeat, s_noPitch, 1f, 1f, out _), Is.True);
     }
 
@@ -35,7 +35,7 @@ public sealed class CueGateTests
         for (var i = 0; i < 200; i++)
         {
             Assert.That(
-                  gate.TryPick(SoundId.GrassSnip, 4, CueVariantOrder.RandomNoRepeat, s_noPitch, 0f, i, out var pick)
+                  gate.TryPick(SoundId.BushTrim, 4, CueVariantOrder.RandomNoRepeat, s_noPitch, 0f, i, out var pick)
                 , Is.True
             );
             Assert.That(pick.Variant, Is.InRange(0, 3));
@@ -90,7 +90,7 @@ public sealed class CueGateTests
 
         for (var i = 0; i < 100; i++)
         {
-            Assert.That(gate.TryPick(SoundId.GrassSnip, 4, CueVariantOrder.RandomNoRepeat, range, 0f, i, out var pick), Is.True);
+            Assert.That(gate.TryPick(SoundId.BushTrim, 4, CueVariantOrder.RandomNoRepeat, range, 0f, i, out var pick), Is.True);
             Assert.That(pick.Pitch, Is.InRange(0.92f, 1.08f));
         }
     }
@@ -104,8 +104,8 @@ public sealed class CueGateTests
 
         for (var i = 0; i < 30; i++)
         {
-            first.TryPick(SoundId.GrassSnip, 4, CueVariantOrder.RandomNoRepeat, range, 0f, i, out var a);
-            second.TryPick(SoundId.GrassSnip, 4, CueVariantOrder.RandomNoRepeat, range, 0f, i, out var b);
+            first.TryPick(SoundId.BushTrim, 4, CueVariantOrder.RandomNoRepeat, range, 0f, i, out var a);
+            second.TryPick(SoundId.BushTrim, 4, CueVariantOrder.RandomNoRepeat, range, 0f, i, out var b);
 
             Assert.That(a, Is.EqualTo(b));
         }

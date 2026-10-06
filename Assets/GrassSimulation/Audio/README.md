@@ -10,9 +10,8 @@ Chỉnh tham số và chạy lại để tạo biến thể. Sau khi chọn xong
 
 | Sự kiện (message) | File chính | Ghi chú phát |
 | --- | --- | --- |
-| Cắt liên tục (`HarvestBatchedMsg`) | `Sfx/Gameplay/sfx_cut_loop_light/medium/dense` | Ba loop chạy cùng lúc, crossfade volume theo số ô cắt trong cửa sổ 0,1 s; pitch 0.95–1.05 theo mật độ cắt |
 | Máy chạy | `Sfx/Gameplay/sfx_mower_hum_loop` | Volume thấp (~0.25), pitch 0.9–1.15 theo vận tốc |
-| Cắt cụm/bụi lớn | `sfx_grass_snip_00..03`, `sfx_bush_trim_00..02` | Chọn ngẫu nhiên, pitch 0.92–1.08, cooldown 80 ms |
+| Cắt bụi (`PropBrokenMsg`) | `sfx_bush_trim_00..02` | Chọn ngẫu nhiên, pitch 0.92–1.08, cooldown 80 ms |
 | Cắt trái cây (`FruitSliceEffects`) | `sfx_fruit_pop_00..02` | Ngẫu nhiên |
 | Đạt quota (`QuotaCompletedMsg`) | `sfx_quota_complete` | Một lần mỗi quota |
 | Lên cấp (`TierUpMsg`) | `sfx_tier_up` | Duck music −6 dB trong 1,5 s |
@@ -39,7 +38,7 @@ hai thanh chỉnh riêng như GDD yêu cầu.
 | Nhóm | Load Type | Compression | Khác |
 | --- | --- | --- | --- |
 | Music, Ambience | Streaming | Vorbis 70 | Load In Background |
-| Loop cắt, hum | Decompress On Load | Vorbis 80 | |
+| Loop hum | Decompress On Load | Vorbis 80 | |
 | SFX ngắn, UI | Decompress On Load | ADPCM | Force To Mono (trừ jingle, tier up, quota) |
 
 ## Credits (CC0, không bắt buộc ghi công)

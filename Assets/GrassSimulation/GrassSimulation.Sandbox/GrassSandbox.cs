@@ -21,6 +21,8 @@ namespace GrassSimulation.Sandbox
         private const float HUD_LINES_PER_SCREEN = 36f;
         private const float HUD_WIDTH_IN_LINES = 26f;
         private const float HUD_HEIGHT_IN_LINES = 19f;
+        private const float MAX_BLEND_STEP = 1f / 20f;
+        private const float FALLBACK_ORTHO_SIZE = 5.5f;
 
         [SerializeField]
         private GrassFieldRenderer _field;
@@ -82,6 +84,21 @@ namespace GrassSimulation.Sandbox
         [SerializeField]
         private float _cameraSmoothing = 6f;
 
+        [SerializeField]
+        private float _previewEnterSeconds = 0.6f;
+
+        [SerializeField]
+        private float _previewExitSeconds = 0.5f;
+
+        [SerializeField]
+        private float _previewMargin = 0.5f;
+
+        [SerializeField]
+        private float _previewHeightAllowance = 2f;
+
+        [SerializeField]
+        private Rect _previewFallbackViewport = new(x: 0.05f, y: 0.52f, width: 0.9f, height: 0.29f);
+
         private readonly Color[] _clippingColorByKind = new Color[PlantKindExtensions.Length];
         private readonly List<int> _harvestedCells = new();
         private readonly List<ISubscription> _subscriptions = new();
@@ -105,6 +122,9 @@ namespace GrassSimulation.Sandbox
         private bool _hasProtectedBed;
         private Vector3 _previousBlade;
         private Vector3 _cameraFocus;
+        private CameraBlend _previewBlend;
+        private Rect _previewViewport;
+        private float _followOrthoSize;
         private float _cutRadius;
         private float _zoneFlash;
         private int _levelIndex;
@@ -122,6 +142,7 @@ namespace GrassSimulation.Sandbox
         private bool _wasHudToggleHeld;
         private bool _showDebugHud;
         private bool _isHome;
+        private bool _isStarting;
         private FlowRequest _pendingFlow;
         private GUIStyle _hudStyle;
 
@@ -129,9 +150,9 @@ namespace GrassSimulation.Sandbox
 
         public void Begin()
         {
-            if (_isHome == false)
+            if (_isHome == false && _session != null && _session.State == LevelState.Preview)
             {
-                _session?.TryBegin();
+                _isStarting = true;
             }
         }
 
@@ -175,6 +196,8 @@ namespace GrassSimulation.Sandbox
         private void Start()
         {
             _zoneProperties = new MaterialPropertyBlock();
+            _followOrthoSize = _camera.IsValid() ? _camera.orthographicSize : FALLBACK_ORTHO_SIZE;
+            _previewViewport = _previewFallbackViewport;
 
             IndexClippingColors();
 
@@ -196,6 +219,9 @@ namespace GrassSimulation.Sandbox
 
             var settledSubscriber = GlobalMessenger.Subscriber.Scope<ProgressionScope>();
             _subscriptions.Add(LevelSettledMsg.Subscribe(in settledSubscriber, OnLevelSettled));
+
+            var cameraSubscriber = GlobalMessenger.Subscriber.Scope<CameraScope>();
+            _subscriptions.Add(PreviewViewportChangedMsg.Subscribe(in cameraSubscriber, OnPreviewViewportChanged));
 
             LoadLevel(_progression.FindFirstIncomplete(_catalog));
 
@@ -233,6 +259,7 @@ namespace GrassSimulation.Sandbox
                 {
                     SetHome(isHome: true);
                     ResetRun();
+                    _previewBlend.Snap(target: 0f);
                     break;
                 }
 
@@ -319,6 +346,20 @@ namespace GrassSimulation.Sandbox
             _hasLastSettlement = true;
         }
 
+        private void OnPreviewViewportChanged(PreviewViewportChangedMsg message)
+        {
+            _previewViewport = message.Viewport;
+        }
+
+        private void TryFinishStart()
+        {
+            if (_isStarting && _previewBlend.Weight <= 0f)
+            {
+                _isStarting = false;
+                _session.TryBegin();
+            }
+        }
+
         private void SetHome(bool isHome)
         {
             _isHome = isHome;
@@ -354,6 +395,7 @@ namespace GrassSimulation.Sandbox
             var deltaTime = Time.deltaTime;
 
             RunPendingFlow();
+            TryFinishStart();
             HandleKeys();
 
             if (_session.IsSimulating)
@@ -403,6 +445,16 @@ namespace GrassSimulation.Sandbox
             var blend = 1f - Mathf.Exp(-_cameraSmoothing * Time.deltaTime);
 
             _cameraFocus = Vector3.Lerp(_cameraFocus, mowerPosition + lookAhead, blend);
+
+            var wantsPreview = _isHome == false && _session.State == LevelState.Preview && _isStarting == false;
+            var blendSeconds = wantsPreview ? _previewEnterSeconds : _previewExitSeconds;
+
+            _previewBlend.Step(
+                  target: wantsPreview ? 1f : 0f
+                , seconds: blendSeconds
+                , deltaTime: Mathf.Min(Time.unscaledDeltaTime, MAX_BLEND_STEP)
+            );
+
             PlaceCamera();
         }
 
@@ -760,9 +812,23 @@ namespace GrassSimulation.Sandbox
             ResetMowerAnimator();
             _previousBlade = spawn;
             _cameraFocus = spawn;
+            _isStarting = false;
 
             PlaceCamera();
             _session.Reset();
+        }
+
+        private bool TryFitPreview(out CameraPose pose)
+        {
+            return OrthoFraming.TryFit(
+                  _grid.Bounds
+                , _cameraPitch
+                , _camera.aspect
+                , _previewViewport
+                , _previewMargin
+                , _previewHeightAllowance
+                , out pose
+            );
         }
 
         private void PlaceCamera()
@@ -775,7 +841,20 @@ namespace GrassSimulation.Sandbox
             var rotation = Quaternion.Euler(_cameraPitch, 0f, 0f);
             var kick = _props.IsValid() ? _props.CameraKick : 0f;
             var shake = UnityEngine.Random.insideUnitSphere * (kick * _cameraShake);
-            var position = _cameraFocus + shake - rotation * Vector3.forward * _cameraDistance;
+            var pose = new CameraPose(_cameraFocus + shake, _followOrthoSize);
+            var eased = _previewBlend.Eased;
+
+            if (_camera.orthographic)
+            {
+                if (eased > 0f && TryFitPreview(out var preview))
+                {
+                    pose = CameraPose.Lerp(in pose, in preview, eased);
+                }
+
+                _camera.orthographicSize = pose.OrthoSize;
+            }
+
+            var position = pose.Focus - rotation * Vector3.forward * _cameraDistance;
             _camera.transform.SetPositionAndRotation(position, rotation);
         }
 

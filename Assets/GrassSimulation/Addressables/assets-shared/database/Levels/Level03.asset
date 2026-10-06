@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: Level03
   m_EditorClassIdentifier: GrassSimulation.Gameplay::GrassSimulation.Gameplay.LevelDefinition
   _id: level-03
-  _cellsX: 72
-  _cellsZ: 56
-  _cellSize: 0.25
+  _cellsX: 36
+  _cellsZ: 28
+  _cellSize: 0.5
   _seed: 3
   _baseKind: 0
   _zones:
@@ -23,21 +23,23 @@ MonoBehaviour:
     <Cells>k__BackingField:
       x: 0
       y: 0
-      width: 32
-      height: 28
+      width: 16
+      height: 14
   - <Kind>k__BackingField: 4
     <Cells>k__BackingField:
-      x: 44
-      y: 32
-      width: 22
-      height: 18
+      x: 22
+      y: 16
+      width: 11
+      height: 9
   _spawn: {x: 2, y: 2}
   _spawnClearing: 1
-  _propLayout: {fileID: 0}
+  _bakedKinds: 
+  _plants: []
+  _obstacles: []
   _timeLimit: 110
   _quotas:
   - <Kind>k__BackingField: 4
-    <Amount>k__BackingField: 220
+    <Amount>k__BackingField: 55
     <IsBonus>k__BackingField: 0
   _type: 0
   _maxTier: 1

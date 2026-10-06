@@ -13,62 +13,146 @@ MonoBehaviour:
   m_Name: SandboxLevel
   m_EditorClassIdentifier: GrassSimulation.Gameplay::GrassSimulation.Gameplay.LevelDefinition
   _id: sandbox
-  _cellsX: 72
-  _cellsZ: 56
-  _cellSize: 0.25
+  _cellsX: 36
+  _cellsZ: 28
+  _cellSize: 0.5
   _seed: 4
-  _baseKind: 1
+  _baseKind: 0
   _zones:
+  - <Kind>k__BackingField: 1
+    <Cells>k__BackingField:
+      x: 3
+      y: 1
+      width: 13
+      height: 6
   - <Kind>k__BackingField: 2
     <Cells>k__BackingField:
-      x: 50
-      y: 6
-      width: 16
-      height: 20
+      x: 18
+      y: 1
+      width: 6
+      height: 6
   - <Kind>k__BackingField: 3
     <Cells>k__BackingField:
-      x: 8
-      y: 32
-      width: 56
-      height: 5
-  - <Kind>k__BackingField: 4
-    <Cells>k__BackingField:
-      x: 24
-      y: 42
-      width: 20
-      height: 10
-  - <Kind>k__BackingField: 5
-    <Cells>k__BackingField:
-      x: 4
-      y: 44
-      width: 12
-      height: 9
-  - <Kind>k__BackingField: 0
-    <Cells>k__BackingField:
-      x: 50
-      y: 37
-      width: 16
-      height: 16
+      x: 26
+      y: 1
+      width: 8
+      height: 6
   - <Kind>k__BackingField: 6
     <Cells>k__BackingField:
-      x: 52
-      y: 39
-      width: 12
-      height: 12
-  _spawn: {x: 2, y: 2}
-  _spawnClearing: 1
-  _propLayout: {fileID: 8443559758747741977, guid: 153fe7ba6639ab64c9c3faede758b6a3,
-    type: 3}
-  _timeLimit: 150
+      x: 21
+      y: 13
+      width: 4
+      height: 4
+  - <Kind>k__BackingField: 6
+    <Cells>k__BackingField:
+      x: 29
+      y: 13
+      width: 4
+      height: 4
+  _spawn: {x: 1.5, y: 1.5}
+  _spawnClearing: 0.8
+  _bakedKinds: 
+  _plants:
+  - <Kind>k__BackingField: 7
+    <Position>k__BackingField: {x: 2.5, y: 5.2}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 0
+    <Scale>k__BackingField: 1
+  - <Kind>k__BackingField: 7
+    <Position>k__BackingField: {x: 4, y: 5.2}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 40
+    <Scale>k__BackingField: 1
+  - <Kind>k__BackingField: 8
+    <Position>k__BackingField: {x: 6, y: 5.2}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 15
+    <Scale>k__BackingField: 1
+  - <Kind>k__BackingField: 8
+    <Position>k__BackingField: {x: 7.2, y: 5.2}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 80
+    <Scale>k__BackingField: 1
+  - <Kind>k__BackingField: 8
+    <Position>k__BackingField: {x: 8.4, y: 5.2}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 150
+    <Scale>k__BackingField: 1
+  - <Kind>k__BackingField: 9
+    <Position>k__BackingField: {x: 10.5, y: 5.2}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 0
+    <Scale>k__BackingField: 1
+  - <Kind>k__BackingField: 9
+    <Position>k__BackingField: {x: 12.5, y: 5.2}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 90
+    <Scale>k__BackingField: 1
+  - <Kind>k__BackingField: 10
+    <Position>k__BackingField: {x: 14.5, y: 5.2}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 20
+    <Scale>k__BackingField: 1
+  - <Kind>k__BackingField: 10
+    <Position>k__BackingField: {x: 16.2, y: 5.2}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 70
+    <Scale>k__BackingField: 1
+  - <Kind>k__BackingField: 8
+    <Position>k__BackingField: {x: 3.5, y: 8.3}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 0
+    <Scale>k__BackingField: 1
+  - <Kind>k__BackingField: 8
+    <Position>k__BackingField: {x: 6.5, y: 8.3}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 120
+    <Scale>k__BackingField: 1
+  - <Kind>k__BackingField: 11
+    <Position>k__BackingField: {x: 3, y: 11.5}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 0
+    <Scale>k__BackingField: 1
+  - <Kind>k__BackingField: 11
+    <Position>k__BackingField: {x: 7, y: 11.5}
+    <FruitCount>k__BackingField: 8
+    <Yaw>k__BackingField: 180
+    <Scale>k__BackingField: 1
+  - <Kind>k__BackingField: 12
+    <Position>k__BackingField: {x: 15, y: 11.6}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 0
+    <Scale>k__BackingField: 1
+  _obstacles:
+  - <Kind>k__BackingField: 0
+    <Position>k__BackingField: {x: 10, y: 9}
+    <Yaw>k__BackingField: 0
+    <Length>k__BackingField: 1.2
+  - <Kind>k__BackingField: 0
+    <Position>k__BackingField: {x: 11, y: 10.4}
+    <Yaw>k__BackingField: 60
+    <Length>k__BackingField: 0.8
+  - <Kind>k__BackingField: 1
+    <Position>k__BackingField: {x: 5, y: 7.4}
+    <Yaw>k__BackingField: 0
+    <Length>k__BackingField: 6
+  - <Kind>k__BackingField: 1
+    <Position>k__BackingField: {x: 14.2, y: 7.5}
+    <Yaw>k__BackingField: 90
+    <Length>k__BackingField: 3
+  _timeLimit: 600
   _quotas:
-  - <Kind>k__BackingField: 2
-    <Amount>k__BackingField: 250
+  - <Kind>k__BackingField: 1
+    <Amount>k__BackingField: 40
     <IsBonus>k__BackingField: 0
-  - <Kind>k__BackingField: 4
-    <Amount>k__BackingField: 120
+  - <Kind>k__BackingField: 10
+    <Amount>k__BackingField: 2
     <IsBonus>k__BackingField: 0
-  - <Kind>k__BackingField: 5
-    <Amount>k__BackingField: 60
+  - <Kind>k__BackingField: 11
+    <Amount>k__BackingField: 2
+    <IsBonus>k__BackingField: 0
+  - <Kind>k__BackingField: 12
+    <Amount>k__BackingField: 1
     <IsBonus>k__BackingField: 1
   _type: 1
-  _maxTier: 3
+  _maxTier: 4

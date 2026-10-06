@@ -1,0 +1,295 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9b7d60b21115e2a4384701f3759831e7, type: 3}
+  m_Name: PlantCatalog
+  m_EditorClassIdentifier: GrassSimulation.Gameplay::GrassSimulation.Gameplay.PlantCatalog
+  _plants:
+  - <Kind>k__BackingField: 1
+    <Key>k__BackingField: grass_common
+    <Representation>k__BackingField: 0
+    <Shape>k__BackingField: 0
+    <IsProtected>k__BackingField: 0
+    <RequiredTier>k__BackingField: 1
+    <Toughness>k__BackingField: 0.12
+    <CutZoneRadius>k__BackingField: 0.25
+    <Xp>k__BackingField: 1
+    <FruitCount>k__BackingField: 0
+    <IsFruit>k__BackingField: 0
+    <EffectColor>k__BackingField: {r: 1, g: 1, b: 1, a: 1}
+    <ObjectPrefabs>k__BackingField: []
+    <Icon>k__BackingField: {fileID: 0}
+    <Material>k__BackingField: {fileID: 2100000, guid: 46a2b950fada37f439135dea7ed6a1e1,
+      type: 2}
+    <BladesPerCell>k__BackingField: 40
+    <MinHeight>k__BackingField: 0.44
+    <MaxHeight>k__BackingField: 0.62
+    <BladeWidth>k__BackingField: 0.18
+    <HasHead>k__BackingField: 0
+    <HeadColor>k__BackingField: {r: 1, g: 1, b: 1, a: 1}
+    <HeadRadius>k__BackingField: 0
+  - <Kind>k__BackingField: 2
+    <Key>k__BackingField: flower_small
+    <Representation>k__BackingField: 0
+    <Shape>k__BackingField: 0
+    <IsProtected>k__BackingField: 0
+    <RequiredTier>k__BackingField: 1
+    <Toughness>k__BackingField: 0.18
+    <CutZoneRadius>k__BackingField: 0.25
+    <Xp>k__BackingField: 1
+    <FruitCount>k__BackingField: 0
+    <IsFruit>k__BackingField: 0
+    <EffectColor>k__BackingField: {r: 1, g: 1, b: 1, a: 1}
+    <ObjectPrefabs>k__BackingField: []
+    <Icon>k__BackingField: {fileID: 0}
+    <Material>k__BackingField: {fileID: 2100000, guid: 88db78c4edbe843429a88722f4bbecf5,
+      type: 2}
+    <BladesPerCell>k__BackingField: 28
+    <MinHeight>k__BackingField: 0.34
+    <MaxHeight>k__BackingField: 0.48
+    <BladeWidth>k__BackingField: 0.16
+    <HasHead>k__BackingField: 1
+    <HeadColor>k__BackingField: {r: 0.93, g: 0.32, b: 0.36, a: 1}
+    <HeadRadius>k__BackingField: 0.11
+  - <Kind>k__BackingField: 3
+    <Key>k__BackingField: grass_thick
+    <Representation>k__BackingField: 0
+    <Shape>k__BackingField: 0
+    <IsProtected>k__BackingField: 0
+    <RequiredTier>k__BackingField: 2
+    <Toughness>k__BackingField: 0.3
+    <CutZoneRadius>k__BackingField: 0.25
+    <Xp>k__BackingField: 2
+    <FruitCount>k__BackingField: 0
+    <IsFruit>k__BackingField: 0
+    <EffectColor>k__BackingField: {r: 1, g: 1, b: 1, a: 1}
+    <ObjectPrefabs>k__BackingField: []
+    <Icon>k__BackingField: {fileID: 0}
+    <Material>k__BackingField: {fileID: 2100000, guid: cea6f706cfc7ccc4c8a53e78007d2a26,
+      type: 2}
+    <BladesPerCell>k__BackingField: 48
+    <MinHeight>k__BackingField: 0.54
+    <MaxHeight>k__BackingField: 0.76
+    <BladeWidth>k__BackingField: 0.19
+    <HasHead>k__BackingField: 0
+    <HeadColor>k__BackingField: {r: 1, g: 1, b: 1, a: 1}
+    <HeadRadius>k__BackingField: 0
+  - <Kind>k__BackingField: 4
+    <Key>k__BackingField: legacy_low_bush
+    <Representation>k__BackingField: 0
+    <Shape>k__BackingField: 1
+    <IsProtected>k__BackingField: 0
+    <RequiredTier>k__BackingField: 2
+    <Toughness>k__BackingField: 0.45
+    <CutZoneRadius>k__BackingField: 0.25
+    <Xp>k__BackingField: 3
+    <FruitCount>k__BackingField: 0
+    <IsFruit>k__BackingField: 0
+    <EffectColor>k__BackingField: {r: 1, g: 1, b: 1, a: 1}
+    <ObjectPrefabs>k__BackingField: []
+    <Icon>k__BackingField: {fileID: 0}
+    <Material>k__BackingField: {fileID: 2100000, guid: c178f4cc434ac664593b2030113afe1b,
+      type: 2}
+    <BladesPerCell>k__BackingField: 8
+    <MinHeight>k__BackingField: 0.36
+    <MaxHeight>k__BackingField: 0.5
+    <BladeWidth>k__BackingField: 0
+    <HasHead>k__BackingField: 0
+    <HeadColor>k__BackingField: {r: 1, g: 1, b: 1, a: 1}
+    <HeadRadius>k__BackingField: 0
+  - <Kind>k__BackingField: 5
+    <Key>k__BackingField: legacy_hard_bush
+    <Representation>k__BackingField: 0
+    <Shape>k__BackingField: 1
+    <IsProtected>k__BackingField: 0
+    <RequiredTier>k__BackingField: 3
+    <Toughness>k__BackingField: 0.65
+    <CutZoneRadius>k__BackingField: 0.25
+    <Xp>k__BackingField: 4
+    <FruitCount>k__BackingField: 0
+    <IsFruit>k__BackingField: 0
+    <EffectColor>k__BackingField: {r: 1, g: 1, b: 1, a: 1}
+    <ObjectPrefabs>k__BackingField: []
+    <Icon>k__BackingField: {fileID: 0}
+    <Material>k__BackingField: {fileID: 2100000, guid: e8447a962156e1646921547a2e0ca226,
+      type: 2}
+    <BladesPerCell>k__BackingField: 8
+    <MinHeight>k__BackingField: 0.46
+    <MaxHeight>k__BackingField: 0.62
+    <BladeWidth>k__BackingField: 0
+    <HasHead>k__BackingField: 0
+    <HeadColor>k__BackingField: {r: 1, g: 1, b: 1, a: 1}
+    <HeadRadius>k__BackingField: 0
+  - <Kind>k__BackingField: 6
+    <Key>k__BackingField: flower_protected
+    <Representation>k__BackingField: 0
+    <Shape>k__BackingField: 0
+    <IsProtected>k__BackingField: 1
+    <RequiredTier>k__BackingField: 99
+    <Toughness>k__BackingField: 1
+    <CutZoneRadius>k__BackingField: 0.25
+    <Xp>k__BackingField: 0
+    <FruitCount>k__BackingField: 0
+    <IsFruit>k__BackingField: 0
+    <EffectColor>k__BackingField: {r: 1, g: 1, b: 1, a: 1}
+    <ObjectPrefabs>k__BackingField: []
+    <Icon>k__BackingField: {fileID: 0}
+    <Material>k__BackingField: {fileID: 2100000, guid: 803361fc271ebb342a85ebf8b8c5c892,
+      type: 2}
+    <BladesPerCell>k__BackingField: 28
+    <MinHeight>k__BackingField: 0.34
+    <MaxHeight>k__BackingField: 0.48
+    <BladeWidth>k__BackingField: 0.16
+    <HasHead>k__BackingField: 1
+    <HeadColor>k__BackingField: {r: 1, g: 1, b: 1, a: 1}
+    <HeadRadius>k__BackingField: 0.11
+  - <Kind>k__BackingField: 7
+    <Key>k__BackingField: bush_low
+    <Representation>k__BackingField: 1
+    <Shape>k__BackingField: 0
+    <IsProtected>k__BackingField: 0
+    <RequiredTier>k__BackingField: 2
+    <Toughness>k__BackingField: 0.45
+    <CutZoneRadius>k__BackingField: 0.4
+    <Xp>k__BackingField: 3
+    <FruitCount>k__BackingField: 0
+    <IsFruit>k__BackingField: 0
+    <EffectColor>k__BackingField: {r: 0.36, g: 0.62, b: 0.24, a: 1}
+    <ObjectPrefabs>k__BackingField:
+    - {fileID: 4053955817022810433, guid: ba1797e974cd9e64ea7789c34b9457e3, type: 3}
+    <Icon>k__BackingField: {fileID: 0}
+    <Material>k__BackingField: {fileID: 0}
+    <BladesPerCell>k__BackingField: 0
+    <MinHeight>k__BackingField: 0
+    <MaxHeight>k__BackingField: 0
+    <BladeWidth>k__BackingField: 0
+    <HasHead>k__BackingField: 0
+    <HeadColor>k__BackingField: {r: 1, g: 1, b: 1, a: 1}
+    <HeadRadius>k__BackingField: 0
+  - <Kind>k__BackingField: 8
+    <Key>k__BackingField: veg_medium
+    <Representation>k__BackingField: 1
+    <Shape>k__BackingField: 0
+    <IsProtected>k__BackingField: 0
+    <RequiredTier>k__BackingField: 2
+    <Toughness>k__BackingField: 0.55
+    <CutZoneRadius>k__BackingField: 0.4
+    <Xp>k__BackingField: 4
+    <FruitCount>k__BackingField: 0
+    <IsFruit>k__BackingField: 0
+    <EffectColor>k__BackingField: {r: 0.45, g: 0.7, b: 0.25, a: 1}
+    <ObjectPrefabs>k__BackingField:
+    - {fileID: 2682181122535414934, guid: 133a8d9e5bae849409e9dd99344141c6, type: 3}
+    - {fileID: 1220451902064566708, guid: ca093d9bffd191f4983d41646dc4441d, type: 3}
+    - {fileID: 6206041250107420537, guid: c0d5437617335984ea188e45bab045be, type: 3}
+    <Icon>k__BackingField: {fileID: 0}
+    <Material>k__BackingField: {fileID: 0}
+    <BladesPerCell>k__BackingField: 0
+    <MinHeight>k__BackingField: 0
+    <MaxHeight>k__BackingField: 0
+    <BladeWidth>k__BackingField: 0
+    <HasHead>k__BackingField: 0
+    <HeadColor>k__BackingField: {r: 1, g: 1, b: 1, a: 1}
+    <HeadRadius>k__BackingField: 0
+  - <Kind>k__BackingField: 9
+    <Key>k__BackingField: bush_big
+    <Representation>k__BackingField: 1
+    <Shape>k__BackingField: 0
+    <IsProtected>k__BackingField: 0
+    <RequiredTier>k__BackingField: 3
+    <Toughness>k__BackingField: 0.65
+    <CutZoneRadius>k__BackingField: 0.6
+    <Xp>k__BackingField: 4
+    <FruitCount>k__BackingField: 0
+    <IsFruit>k__BackingField: 0
+    <EffectColor>k__BackingField: {r: 0.25, g: 0.5, b: 0.2, a: 1}
+    <ObjectPrefabs>k__BackingField:
+    - {fileID: 4688706736768840544, guid: 87cae8ff612558542acbdbaaff40c219, type: 3}
+    <Icon>k__BackingField: {fileID: 0}
+    <Material>k__BackingField: {fileID: 0}
+    <BladesPerCell>k__BackingField: 0
+    <MinHeight>k__BackingField: 0
+    <MaxHeight>k__BackingField: 0
+    <BladeWidth>k__BackingField: 0
+    <HasHead>k__BackingField: 0
+    <HeadColor>k__BackingField: {r: 1, g: 1, b: 1, a: 1}
+    <HeadRadius>k__BackingField: 0
+  - <Kind>k__BackingField: 10
+    <Key>k__BackingField: melon
+    <Representation>k__BackingField: 1
+    <Shape>k__BackingField: 0
+    <IsProtected>k__BackingField: 0
+    <RequiredTier>k__BackingField: 3
+    <Toughness>k__BackingField: 0.9
+    <CutZoneRadius>k__BackingField: 0.6
+    <Xp>k__BackingField: 8
+    <FruitCount>k__BackingField: 0
+    <IsFruit>k__BackingField: 1
+    <EffectColor>k__BackingField: {r: 0.97, g: 0.55, b: 0.13, a: 1}
+    <ObjectPrefabs>k__BackingField:
+    - {fileID: 4286149897680030822, guid: a23f7a1bca8ecc14db6ac4fbae0bdb5a, type: 3}
+    - {fileID: 2019871651173464216, guid: 9cc99a1131946624283cad7eac9a1e7e, type: 3}
+    <Icon>k__BackingField: {fileID: 0}
+    <Material>k__BackingField: {fileID: 0}
+    <BladesPerCell>k__BackingField: 0
+    <MinHeight>k__BackingField: 0
+    <MaxHeight>k__BackingField: 0
+    <BladeWidth>k__BackingField: 0
+    <HasHead>k__BackingField: 0
+    <HeadColor>k__BackingField: {r: 1, g: 1, b: 1, a: 1}
+    <HeadRadius>k__BackingField: 0
+  - <Kind>k__BackingField: 11
+    <Key>k__BackingField: fruit_tree
+    <Representation>k__BackingField: 1
+    <Shape>k__BackingField: 0
+    <IsProtected>k__BackingField: 0
+    <RequiredTier>k__BackingField: 4
+    <Toughness>k__BackingField: 2
+    <CutZoneRadius>k__BackingField: 0.6
+    <Xp>k__BackingField: 0
+    <FruitCount>k__BackingField: 5
+    <IsFruit>k__BackingField: 1
+    <EffectColor>k__BackingField: {r: 0.36, g: 0.6, b: 0.25, a: 1}
+    <ObjectPrefabs>k__BackingField:
+    - {fileID: 3919278015057918128, guid: 2b335ca1239a6ea49be6cc5cd4500419, type: 3}
+    - {fileID: 2379783762052743290, guid: 07a6a445c9109a3408b4dba1022cb1b9, type: 3}
+    <Icon>k__BackingField: {fileID: 0}
+    <Material>k__BackingField: {fileID: 0}
+    <BladesPerCell>k__BackingField: 0
+    <MinHeight>k__BackingField: 0
+    <MaxHeight>k__BackingField: 0
+    <BladeWidth>k__BackingField: 0
+    <HasHead>k__BackingField: 0
+    <HeadColor>k__BackingField: {r: 1, g: 1, b: 1, a: 1}
+    <HeadRadius>k__BackingField: 0
+  - <Kind>k__BackingField: 12
+    <Key>k__BackingField: fruit_giant
+    <Representation>k__BackingField: 1
+    <Shape>k__BackingField: 0
+    <IsProtected>k__BackingField: 0
+    <RequiredTier>k__BackingField: 4
+    <Toughness>k__BackingField: 2.5
+    <CutZoneRadius>k__BackingField: 1.25
+    <Xp>k__BackingField: 0
+    <FruitCount>k__BackingField: 0
+    <IsFruit>k__BackingField: 1
+    <EffectColor>k__BackingField: {r: 0.97, g: 0.55, b: 0.13, a: 1}
+    <ObjectPrefabs>k__BackingField:
+    - {fileID: 502103640335438134, guid: f02d966fde299c84f94dbb264cbaf93a, type: 3}
+    <Icon>k__BackingField: {fileID: 0}
+    <Material>k__BackingField: {fileID: 0}
+    <BladesPerCell>k__BackingField: 0
+    <MinHeight>k__BackingField: 0
+    <MaxHeight>k__BackingField: 0
+    <BladeWidth>k__BackingField: 0
+    <HasHead>k__BackingField: 0
+    <HeadColor>k__BackingField: {r: 1, g: 1, b: 1, a: 1}
+    <HeadRadius>k__BackingField: 0

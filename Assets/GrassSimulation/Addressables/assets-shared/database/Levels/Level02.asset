@@ -13,25 +13,27 @@ MonoBehaviour:
   m_Name: Level02
   m_EditorClassIdentifier: GrassSimulation.Gameplay::GrassSimulation.Gameplay.LevelDefinition
   _id: level-02
-  _cellsX: 72
-  _cellsZ: 56
-  _cellSize: 0.25
+  _cellsX: 36
+  _cellsZ: 28
+  _cellSize: 0.5
   _seed: 2
   _baseKind: 1
   _zones:
   - <Kind>k__BackingField: 2
     <Cells>k__BackingField:
-      x: 50
-      y: 34
-      width: 16
-      height: 16
+      x: 25
+      y: 17
+      width: 8
+      height: 8
   _spawn: {x: 2, y: 2}
   _spawnClearing: 1
-  _propLayout: {fileID: 0}
+  _bakedKinds: 
+  _plants: []
+  _obstacles: []
   _timeLimit: 100
   _quotas:
   - <Kind>k__BackingField: 2
-    <Amount>k__BackingField: 200
+    <Amount>k__BackingField: 50
     <IsBonus>k__BackingField: 0
   _type: 0
   _maxTier: 1

@@ -67,6 +67,21 @@ namespace GrassSimulation.UI
         private TMP_Text _protectedText;
 
         [SerializeField]
+        private RectTransform _joystickLayer;
+
+        [SerializeField]
+        private RectTransform _joystickBase;
+
+        [SerializeField]
+        private RectTransform _joystickKnob;
+
+        [SerializeField]
+        private GameObject _hint;
+
+        [SerializeField]
+        private TMP_Text _hintText;
+
+        [SerializeField]
         private Sprite _grassIcon;
 
         [SerializeField]
@@ -78,7 +93,13 @@ namespace GrassSimulation.UI
         private MessagePublisher.Publisher<LevelCommandScope> _commands;
         private Processor.Hub<GameplayScope> _hub;
         private ProcessingContext _processingContext;
+        private readonly OnboardingHintModel _hintModel = new();
+
         private float _pollTimer;
+        private int _levelIndex;
+        private LevelState _levelState;
+        private bool _isPaused;
+        private bool _isJoystickShown;
 
         private int _timerSeconds;
         private bool _hasTimerSeconds;
@@ -106,6 +127,7 @@ namespace GrassSimulation.UI
             _processingContext = ProcessingContext.DropIfNoHandler(warnNoHandler: false);
 
             _finishLabel.text = UiText.FINISH_CLEANUP;
+            _hintText.text = UiText.DRAG_HINT;
 
             _pauseButton.onClick.AddListener(OnPauseClicked);
             _finishButton.onClick.AddListener(OnFinishClicked);
@@ -114,6 +136,9 @@ namespace GrassSimulation.UI
         private void OnEnable()
         {
             ResetCaches();
+            _hintModel.Reset();
+            _hint.SetActive(false);
+            HideJoystick();
             Refresh();
 
             _pollTimer = 0f;
@@ -121,6 +146,8 @@ namespace GrassSimulation.UI
 
         private void Update()
         {
+            ShowJoystickAndHint();
+
             _pollTimer += Time.unscaledDeltaTime;
 
             if (_pollTimer < POLL_INTERVAL)
@@ -175,11 +202,80 @@ namespace GrassSimulation.UI
                 return;
             }
 
+            _levelIndex = snapshot.LevelIndex;
+            _levelState = snapshot.State;
+            _isPaused = snapshot.IsPaused;
+
             ShowMode(snapshot);
             ShowTimer(snapshot);
             ShowQuotas(snapshot);
             ShowGrowth(snapshot);
             ShowProtectedHits(snapshot);
+        }
+
+        private void ShowJoystickAndHint()
+        {
+            var result = GetJoystickStateRequest.TryProcess(in _hub, new GetJoystickStateRequest(), _processingContext);
+
+            if (result.TryGetValue(out var joystick) == false)
+            {
+                joystick = default;
+            }
+
+            ShowJoystick(in joystick);
+
+            var isActive = joystick.IsDragging || joystick.IsMoving;
+
+            _hintModel.Update(Time.unscaledDeltaTime, _levelIndex, _levelState, _isPaused, isActive);
+
+            if (_hint.activeSelf != _hintModel.IsVisible)
+            {
+                _hint.SetActive(_hintModel.IsVisible);
+            }
+        }
+
+        private void ShowJoystick(in JoystickState joystick)
+        {
+            if (joystick.IsDragging == false)
+            {
+                HideJoystick();
+                return;
+            }
+
+            if (_isJoystickShown == false)
+            {
+                _isJoystickShown = true;
+                _joystickBase.gameObject.SetActive(true);
+                _joystickKnob.gameObject.SetActive(true);
+            }
+
+            var layerSize = _joystickLayer.rect.size;
+            var screenSize = new Vector2(Screen.width, Screen.height);
+            var unitsPerPixel = JoystickLayout.GetUnitsPerPixel(layerSize.x, screenSize.x);
+            var origin = JoystickLayout.ToCanvasPosition(joystick.Origin, screenSize, layerSize);
+            var baseSize = JoystickLayout.GetBaseSize(joystick.Radius, unitsPerPixel);
+            var knobSize = JoystickLayout.GetKnobSize(joystick.Radius, unitsPerPixel);
+
+            _joystickBase.anchoredPosition = origin;
+            _joystickBase.sizeDelta = new Vector2(baseSize, baseSize);
+            _joystickKnob.anchoredPosition = origin + JoystickLayout.GetKnobOffset(
+                  joystick.Input
+                , joystick.Radius
+                , unitsPerPixel
+            );
+            _joystickKnob.sizeDelta = new Vector2(knobSize, knobSize);
+        }
+
+        private void HideJoystick()
+        {
+            if (_isJoystickShown == false && _joystickBase.gameObject.activeSelf == false)
+            {
+                return;
+            }
+
+            _isJoystickShown = false;
+            _joystickBase.gameObject.SetActive(false);
+            _joystickKnob.gameObject.SetActive(false);
         }
 
         private void ShowMode(in LevelSnapshot snapshot)

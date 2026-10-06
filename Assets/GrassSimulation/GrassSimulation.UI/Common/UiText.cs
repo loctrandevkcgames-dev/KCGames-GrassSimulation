@@ -33,6 +33,7 @@ namespace GrassSimulation.UI
 
         public const string CLEARED = "Đã dọn {0}%";
         public const string FINISH_CLEANUP = "Kết thúc";
+        public const string DRAG_HINT = "Kéo để lái máy cắt";
 
         public const string RESULT_TITLE = "Hoàn thành!";
         public const string RESULT_GOAL = "Đạt mục tiêu";

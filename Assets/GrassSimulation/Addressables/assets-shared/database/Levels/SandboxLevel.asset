@@ -70,6 +70,5 @@ MonoBehaviour:
   - <Kind>k__BackingField: 5
     <Amount>k__BackingField: 60
     <IsBonus>k__BackingField: 1
-  _failOnProtectedHits: 1
-  _protectedHitLimit: 3
-  _protectedHitCooldown: 1
+  _type: 1
+  _maxTier: 3

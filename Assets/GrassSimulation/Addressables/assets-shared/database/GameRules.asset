@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c6404da1b721b0243b7333d6e442f1c3, type: 3}
+  m_Name: GameRules
+  m_EditorClassIdentifier: GrassSimulation.Gameplay::GrassSimulation.Gameplay.GameRules
+  _protectedMode: 0
+  _failLimit: 3
+  _retrigger: 1
+  _timerEnabled: 1
+  _timerMultiplier: 1
+  _star2TimeLeft: 0.2
+  _timerWarning: 15
+  _autoSlow: 0
+  _slowHintThreshold: 0.8
+  _cleanupFinishArea: 0.01
+  _cleanupClusterMax: 4
+  _idleHint: 8
+  _boosterGiftTurbo: 3
+  _boosterGiftExtraTime: 3

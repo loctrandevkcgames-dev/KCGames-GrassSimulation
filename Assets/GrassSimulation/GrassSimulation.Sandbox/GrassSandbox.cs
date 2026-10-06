@@ -122,6 +122,7 @@ namespace GrassSimulation.Sandbox
         private ProgressionService _progression;
         private LevelSettlementHandler _settlementHandler;
         private LevelCommandRouter _commandRouter;
+        private GameHaptics _haptics;
         private MessagePublisher.Publisher<LevelCommandScope> _commands;
         private MessagePublisher.Publisher<GameplayScope> _gameplayEvents;
         private Result<LevelSettlement, SettleError> _lastSettlement;
@@ -226,6 +227,8 @@ namespace GrassSimulation.Sandbox
             BindMowerAnimator();
             BindAudio();
 
+            _haptics = new GameHaptics(GlobalMessenger.Subscriber.Scope<GameplayScope>());
+
             var settledSubscriber = GlobalMessenger.Subscriber.Scope<ProgressionScope>();
             _subscriptions.Add(LevelSettledMsg.Subscribe(in settledSubscriber, OnLevelSettled));
 
@@ -248,6 +251,7 @@ namespace GrassSimulation.Sandbox
             _mower.IsPointerBlocked = null;
             _commandRouter?.Dispose();
             _settlementHandler?.Dispose();
+            _haptics?.Dispose();
         }
 
         private void RunPendingFlow()

@@ -110,6 +110,51 @@ public sealed class GrassPageRoutesTests
         }
     }
 
+    [TestCase(false)]
+    [TestCase(true)]
+    public void TryGetPopupKey_MapsSettingsOpenToSettingsPopupWhileHome(bool isPaused)
+    {
+        foreach (LevelState state in System.Enum.GetValues(typeof(LevelState)))
+        {
+            var hasKey = TryPopupWithSettings(state: state, isPaused: isPaused, isHome: true, key: out var key);
+
+            Assert.That(hasKey, Is.True, state.ToString());
+            Assert.That(key, Is.EqualTo(UiPageKeys.SETTINGS_POPUP), state.ToString());
+        }
+
+        Assert.That(UiPageKeys.SETTINGS_POPUP, Is.EqualTo("ui/settings-popup"));
+    }
+
+    [Test]
+    public void TryGetPopupKey_IgnoresSettingsOpenOutsideHome()
+    {
+        var hasPlaying = TryPopupWithSettings(
+              state: LevelState.Playing
+            , isPaused: false
+            , isHome: false
+            , key: out var playingKey
+        );
+        var hasPaused = TryPopupWithSettings(
+              state: LevelState.Playing
+            , isPaused: true
+            , isHome: false
+            , key: out var pausedKey
+        );
+        var hasResult = TryPopupWithSettings(
+              state: LevelState.Success
+            , isPaused: false
+            , isHome: false
+            , key: out var resultKey
+        );
+
+        Assert.That(hasPlaying, Is.False);
+        Assert.That(playingKey, Is.Null);
+        Assert.That(hasPaused, Is.True);
+        Assert.That(pausedKey, Is.EqualTo(UiPageKeys.PAUSE_POPUP));
+        Assert.That(hasResult, Is.True);
+        Assert.That(resultKey, Is.EqualTo(UiPageKeys.RESULT_POPUP));
+    }
+
     [Test]
     public void UpgradeChoice_KeepsTheGameplayScreenRouteUnchanged()
     {
@@ -118,6 +163,7 @@ public sealed class GrassPageRoutesTests
 
     [TestCase(UiPageKeys.PAUSE_POPUP)]
     [TestCase(UiPageKeys.UPGRADE_POPUP)]
+    [TestCase(UiPageKeys.SETTINGS_POPUP)]
     public void TryGetPopupSound_OpensWhenAPopupAppears(string toKey)
     {
         Assert.That(GrassPageRoutes.TryGetPopupSound(fromKey: null, toKey: toKey, sound: out var sound), Is.True);
@@ -126,6 +172,7 @@ public sealed class GrassPageRoutesTests
 
     [TestCase(UiPageKeys.PAUSE_POPUP)]
     [TestCase(UiPageKeys.UPGRADE_POPUP)]
+    [TestCase(UiPageKeys.SETTINGS_POPUP)]
     public void TryGetPopupSound_ClosesWhenAPopupDisappears(string fromKey)
     {
         Assert.That(GrassPageRoutes.TryGetPopupSound(fromKey: fromKey, toKey: null, sound: out var sound), Is.True);
@@ -135,10 +182,20 @@ public sealed class GrassPageRoutesTests
     [Test]
     public void TryGetPopupSound_StaysSilentForTheResultPopup()
     {
-        Assert.That(GrassPageRoutes.TryGetPopupSound(fromKey: null, toKey: UiPageKeys.RESULT_POPUP, sound: out _), Is.False);
-        Assert.That(GrassPageRoutes.TryGetPopupSound(fromKey: UiPageKeys.RESULT_POPUP, toKey: null, sound: out _), Is.False);
         Assert.That(
-              GrassPageRoutes.TryGetPopupSound(fromKey: UiPageKeys.UPGRADE_POPUP, toKey: UiPageKeys.RESULT_POPUP, sound: out _)
+              GrassPageRoutes.TryGetPopupSound(fromKey: null, toKey: UiPageKeys.RESULT_POPUP, sound: out _)
+            , Is.False
+        );
+        Assert.That(
+              GrassPageRoutes.TryGetPopupSound(fromKey: UiPageKeys.RESULT_POPUP, toKey: null, sound: out _)
+            , Is.False
+        );
+        Assert.That(
+              GrassPageRoutes.TryGetPopupSound(
+                  fromKey: UiPageKeys.UPGRADE_POPUP
+                , toKey: UiPageKeys.RESULT_POPUP
+                , sound: out _
+              )
             , Is.False
         );
     }
@@ -156,6 +213,23 @@ public sealed class GrassPageRoutesTests
 
     private static bool TryPopup(LevelState state, bool isPaused, bool isHome, out string key)
     {
-        return GrassPageRoutes.TryGetPopupKey(state: state, isPaused: isPaused, isHome: isHome, key: out key);
+        return GrassPageRoutes.TryGetPopupKey(
+              state: state
+            , isPaused: isPaused
+            , isHome: isHome
+            , isSettingsOpen: false
+            , key: out key
+        );
+    }
+
+    private static bool TryPopupWithSettings(LevelState state, bool isPaused, bool isHome, out string key)
+    {
+        return GrassPageRoutes.TryGetPopupKey(
+              state: state
+            , isPaused: isPaused
+            , isHome: isHome
+            , isSettingsOpen: true
+            , key: out key
+        );
     }
 }

@@ -3,6 +3,7 @@ namespace GrassSimulation.UI
     public static class UiText
     {
         public const string PAUSE = "Tạm dừng";
+        public const string SETTINGS = "Cài đặt";
 
         public const string TIER = "Cấp {0}";
         public const string XP = "{0} / {1} XP";
@@ -55,6 +56,7 @@ namespace GrassSimulation.UI
         public const string BUTTON_HOME = "Về trang chính";
         public const string BUTTON_RESUME = "Tiếp tục";
         public const string BUTTON_QUIT = "Thoát";
+        public const string BUTTON_CLOSE = "Đóng";
 
         public const string FAIL_TIME_UP_TITLE = "Hết giờ";
         public const string FAIL_TIME_UP_REASON = "Chưa đủ mục tiêu khi hết thời gian.";

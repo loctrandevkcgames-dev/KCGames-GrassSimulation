@@ -22,6 +22,7 @@ namespace GrassSimulation.UI
         private LevelState _state;
         private bool _isPaused;
         private bool _isHome = true;
+        private bool _isSettingsOpen;
         private bool _isScreenBusy;
         private bool _isPopupBusy;
 
@@ -35,6 +36,10 @@ namespace GrassSimulation.UI
 
             _subscriptions.Add(LevelStateChangedMsg.Subscribe(in subscriber, OnLevelStateChanged));
             _subscriptions.Add(HomeChangedMsg.Subscribe(in subscriber, OnHomeChanged));
+
+            var uiSubscriber = GlobalMessenger.Subscriber.Scope<UiScope>();
+
+            _subscriptions.Add(SettingsRequestedMsg.Subscribe(in uiSubscriber, OnSettingsRequested));
 
             var hub = GlobalProcessor.Instance.Scope<GameplayScope>();
             var context = ProcessingContext.DropIfNoHandler(warnNoHandler: false);
@@ -67,6 +72,14 @@ namespace GrassSimulation.UI
         private void OnHomeChanged(HomeChangedMsg message)
         {
             _isHome = message.IsHome;
+            _isSettingsOpen = false;
+
+            Route();
+        }
+
+        private void OnSettingsRequested(SettingsRequestedMsg message)
+        {
+            _isSettingsOpen = message.IsOpen && _isHome;
 
             Route();
         }
@@ -123,7 +136,7 @@ namespace GrassSimulation.UI
 
         private void RoutePopup()
         {
-            GrassPageRoutes.TryGetPopupKey(_state, _isPaused, _isHome, out var key);
+            GrassPageRoutes.TryGetPopupKey(_state, _isPaused, _isHome, _isSettingsOpen, out var key);
 
             _wantedPopupKey = key;
 

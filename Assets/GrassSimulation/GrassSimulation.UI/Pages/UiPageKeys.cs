@@ -8,5 +8,6 @@ namespace GrassSimulation.UI
         public const string UPGRADE_POPUP = "ui/upgrade-popup";
         public const string RESULT_POPUP = "ui/result-popup";
         public const string PAUSE_POPUP = "ui/pause-popup";
+        public const string SETTINGS_POPUP = "ui/settings-popup";
     }
 }

@@ -17,6 +17,9 @@ namespace GrassSimulation.UI
         private TMP_Text _coinText;
 
         [SerializeField]
+        private Button _settingsButton;
+
+        [SerializeField]
         private TMP_Text _titleText;
 
         [SerializeField]
@@ -62,6 +65,7 @@ namespace GrassSimulation.UI
         private MainMenuLockedButton _levelSelectButton;
 
         private MessagePublisher.Publisher<LevelCommandScope> _commands;
+        private MessagePublisher.Publisher<UiScope> _ui;
         private Processor.Hub<GameplayScope> _gameplayHub;
         private Processor.Hub<ProgressionScope> _progressionHub;
         private ProcessingContext _processingContext;
@@ -74,6 +78,7 @@ namespace GrassSimulation.UI
         private void Awake()
         {
             _commands = GlobalMessenger.Publisher.Scope<LevelCommandScope>();
+            _ui = GlobalMessenger.Publisher.Scope<UiScope>();
             _gameplayHub = GlobalProcessor.Instance.Scope<GameplayScope>();
             _progressionHub = GlobalProcessor.Instance.Scope<ProgressionScope>();
             _processingContext = ProcessingContext.DropIfNoHandler(warnNoHandler: false);
@@ -87,6 +92,7 @@ namespace GrassSimulation.UI
             _levelSelectButton.Init(UiText.BUTTON_LEVEL_SELECT);
 
             _playButton.onClick.AddListener(OnPlayClicked);
+            _settingsButton.onClick.AddListener(OnSettingsClicked);
         }
 
         private void OnEnable()
@@ -114,12 +120,19 @@ namespace GrassSimulation.UI
         private void OnDestroy()
         {
             _playButton.onClick.RemoveListener(OnPlayClicked);
+            _settingsButton.onClick.RemoveListener(OnSettingsClicked);
         }
 
         private void OnPlayClicked()
         {
             UiAudio.Tap();
             PlayRequestedMsg.Publish(in _commands, new PlayRequestedMsg());
+        }
+
+        private void OnSettingsClicked()
+        {
+            UiAudio.Tap();
+            SettingsRequestedMsg.Publish(in _ui, new SettingsRequestedMsg(IsOpen: true));
         }
 
         private void Refresh()

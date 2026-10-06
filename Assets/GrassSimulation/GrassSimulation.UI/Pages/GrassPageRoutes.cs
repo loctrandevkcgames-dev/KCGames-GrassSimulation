@@ -36,12 +36,18 @@ namespace GrassSimulation.UI
             }
         }
 
-        public static bool TryGetPopupKey(LevelState state, bool isPaused, bool isHome, out string key)
+        public static bool TryGetPopupKey(
+              LevelState state
+            , bool isPaused
+            , bool isHome
+            , bool isSettingsOpen
+            , out string key
+        )
         {
             if (isHome)
             {
-                key = null;
-                return false;
+                key = isSettingsOpen ? UiPageKeys.SETTINGS_POPUP : null;
+                return isSettingsOpen;
             }
 
             switch (state)
@@ -94,7 +100,9 @@ namespace GrassSimulation.UI
 
         private static bool IsSoundPopup(string key)
         {
-            return key == UiPageKeys.PAUSE_POPUP || key == UiPageKeys.UPGRADE_POPUP;
+            return key == UiPageKeys.PAUSE_POPUP
+                || key == UiPageKeys.UPGRADE_POPUP
+                || key == UiPageKeys.SETTINGS_POPUP;
         }
     }
 }

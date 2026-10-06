@@ -1,0 +1,25 @@
+{
+    "name": "GrassSimulation.UI",
+    "rootNamespace": "GrassSimulation.UI",
+    "references": [
+        "EncosyTower.Core",
+        "EncosyTower.PubSub",
+        "EncosyTower.Processing",
+        "EncosyTower.Mvvm",
+        "EncosyTower.PageFlows",
+        "EncosyTower.PageFlows.MonoPages",
+        "UniTask",
+        "Unity.TextMeshPro",
+        "UnityEngine.UI",
+        "GrassSimulation.Gameplay"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

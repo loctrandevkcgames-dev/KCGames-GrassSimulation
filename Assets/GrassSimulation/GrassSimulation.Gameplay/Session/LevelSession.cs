@@ -22,13 +22,19 @@ namespace GrassSimulation.Gameplay
             , MessagePublisher.Publisher<GameplayScope> publisher
         )
         {
+            ThrowHelper.ThrowIfTooManyQuotas(
+                  level.Quotas.Length <= LevelSnapshot.MAX_QUOTAS
+                , level.Id.Value
+                , LevelSnapshot.MAX_QUOTAS
+            );
+
             _level = level;
             _cuttableCells = cuttableCells;
             _publisher = publisher;
             Growth = new MowerGrowth(machine);
             Objectives = new LevelObjectives(level.Quotas);
             Protection = new ProtectedRule(level.ProtectedHitCooldown);
-            Reset();
+            ResetState();
         }
 
         public MowerGrowth Growth { get; }
@@ -57,16 +63,8 @@ namespace GrassSimulation.Gameplay
 
         public void Reset()
         {
-            Growth.Reset();
-            Objectives.Reset();
-            Protection.Reset();
-            State = LevelState.Preview;
-            IsPaused = false;
-            RemainingTime = _level.TimeLimit;
-            ElapsedTime = 0f;
-            Result = default;
-            _clearedCells = 0;
-            _harvestBatcher.Clear();
+            ResetState();
+            PublishState();
         }
 
         public bool TryBegin()
@@ -78,6 +76,7 @@ namespace GrassSimulation.Gameplay
 
             State = LevelState.Playing;
             LevelStartedMsg.Publish(in _publisher, new LevelStartedMsg(_level.Id));
+            PublishState();
             PublishAlreadyMetQuotas();
             return true;
         }
@@ -85,12 +84,25 @@ namespace GrassSimulation.Gameplay
         public void Pause()
         {
             var canPause = State == LevelState.Playing || State == LevelState.Cleanup;
+
+            if (IsPaused == canPause)
+            {
+                return;
+            }
+
             IsPaused = canPause;
+            PublishState();
         }
 
         public void Resume()
         {
+            if (IsPaused == false)
+            {
+                return;
+            }
+
             IsPaused = false;
+            PublishState();
         }
 
         public void RecordHarvest(PlantKind kind, int xp)
@@ -189,6 +201,7 @@ namespace GrassSimulation.Gameplay
             if (Growth.PendingUpgrades > 0)
             {
                 State = LevelState.UpgradeChoice;
+                PublishState();
             }
         }
 
@@ -207,6 +220,11 @@ namespace GrassSimulation.Gameplay
                 State = LevelState.Playing;
             }
 
+            if (State == LevelState.Playing)
+            {
+                PublishState();
+            }
+
             UpgradeChosenMsg.Publish(in _publisher, message);
 
             return true;
@@ -220,6 +238,7 @@ namespace GrassSimulation.Gameplay
             }
 
             State = LevelState.Cleanup;
+            PublishState();
             return true;
         }
 
@@ -234,6 +253,12 @@ namespace GrassSimulation.Gameplay
 
             FlushHarvestBatch(force: true);
             LevelFinishedMsg.Publish(in _publisher, finished);
+            PublishState();
+        }
+
+        private void PublishState()
+        {
+            LevelStateChangedMsg.Publish(in _publisher, new LevelStateChangedMsg(State, IsPaused));
         }
 
         private void PublishTierUps(int tiersGained)
@@ -302,6 +327,20 @@ namespace GrassSimulation.Gameplay
             }
 
             return stars;
+        }
+
+        private void ResetState()
+        {
+            Growth.Reset();
+            Objectives.Reset();
+            Protection.Reset();
+            State = LevelState.Preview;
+            IsPaused = false;
+            RemainingTime = _level.TimeLimit;
+            ElapsedTime = 0f;
+            Result = default;
+            _clearedCells = 0;
+            _harvestBatcher.Clear();
         }
     }
 }

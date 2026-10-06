@@ -23,32 +23,21 @@ namespace GrassSimulation.Gameplay
 
         public int UpgradeOptionCount => _upgradeCounts.Length;
 
-        public MachineStats Stats
+        public MachineStats Stats => ComputeStats(option: 0, extraTimes: 0);
+
+        public int TierFloorXp
         {
             get
             {
-                var upgrades = _config.Upgrades;
-                var cutRadius = _config.BaseCutRadius;
-                var cuttingPower = _config.BaseCuttingPower;
-                var speed = _config.BaseSpeed;
-                var count = _upgradeCounts.Length;
+                var thresholds = _config.XpThresholds;
+                var index = Tier - 2;
 
-                for (var i = 0; i < count; i++)
-                {
-                    var upgrade = upgrades[i];
-                    var times = _upgradeCounts[i];
-                    cutRadius += upgrade.CutRadiusDelta * times;
-                    cuttingPower += upgrade.CuttingPowerDelta * times;
-                    speed += upgrade.SpeedDelta * times;
-                }
-
-                return new MachineStats(
-                      Mathf.Min(cutRadius, _config.MaxCutRadius)
-                    , cuttingPower
-                    , Mathf.Min(speed, _config.MaxSpeed)
-                );
+                return (uint)index < (uint)thresholds.Length ? thresholds[index] : 0;
             }
         }
+
+        public MachineStats GetStatsWithUpgrade(int option)
+            => ComputeStats(option, extraTimes: 1);
 
         public bool TryGetNextThreshold(out int threshold)
         {
@@ -106,6 +95,30 @@ namespace GrassSimulation.Gameplay
             _upgradeCounts[option]++;
             PendingUpgrades--;
             return true;
+        }
+
+        private MachineStats ComputeStats(int option, int extraTimes)
+        {
+            var upgrades = _config.Upgrades;
+            var cutRadius = _config.BaseCutRadius;
+            var cuttingPower = _config.BaseCuttingPower;
+            var speed = _config.BaseSpeed;
+            var count = _upgradeCounts.Length;
+
+            for (var i = 0; i < count; i++)
+            {
+                var upgrade = upgrades[i];
+                var times = _upgradeCounts[i] + (i == option ? extraTimes : 0);
+                cutRadius += upgrade.CutRadiusDelta * times;
+                cuttingPower += upgrade.CuttingPowerDelta * times;
+                speed += upgrade.SpeedDelta * times;
+            }
+
+            return new MachineStats(
+                  Mathf.Min(cutRadius, _config.MaxCutRadius)
+                , cuttingPower
+                , Mathf.Min(speed, _config.MaxSpeed)
+            );
         }
     }
 }

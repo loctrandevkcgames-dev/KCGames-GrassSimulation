@@ -70,6 +70,12 @@ namespace GrassSimulation.Gameplay
         [SerializeField]
         private float _bagInflate = 0.18f;
 
+        [SerializeField]
+        private float _bagFillPerCell = 0.003f;
+
+        [SerializeField]
+        private float _bagFillInflate = 0.25f;
+
         [Header("Engine start")]
         [SerializeField]
         private float _startShake = 0.035f;
@@ -140,10 +146,15 @@ namespace GrassSimulation.Gameplay
         private float _stateTime;
         private float _clock;
         private float _cutLevel;
+        private float _bagFill;
         private float _startKick;
         private float _spin;
         private float _wobbleSign = 1f;
         private bool _hasPreviousPosition;
+
+        public Vector3 ChutePosition => _bag.IsValid() ? _bag.position : transform.position;
+
+        public Vector3 ChuteDirection => _bag.IsValid() ? _bag.position - transform.position : -transform.forward;
 
         public MowerAnimationState State
         {
@@ -174,6 +185,7 @@ namespace GrassSimulation.Gameplay
         public void NotifyCut(int cells)
         {
             _cutLevel = Mathf.Min(a: _cutLevel + cells * _cutPerCell, b: 1f);
+            _bagFill = Mathf.Min(a: _bagFill + cells * _bagFillPerCell, b: 1f);
         }
 
         public void ResetPose()
@@ -181,6 +193,7 @@ namespace GrassSimulation.Gameplay
             _state = MowerAnimationState.Parked;
             _stateTime = 0f;
             _cutLevel = 0f;
+            _bagFill = 0f;
             _startKick = 0f;
             _spin = 0f;
             _pitch = default;
@@ -371,7 +384,7 @@ namespace GrassSimulation.Gameplay
             }
 
             var puff = _cutLevel * _bagInflate * (1f + 0.3f * Mathf.Sin(_clock * _bobFrequency * 2f));
-            _bag.localScale = _bagScale * (1f + puff);
+            _bag.localScale = _bagScale * (1f + _bagFill * _bagFillInflate + puff);
         }
 
         private void OnLevelStarted(LevelStartedMsg message)

@@ -76,6 +76,9 @@ namespace GrassSimulation.Sandbox
         private float _leafLitterShade = 0.8f;
 
         [SerializeField]
+        private float _chutePuffPerCell = 0.35f;
+
+        [SerializeField]
         private PlantSettings[] _plants = Array.Empty<PlantSettings>();
 
         [SerializeField]
@@ -135,6 +138,8 @@ namespace GrassSimulation.Sandbox
         private CameraBlend _previewBlend;
         private Rect _previewViewport;
         private float _followOrthoSize;
+        private float _chuteBudget;
+        private Color _chuteColor;
         private float _cutRadius;
         private float _zoneFlash;
         private int _levelIndex;
@@ -718,7 +723,28 @@ namespace GrassSimulation.Sandbox
             if (cells > 0 && _mowerAnimator.IsValid())
             {
                 _mowerAnimator.NotifyCut(cells);
+                PuffChute(cells);
             }
+        }
+
+        private void PuffChute(int cells)
+        {
+            if (_clippings.IsInvalid() || PlayerOptions.GetReduceEffects())
+            {
+                return;
+            }
+
+            _chuteBudget += cells * _chutePuffPerCell;
+
+            var count = Mathf.FloorToInt(_chuteBudget);
+
+            if (count <= 0)
+            {
+                return;
+            }
+
+            _chuteBudget -= count;
+            _clippings.Emit(_mowerAnimator.ChutePosition, _mowerAnimator.ChuteDirection, _chuteColor, count);
         }
 
         private void ResetMowerAnimator()
@@ -1073,8 +1099,10 @@ namespace GrassSimulation.Sandbox
             var position = _grid.ToWorld(_grid.CellCenter(index));
             var away = position - _mower.transform.position;
             var leafColor = _clippingColorByKind[(int)plant.Kind];
+            var leafShape = plant.Shape == PlantShape.Puff ? ClippingShape.Chip : ClippingShape.Blade;
 
-            _clippings.Emit(position, away, leafColor, _clippingsPerCell);
+            _chuteColor = leafColor;
+            _clippings.Emit(position, away, leafColor, _clippingsPerCell, leafShape);
 
             if (plant.HasHead)
             {

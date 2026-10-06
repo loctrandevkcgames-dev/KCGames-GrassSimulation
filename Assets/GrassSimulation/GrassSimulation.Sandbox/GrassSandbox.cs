@@ -113,6 +113,8 @@ namespace GrassSimulation.Sandbox
         private bool _wasReloadHeld;
         private bool _wasRetryHeld;
         private bool _wasWipeHeld;
+        private bool _wasHudToggleHeld;
+        private bool _showDebugHud;
         private FlowRequest _pendingFlow;
         private GUIStyle _hudStyle;
 
@@ -354,6 +356,11 @@ namespace GrassSimulation.Sandbox
 
         private void OnGUI()
         {
+            if (_showDebugHud == false)
+            {
+                return;
+            }
+
             var lineHeight = Screen.height / HUD_LINES_PER_SCREEN;
             var margin = lineHeight * 0.5f;
             var size = new Vector2(HUD_WIDTH_IN_LINES, HUD_HEIGHT_IN_LINES) * lineHeight;
@@ -716,6 +723,12 @@ namespace GrassSimulation.Sandbox
             var retryPressed = IsNewPress(keyboard.f6Key.isPressed, ref _wasRetryHeld);
             var isShiftHeld = keyboard.leftShiftKey.isPressed || keyboard.rightShiftKey.isPressed;
             var wipePressed = IsNewPress(isShiftHeld && keyboard.deleteKey.isPressed, ref _wasWipeHeld);
+            var hudTogglePressed = IsNewPress(keyboard.f1Key.isPressed, ref _wasHudToggleHeld);
+
+            if (hudTogglePressed)
+            {
+                _showDebugHud = !_showDebugHud;
+            }
 
             if (wipePressed)
             {

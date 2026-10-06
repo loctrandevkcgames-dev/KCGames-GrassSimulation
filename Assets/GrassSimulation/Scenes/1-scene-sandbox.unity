@@ -22255,7 +22255,14 @@ MonoBehaviour:
   _acceleration: 12
   _deceleration: 18
   _turnDegreesPerSecond: 540
-  _joystickRadiusPixels: 90
+  _joystickRadiusFraction: 0.16923077
+  _joystickMinRadiusPixels: 60
+  _joystickRegion:
+    serializedVersion: 2
+    x: 0
+    y: 0
+    width: 1
+    height: 0.5
 --- !u!4 &1776663716
 Transform:
   m_ObjectHideFlags: 0

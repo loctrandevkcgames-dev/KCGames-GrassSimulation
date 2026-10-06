@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using EncosyTower.Common;
+using EncosyTower.Processing;
 using EncosyTower.PubSub;
 using EncosyTower.UnityExtensions;
 using GrassSimulation.Gameplay;
@@ -11,7 +12,7 @@ using UnityEngine.InputSystem;
 
 namespace GrassSimulation.Sandbox
 {
-    public sealed class GrassSandbox : MonoBehaviour
+    public sealed class GrassSandbox : MonoBehaviour, ILevelFlowHost
     {
         private const float MIN_SEGMENT = 1e-4f;
         private const float ZONE_FLASH_DECAY = 2f;
@@ -80,6 +81,7 @@ namespace GrassSimulation.Sandbox
         private readonly Color[] _clippingColorByKind = new Color[PlantKindExtensions.Length];
         private readonly List<int> _harvestedCells = new();
         private readonly List<ISubscription> _subscriptions = new();
+        private readonly List<ProcessRegistry> _registries = new();
 
         private LevelDefinition _level;
         private FieldGrid _grid;
@@ -88,6 +90,8 @@ namespace GrassSimulation.Sandbox
         private LevelSession _session;
         private ProgressionService _progression;
         private LevelSettlementHandler _settlementHandler;
+        private LevelCommandRouter _commandRouter;
+        private MessagePublisher.Publisher<LevelCommandScope> _commands;
         private Result<LevelSettlement, SettleError> _lastSettlement;
         private bool _hasLastSettlement;
         private MaterialPropertyBlock _zoneProperties;
@@ -109,7 +113,40 @@ namespace GrassSimulation.Sandbox
         private bool _wasReloadHeld;
         private bool _wasRetryHeld;
         private bool _wasWipeHeld;
+        private FlowRequest _pendingFlow;
         private GUIStyle _hudStyle;
+
+        public LevelSession Session => _session;
+
+        public void Retry()
+        {
+            _pendingFlow = FlowRequest.Retry;
+        }
+
+        public void LoadNext()
+        {
+            _pendingFlow = FlowRequest.LoadNext;
+        }
+
+        public void GoHome()
+        {
+            _pendingFlow = FlowRequest.GoHome;
+        }
+
+        public void Play()
+        {
+            _pendingFlow = FlowRequest.Play;
+        }
+
+        public void FinishCleanup()
+        {
+            _pendingFlow = FlowRequest.FinishCleanup;
+        }
+
+        public void RetrySave()
+        {
+            _settlementHandler.RetryPending();
+        }
 
         private static bool IsNewPress(bool isHeld, ref bool wasHeld)
         {
@@ -141,12 +178,92 @@ namespace GrassSimulation.Sandbox
             _subscriptions.Add(LevelSettledMsg.Subscribe(in settledSubscriber, OnLevelSettled));
 
             LoadLevel(_progression.FindFirstIncomplete(_catalog));
+
+            _commands = GlobalMessenger.Publisher.Scope<LevelCommandScope>();
+            _commandRouter = new LevelCommandRouter(GlobalMessenger.Subscriber.Scope<LevelCommandScope>(), this);
+            RegisterQueries();
         }
 
         private void OnDestroy()
         {
             _subscriptions.Unsubscribe();
+            _registries.Unregister();
+            _commandRouter?.Dispose();
             _settlementHandler?.Dispose();
+        }
+
+        private void RunPendingFlow()
+        {
+            var request = _pendingFlow;
+
+            _pendingFlow = FlowRequest.None;
+
+            switch (request)
+            {
+                case FlowRequest.Retry:
+                case FlowRequest.GoHome:
+                {
+                    ResetRun();
+                    break;
+                }
+
+                case FlowRequest.LoadNext:
+                {
+                    TryAdvanceLevel();
+                    break;
+                }
+
+                case FlowRequest.Play:
+                {
+                    var state = _session.State;
+                    var canPlay = state != LevelState.Playing && state != LevelState.UpgradeChoice;
+
+                    if (canPlay)
+                    {
+                        LoadLevel(_progression.FindFirstIncomplete(_catalog));
+                    }
+
+                    break;
+                }
+
+                case FlowRequest.FinishCleanup:
+                {
+                    if (_session.State != LevelState.Cleanup)
+                    {
+                        break;
+                    }
+
+                    if (_levelIndex + 1 < _catalog.Count)
+                    {
+                        LoadLevel(_levelIndex + 1);
+                    }
+                    else
+                    {
+                        ResetRun();
+                    }
+
+                    break;
+                }
+            }
+        }
+
+        private void RegisterQueries()
+        {
+            var gameplayHub = GlobalProcessor.Instance.Scope<GameplayScope>().WithRegistries(_registries);
+            var progressionHub = GlobalProcessor.Instance.Scope<ProgressionScope>().WithRegistries(_registries);
+
+            GetLevelSnapshotRequest.Register(in gameplayHub, ProvideLevelSnapshot);
+            GetProgressSnapshotRequest.Register(in progressionHub, ProvideProgressSnapshot);
+        }
+
+        private LevelSnapshot ProvideLevelSnapshot(GetLevelSnapshotRequest request)
+        {
+            return LevelSnapshot.From(_session, _level, _levelIndex, _catalog.Count);
+        }
+
+        private ProgressSnapshot ProvideProgressSnapshot(GetProgressSnapshotRequest request)
+        {
+            return ProgressSnapshot.From(_progression, _catalog, _settlementHandler.HasPending);
         }
 
         private void OnLevelSettled(LevelSettledMsg message)
@@ -183,6 +300,7 @@ namespace GrassSimulation.Sandbox
         {
             var deltaTime = Time.deltaTime;
 
+            RunPendingFlow();
             HandleKeys();
 
             if (_session.IsSimulating)
@@ -544,10 +662,9 @@ namespace GrassSimulation.Sandbox
 
             _grid.ResetProgress();
             _feedback.Clear();
-            _session.Reset();
             _hasLastSettlement = false;
             _zoneFlash = 0f;
-            _cutRadius = _session.Growth.Stats.CutRadius;
+            _cutRadius = Mathf.Min(_machine.BaseCutRadius, _machine.MaxCutRadius);
 
             var spawn = _grid.ToWorld(_level.Spawn);
             _mower.ResetTo(spawn);
@@ -557,6 +674,7 @@ namespace GrassSimulation.Sandbox
             _cameraFocus = spawn;
 
             PlaceCamera();
+            _session.Reset();
         }
 
         private void PlaceCamera()
@@ -614,19 +732,19 @@ namespace GrassSimulation.Sandbox
 
             if (retryPressed)
             {
-                _settlementHandler.RetryPending();
+                RetrySaveRequestedMsg.Publish(in _commands, new RetrySaveRequestedMsg());
                 return;
             }
 
             if (resetPressed)
             {
-                ResetRun();
+                RetryRequestedMsg.Publish(in _commands, new RetryRequestedMsg());
                 return;
             }
 
             if (nextLevelPressed)
             {
-                TryAdvanceLevel();
+                NextLevelRequestedMsg.Publish(in _commands, new NextLevelRequestedMsg());
                 return;
             }
 
@@ -638,7 +756,7 @@ namespace GrassSimulation.Sandbox
 
             if (pausePressed)
             {
-                TogglePause();
+                PauseRequestedMsg.Publish(in _commands, new PauseRequestedMsg(_session.IsPaused == false));
             }
 
             if (confirmPressed)
@@ -648,11 +766,11 @@ namespace GrassSimulation.Sandbox
 
             if (firstPressed)
             {
-                _session.TryChooseUpgrade(0);
+                UpgradeRequestedMsg.Publish(in _commands, new UpgradeRequestedMsg(Option: 0));
             }
             else if (secondPressed)
             {
-                _session.TryChooseUpgrade(1);
+                UpgradeRequestedMsg.Publish(in _commands, new UpgradeRequestedMsg(Option: 1));
             }
         }
 
@@ -681,31 +799,19 @@ namespace GrassSimulation.Sandbox
             }
         }
 
-        private void TogglePause()
-        {
-            if (_session.IsPaused)
-            {
-                _session.Resume();
-            }
-            else
-            {
-                _session.Pause();
-            }
-        }
-
         private void Confirm()
         {
             switch (_session.State)
             {
                 case LevelState.Preview:
                 {
-                    _session.TryBegin();
+                    StartRequestedMsg.Publish(in _commands, new StartRequestedMsg());
                     break;
                 }
 
                 case LevelState.Success:
                 {
-                    _session.TryEnterCleanup();
+                    CleanupRequestedMsg.Publish(in _commands, new CleanupRequestedMsg());
                     break;
                 }
             }
@@ -795,6 +901,16 @@ namespace GrassSimulation.Sandbox
             _protectedZone.GetPropertyBlock(_zoneProperties);
             _zoneProperties.SetFloat(GrassFieldShaderIds.Flash, _zoneFlash);
             _protectedZone.SetPropertyBlock(_zoneProperties);
+        }
+
+        private enum FlowRequest
+        {
+            None,
+            Retry,
+            LoadNext,
+            GoHome,
+            Play,
+            FinishCleanup,
         }
     }
 }

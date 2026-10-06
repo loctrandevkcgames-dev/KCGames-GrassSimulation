@@ -174,15 +174,21 @@ MonoBehaviour:
   _props: {fileID: 1161807234}
   _machine: {fileID: 11400000, guid: ebc40e11f7bfca245aa82bc9c2f13402, type: 2}
   _catalog: {fileID: 11400000, guid: a17d35073a536bc41b91ad47a7736194, type: 2}
+  _rules: {fileID: 11400000, guid: 271f5bb9b5ac6a44bb55a4e66d7ed50a, type: 2}
   _cameraShake: 0.12
   _clippingsPerCell: 4
   _petalsPerFlower: 2
+  _petalLitterShare: 0.3
+  _leafLitterShare: 0.6
+  _leafLitterShade: 0.8
+  _chutePuffPerCell: 0.35
   _plants:
   - <Kind>k__BackingField: 1
     <Shape>k__BackingField: 0
     <IsProtected>k__BackingField: 0
     <RequiredTier>k__BackingField: 1
     <Toughness>k__BackingField: 0.12
+    <CutZoneRadius>k__BackingField: 0.125
     <Xp>k__BackingField: 1
     <Material>k__BackingField: {fileID: 2100000, guid: 46a2b950fada37f439135dea7ed6a1e1,
       type: 2}
@@ -198,6 +204,7 @@ MonoBehaviour:
     <IsProtected>k__BackingField: 0
     <RequiredTier>k__BackingField: 1
     <Toughness>k__BackingField: 0.18
+    <CutZoneRadius>k__BackingField: 0.125
     <Xp>k__BackingField: 1
     <Material>k__BackingField: {fileID: 2100000, guid: 88db78c4edbe843429a88722f4bbecf5,
       type: 2}
@@ -213,6 +220,7 @@ MonoBehaviour:
     <IsProtected>k__BackingField: 0
     <RequiredTier>k__BackingField: 2
     <Toughness>k__BackingField: 0.3
+    <CutZoneRadius>k__BackingField: 0.125
     <Xp>k__BackingField: 2
     <Material>k__BackingField: {fileID: 2100000, guid: cea6f706cfc7ccc4c8a53e78007d2a26,
       type: 2}
@@ -228,6 +236,7 @@ MonoBehaviour:
     <IsProtected>k__BackingField: 0
     <RequiredTier>k__BackingField: 2
     <Toughness>k__BackingField: 0.45
+    <CutZoneRadius>k__BackingField: 0.125
     <Xp>k__BackingField: 3
     <Material>k__BackingField: {fileID: 2100000, guid: c178f4cc434ac664593b2030113afe1b,
       type: 2}
@@ -243,6 +252,7 @@ MonoBehaviour:
     <IsProtected>k__BackingField: 0
     <RequiredTier>k__BackingField: 3
     <Toughness>k__BackingField: 0.65
+    <CutZoneRadius>k__BackingField: 0.125
     <Xp>k__BackingField: 4
     <Material>k__BackingField: {fileID: 2100000, guid: e8447a962156e1646921547a2e0ca226,
       type: 2}
@@ -258,6 +268,7 @@ MonoBehaviour:
     <IsProtected>k__BackingField: 1
     <RequiredTier>k__BackingField: 99
     <Toughness>k__BackingField: 1
+    <CutZoneRadius>k__BackingField: 0.125
     <Xp>k__BackingField: 0
     <Material>k__BackingField: {fileID: 2100000, guid: 803361fc271ebb342a85ebf8b8c5c892,
       type: 2}
@@ -17127,7 +17138,7 @@ MonoBehaviour:
     sortingOrderInLayer: 100
   _flowContext:
     autoInitializeOnAwake: 1
-    useProjectSettings: 1
+    useProjectSettings: 0
     warnNoSubscriber: 0
     loadStrategy: 0
     poolRentingStrategy: 0
@@ -22384,6 +22395,8 @@ MonoBehaviour:
   _cutPerCell: 0.25
   _cutDecay: 2.5
   _bagInflate: 0.18
+  _bagFillPerCell: 0.003
+  _bagFillInflate: 0.25
   _startShake: 0.035
   _startDecay: 2.5
   _startPopImpulse: 2.5
@@ -22583,6 +22596,7 @@ SceneRoots:
   - {fileID: 899344536}
   - {fileID: 1581607474}
   - {fileID: 1629049829}
+  - {fileID: 735453817}
   - {fileID: 687041106}
   - {fileID: 1776663716}
   - {fileID: 425614671}
@@ -22594,5 +22608,4 @@ SceneRoots:
   - {fileID: 387600428}
   - {fileID: 1161807235}
   - {fileID: 1697150042}
-  - {fileID: 735453817}
   - {fileID: 1628998673}

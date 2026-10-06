@@ -82,6 +82,7 @@ namespace GrassSimulation.Sandbox
         private readonly List<int> _harvestedCells = new();
         private readonly List<ISubscription> _subscriptions = new();
         private readonly List<ProcessRegistry> _registries = new();
+        private readonly UiPointerProbe _uiProbe = new();
 
         private LevelDefinition _level;
         private FieldGrid _grid;
@@ -184,6 +185,8 @@ namespace GrassSimulation.Sandbox
                 , GlobalMessenger.Publisher.Scope<ProgressionScope>()
             );
 
+            _mower.IsPointerBlocked = _uiProbe.IsOverUi;
+
             BindMowerAnimator();
 
             var settledSubscriber = GlobalMessenger.Subscriber.Scope<ProgressionScope>();
@@ -202,6 +205,7 @@ namespace GrassSimulation.Sandbox
         {
             _subscriptions.Unsubscribe();
             _registries.Unregister();
+            _mower.IsPointerBlocked = null;
             _commandRouter?.Dispose();
             _settlementHandler?.Dispose();
         }
@@ -276,7 +280,13 @@ namespace GrassSimulation.Sandbox
 
             GetLevelSnapshotRequest.Register(in gameplayHub, ProvideLevelSnapshot);
             GetLevelPreviewRequest.Register(in gameplayHub, ProvideLevelPreview);
+            GetJoystickStateRequest.Register(in gameplayHub, ProvideJoystickState);
             GetProgressSnapshotRequest.Register(in progressionHub, ProvideProgressSnapshot);
+        }
+
+        private JoystickState ProvideJoystickState(GetJoystickStateRequest request)
+        {
+            return _session != null && _session.IsSimulating ? _mower.GetJoystickState() : default;
         }
 
         private LevelPreview ProvideLevelPreview(GetLevelPreviewRequest request)

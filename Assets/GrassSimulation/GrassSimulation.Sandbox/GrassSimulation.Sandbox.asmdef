@@ -7,7 +7,8 @@
         "EncosyTower.Processing",
         "GrassSimulation.Gameplay",
         "GrassSimulation.Progression",
-        "Unity.InputSystem"
+        "Unity.InputSystem",
+        "UnityEngine.UI"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

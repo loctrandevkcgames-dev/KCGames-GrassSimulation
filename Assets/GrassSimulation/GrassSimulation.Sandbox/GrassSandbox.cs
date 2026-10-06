@@ -1037,7 +1037,7 @@ namespace GrassSimulation.Sandbox
 
             if (plant.HasHead)
             {
-                _clippings.Emit(position, away, plant.HeadColor, _petalsPerFlower);
+                _clippings.Emit(position, away, plant.HeadColor, _petalsPerFlower, ClippingShape.Chip);
             }
         }
 

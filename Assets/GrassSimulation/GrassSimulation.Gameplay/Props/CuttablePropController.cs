@@ -365,7 +365,7 @@ namespace GrassSimulation.Gameplay
                 return;
             }
 
-            _chips.Emit(prop.EffectPosition, prop.transform.position - from, color, count);
+            _chips.Emit(prop.EffectPosition, prop.transform.position - from, color, count, ClippingShape.Chip);
         }
 
         private int BreakProp(CuttableProp prop, Vector3 blade)

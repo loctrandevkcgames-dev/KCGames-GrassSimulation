@@ -175,7 +175,7 @@ MonoBehaviour:
   _machine: {fileID: 11400000, guid: ebc40e11f7bfca245aa82bc9c2f13402, type: 2}
   _catalog: {fileID: 11400000, guid: a17d35073a536bc41b91ad47a7736194, type: 2}
   _cameraShake: 0.12
-  _clippingsPerCell: 3
+  _clippingsPerCell: 4
   _petalsPerFlower: 2
   _plants:
   - <Kind>k__BackingField: 1
@@ -273,6 +273,16 @@ MonoBehaviour:
   _cameraDistance: 25
   _cameraLookAhead: 1.2
   _cameraSmoothing: 6
+  _previewEnterSeconds: 0.6
+  _previewExitSeconds: 0.5
+  _previewMargin: 0.5
+  _previewHeightAllowance: 2
+  _previewFallbackViewport:
+    serializedVersion: 2
+    x: 0.05
+    y: 0.52
+    width: 0.9
+    height: 0.29
 --- !u!114 &130738386
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -405,6 +415,10 @@ MonoBehaviour:
   _lifetime: {x: 0.7, y: 1.2}
   _spinDegrees: 900
   _shadeJitter: 0.15
+  _hueJitter: 0.03
+  _saturationJitter: 0.12
+  _bladeSpinDegrees: 1100
+  _bladeTumbleDegrees: 120
 --- !u!199 &387600426
 ParticleSystemRenderer:
   serializedVersion: 7
@@ -10629,16 +10643,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cbf0e81de170b834fb284d3f8e5b6046, type: 3}
   m_Name: 
   m_EditorClassIdentifier: GrassSimulation.Gameplay::GrassSimulation.Gameplay.GrassClippingsEmitter
-  _maxParticlesPerFrame: 60
+  _maxParticlesPerFrame: 90
   _spawnHeight: 0.35
   _spawnJitter: 0.1
   _spreadDegrees: 55
   _outwardSpeed: {x: 1.4, y: 3.2}
   _upwardSpeed: {x: 2.6, y: 4.4}
-  _size: {x: 0.22, y: 0.36}
+  _size: {x: 0.22, y: 0.32}
   _lifetime: {x: 0.8, y: 1.3}
   _spinDegrees: 900
   _shadeJitter: 0.15
+  _hueJitter: 0.03
+  _saturationJitter: 0.08
+  _bladeSpinDegrees: 720
+  _bladeTumbleDegrees: 420
 --- !u!199 &799609464
 ParticleSystemRenderer:
   serializedVersion: 7
@@ -13338,7 +13356,7 @@ ParticleSystem:
     drag:
       serializedVersion: 2
       minMaxState: 0
-      scalar: 1.2
+      scalar: 1.8
       minScalar: 0
       maxCurve:
         serializedVersion: 2
@@ -13389,11 +13407,11 @@ ParticleSystem:
         m_PostInfinity: 2
         m_RotationOrder: 4
   NoiseModule:
-    enabled: 0
+    enabled: 1
     strength:
       serializedVersion: 2
       minMaxState: 0
-      scalar: 1
+      scalar: 0.6
       minScalar: 1
       maxCurve:
         serializedVersion: 2
@@ -13550,16 +13568,16 @@ ParticleSystem:
         m_PostInfinity: 2
         m_RotationOrder: 4
     separateAxes: 0
-    frequency: 0.5
+    frequency: 0.8
     damping: 1
     octaves: 1
     octaveMultiplier: 0.5
     octaveScale: 2
-    quality: 1
+    quality: 0
     scrollSpeed:
       serializedVersion: 2
       minMaxState: 0
-      scalar: 0
+      scalar: 0.5
       minScalar: 0
       maxCurve:
         serializedVersion: 2

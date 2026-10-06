@@ -55,6 +55,18 @@ namespace GrassSimulation.Gameplay
         [SerializeField]
         private int _maxTier = 1;
 
+        [SerializeField]
+        private string _displayName = string.Empty;
+
+        [SerializeField]
+        private string _decision = string.Empty;
+
+        [SerializeField]
+        private UnlockSettings _unlock;
+
+        [SerializeField]
+        private RectInt[] _bakedBeds = Array.Empty<RectInt>();
+
         [NonSerialized]
         private RectInt[] _beds;
 
@@ -81,6 +93,12 @@ namespace GrassSimulation.Gameplay
         public LevelType Type => _type;
 
         public int MaxTier => _maxTier;
+
+        public string DisplayName => _displayName;
+
+        public string Decision => _decision;
+
+        public UnlockSettings Unlock => _unlock;
 
         public ReadOnlySpan<RectInt> Beds => _beds ??= CollectBeds();
 
@@ -167,6 +185,11 @@ namespace GrassSimulation.Gameplay
 
         private RectInt[] CollectBeds()
         {
+            if (_bakedBeds.Length > 0)
+            {
+                return (RectInt[])_bakedBeds.Clone();
+            }
+
             var beds = new List<RectInt>();
             var zoneCount = _zones.Length;
 

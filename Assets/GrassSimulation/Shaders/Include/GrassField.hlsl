@@ -16,6 +16,25 @@
 //                       B  Locked flash 0..1. Pulse when the blade touches a plant whose RequiredTier is too high.
 //                       A  Protected hit flash 0..1. Pulse when the blade touches a protected flower cell.
 //
+//   _GrassLitter        Texture2D, RGBA32, linear, no mipmaps, same size and layout as _GrassCellState.
+//                       RGB  Leaf clippings colour of the cell's plant kind, premultiplied by A.
+//                       A    Clippings left on the ground 0..1. 0 = none (standing plants, or a cell that never had
+//                            plants), 1 = the cell's plants are fully cut. Never decays during a level.
+//
+//   _GrassLitterAccent  Texture2D, RGBA32, linear, no mipmaps, same layout as _GrassLitter.
+//                       RGB  Accent chip colour (flower petals, for example), premultiplied by _GrassLitter.A.
+//                       A    Accent share of the clippings, premultiplied by _GrassLitter.A. 0 = leaves only.
+//
+//   _GrassCutState      Texture2D, RGBA32, linear, no mipmaps, same layout as _GrassLitter.
+//                       RG   Mower heading (world XZ) when the cell was cut, mapped -1..1 -> 0..1 and premultiplied
+//                            by _GrassLitter.A. 0.5 (after un-premultiplying) = no heading.
+//                       B    Fresh cut 0..1, premultiplied by _GrassLitter.A. 1 right after the cut, fades over seconds.
+//                       A    Cut pop 0..1, NOT premultiplied, read with point sampling. 1 at the cut, 0 about 0.1 s
+//                            later; foliage sinks and splays out while it runs.
+//
+//   _GrassSweep         xy = world XZ origin of the celebration sweep, z = start time (_Time.y),
+//                       w = 1 while a sweep is set, 0 for none.
+//
 //   _GrassFieldParams   xy = world XZ of the field's minimum corner, zw = 1 / field size in metres (X, Z).
 //                       zw = 0 means no field is bound; every cell then reads as standing and untouched.
 //
@@ -25,10 +44,14 @@
 //   _GrassBladeState    x = protected-zone warning 0..1 for the cut range indicator. yzw are reserved.
 
 TEXTURE2D(_GrassCellState);
+TEXTURE2D(_GrassLitter);
+TEXTURE2D(_GrassLitterAccent);
+TEXTURE2D(_GrassCutState);
 
 float4 _GrassFieldParams;
 float4 _GrassBladeParams;
 float4 _GrassBladeState;
+float4 _GrassSweep;
 
 float2 GrassFieldUV(float2 positionXZ)
 {
@@ -54,6 +77,41 @@ half4 SampleGrassCellStateSmooth(float2 positionXZ)
 {
     float2 uv = GrassFieldUV(positionXZ);
     return SAMPLE_TEXTURE2D_LOD(_GrassCellState, sampler_LinearClamp, uv, 0) * GrassFieldMask(uv);
+}
+
+struct GrassLitter
+{
+    half amount;    // clippings 0..1
+    half3 leaf;     // leaf clippings colour
+    half4 accent;   // rgb = accent chip colour, a = accent share 0..1
+    half2 heading;  // mower heading when cut, world XZ, length 0..1
+    half fresh;     // 1 right after the cut, fades to 0
+};
+
+// Bilinear clippings, un-premultiplied. Only cells that had plants and were cut leave clippings.
+GrassLitter SampleGrassLitterSmooth(float2 positionXZ)
+{
+    float2 uv = GrassFieldUV(positionXZ);
+    half mask = GrassFieldMask(uv);
+    half4 litter = SAMPLE_TEXTURE2D_LOD(_GrassLitter, sampler_LinearClamp, uv, 0) * mask;
+    half4 litterAccent = SAMPLE_TEXTURE2D_LOD(_GrassLitterAccent, sampler_LinearClamp, uv, 0) * mask;
+    half4 cutState = SAMPLE_TEXTURE2D_LOD(_GrassCutState, sampler_LinearClamp, uv, 0) * mask;
+    half inverse = 1.0h / max(litter.a, 1.0h / 255.0h);
+
+    GrassLitter output;
+    output.amount = litter.a;
+    output.leaf = saturate(litter.rgb * inverse);
+    output.accent = saturate(litterAccent * inverse);
+    output.heading = saturate(cutState.rg * inverse) * 2.0h - 1.0h;
+    output.fresh = saturate(cutState.b * inverse);
+    return output;
+}
+
+// Exact cut pop of the cell, 0..1. Use it for foliage.
+half SampleGrassCutPop(float2 positionXZ)
+{
+    float2 uv = GrassFieldUV(positionXZ);
+    return SAMPLE_TEXTURE2D_LOD(_GrassCutState, sampler_PointClamp, uv, 0).a * GrassFieldMask(uv);
 }
 
 half GrassBladeRadius()

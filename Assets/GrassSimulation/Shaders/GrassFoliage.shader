@@ -46,6 +46,7 @@ Shader "GrassSimulation/Foliage"
         _PartialCutHeight ("Partly Cut Height", Range(0, 1)) = 0.7
         _PartialCutColor ("Partly Cut Tint (A = amount)", Color) = (0.75, 0.70, 0.35, 0.45)
         _CutStubbleHeight ("Cut Stubble Height", Range(0, 0.5)) = 0
+        _CutPopSplay ("Cut Pop Splay", Range(0, 2)) = 0.8
 
         [Header(Feedback)]
         _LockedFlashColor ("Locked Flash (A = amount)", Color) = (0.55, 0.60, 0.95, 0.8)

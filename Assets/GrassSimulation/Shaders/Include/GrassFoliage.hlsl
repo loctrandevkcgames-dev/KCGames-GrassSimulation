@@ -54,6 +54,7 @@ CBUFFER_START(UnityPerMaterial)
     half _PartialCutHeight;
     half4 _PartialCutColor;
     half _CutStubbleHeight;
+    half _CutPopSplay;
     half4 _LockedFlashColor;
     half4 _ProtectedFlashColor;
     half _FlashPulseSpeed;
@@ -93,11 +94,16 @@ GrassFoliageVertex DeformGrassFoliage(GrassFoliageAttributes input)
     half4 cellState = SampleGrassCellState(rootWS.xz);
 
     // Cut progress: a partly cut clump droops, a cut clump collapses into stubble (or vanishes at height 0).
+    // Right after the cut the clump sinks and splays out over the cut pop instead of vanishing at once.
     half clearance = cellState.r;
     half isCut = step(0.99h, clearance);
+    half pop = SampleGrassCutPop(rootWS.xz);
+    half isPopping = step(1e-3h, pop);
     half partialHeight = lerp(1.0h, _PartialCutHeight, saturate(clearance));
-    offsetWS.y *= lerp(partialHeight, _CutStubbleHeight, isCut);
-    offsetWS.xz *= lerp(1.0h, step(1e-3h, _CutStubbleHeight), isCut);
+    half cutHeight = lerp(_CutStubbleHeight, 1.0h, pop * pop);
+    half cutSpread = lerp(step(1e-3h, _CutStubbleHeight), 1.0h + _CutPopSplay * (1.0h - pop), isPopping);
+    offsetWS.y *= lerp(partialHeight, cutHeight, isCut);
+    offsetWS.xz *= lerp(1.0h, cutSpread, isCut);
 
     float time = _Time.y;
 

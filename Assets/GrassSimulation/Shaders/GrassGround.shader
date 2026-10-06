@@ -1,5 +1,10 @@
 // Lawn ground of the Grass Route field. Cells with standing plants show the uncut colour; cleared cells (cut or empty)
 // show the mown colour with mower stripes, so every cut leaves a clean, readable trail (GDD sections 2 and 11).
+// Cut cells that had plants are covered with a layer of clippings in the colours of the plant kind that grew there:
+// a patchy mat plus scattered short leaf blades, mixed with round accent chips such as flower petals. Read from
+// _GrassLitter and _GrassLitterAccent, so never-planted ground stays bare soil. The clippings take a light or dark
+// mower stripe from the heading they were cut with (_GrassCutState), start brighter while fresh, sit in a soft shadow
+// along standing plants, and light up under the celebration sweep (_GrassSweep).
 // Reads the cell state contract documented in Include/GrassField.hlsl. _CutColor is the cut trail skin colour.
 Shader "GrassSimulation/Ground"
 {
@@ -29,6 +34,29 @@ Shader "GrassSimulation/Ground"
         _CutEdge ("Cut Edge Threshold", Range(0.05, 0.95)) = 0.5
         _CutEdgeSoftness ("Cut Edge Softness", Range(0.01, 0.5)) = 0.2
         _CutEdgeDarkening ("Cut Edge Darkening", Range(0, 1)) = 0.25
+        _CutEdgeShadow ("Cut Edge Shadow (beside standing plants)", Range(0, 1)) = 0.35
+
+        [Header(Clippings)]
+        _LitterMatShade ("Clippings Mat Shade (x kind colour)", Range(0, 2)) = 0.92
+        _LitterMatAmount ("Clippings Mat Amount", Range(0, 1)) = 0.88
+        _LitterMatScale ("Clippings Mat Patch Scale (1/m)", Float) = 2.5
+        _LitterLightShade ("Clippings Light Shade (x kind colour)", Range(0, 2)) = 1.12
+        _LitterDarkShade ("Clippings Dark Shade (x kind colour)", Range(0, 2)) = 0.65
+        _LitterScale ("Clippings Grid (1/m)", Float) = 4.5
+        _LitterDensity ("Clippings Density", Range(0, 1)) = 0.85
+        _LitterLength ("Clippings Length (cell)", Range(0.1, 0.9)) = 0.75
+        _LitterWidth ("Clippings Width (cell)", Range(0.02, 0.3)) = 0.17
+        _LitterShadow ("Clippings Shadow", Range(0, 1)) = 0.3
+        _LitterAccentLength ("Accent Chip Length (x blade)", Range(0.1, 1)) = 0.4
+        _LitterAccentWidth ("Accent Chip Width (x blade)", Range(0.5, 3)) = 1.8
+        _LitterStripeStrength ("Heading Stripe Strength", Range(0, 0.5)) = 0.28
+        _LitterFreshBoost ("Fresh Cut Brightness", Range(0, 1)) = 0.15
+
+        [Header(Celebration Sweep)]
+        _SweepColor ("Sweep Glow Color (A = amount)", Color) = (1, 0.95, 0.7, 0.45)
+        _SweepSpeed ("Sweep Speed (m/s)", Float) = 9
+        _SweepWidth ("Sweep Width (m)", Float) = 0.9
+        _SweepDuration ("Sweep Duration (s)", Float) = 1.6
 
         [Header(Mower Stripes)]
         _StripeStrength ("Stripe Strength", Range(0, 0.5)) = 0.12
@@ -82,6 +110,25 @@ Shader "GrassSimulation/Ground"
             half _CutEdge;
             half _CutEdgeSoftness;
             half _CutEdgeDarkening;
+            half _CutEdgeShadow;
+            half _LitterMatShade;
+            half _LitterMatAmount;
+            float _LitterMatScale;
+            half _LitterLightShade;
+            half _LitterDarkShade;
+            float _LitterScale;
+            half _LitterDensity;
+            half _LitterLength;
+            half _LitterWidth;
+            half _LitterShadow;
+            half _LitterAccentLength;
+            half _LitterAccentWidth;
+            half _LitterStripeStrength;
+            half _LitterFreshBoost;
+            half4 _SweepColor;
+            float _SweepSpeed;
+            float _SweepWidth;
+            float _SweepDuration;
             half _StripeStrength;
             float _StripeWidth;
             float _StripeAngle;
@@ -191,6 +238,82 @@ Shader "GrassSimulation/Ground"
                 return albedo;
             }
 
+            // One clipping per grid cell at most: a tapered, randomly rotated stroke kept inside its cell, so no
+            // neighbour search is needed. Several offset layers hide the grid. An accent clipping is a short, wide chip.
+            half3 ApplyLitterLayer(half3 albedo, float2 coord, float seed, half litter, half3 leaf, half4 accent)
+            {
+                float2 cell = floor(coord);
+                float2 local = frac(coord) - 0.5;
+                float spawn = GrassHash21(cell + seed);
+                float angle = GrassHash21(cell + seed + 7.7) * 6.2831853;
+                float lengthJitter = GrassHash21(cell + seed + 19.3);
+                float shade = GrassHash21(cell + seed + 31.1);
+                float2 jitter = float2(GrassHash21(cell + seed + 43.9), GrassHash21(cell + seed + 57.3)) - 0.5;
+                half isAccent = step(GrassHash21(cell + seed + 71.3), accent.a);
+
+                half exists = step(spawn, _LitterDensity * litter);
+                float lengthScale = lerp(1.0, _LitterAccentLength, isAccent);
+                float widthScale = lerp(1.0, _LitterAccentWidth, isAccent);
+                float halfLength = min(_LitterLength * 0.5 * lengthScale * (0.7 + 0.6 * lengthJitter), 0.45);
+                float2 direction = float2(cos(angle), sin(angle));
+                float2 center = jitter * max(0.9 - 2.0 * halfLength, 0.0);
+                float2 delta = local - center;
+                float along = clamp(dot(delta, direction), -halfLength, halfLength);
+                float taper = lerp(0.5, 0.2, isAccent);
+                float halfWidth = _LitterWidth * widthScale * 0.5 * (1.0 - taper * abs(along) / max(halfLength, 1e-3));
+                half aa = (half)max(fwidth(coord.x), 1e-3);
+
+                float2 shadowDelta = delta + float2(-0.3, 0.4) * _LitterWidth;
+                float shadowAlong = clamp(dot(shadowDelta, direction), -halfLength, halfLength);
+                half shadowDistance = (half)length(shadowDelta - direction * shadowAlong);
+                half shadow = (1.0h - smoothstep((half)halfWidth - aa, (half)halfWidth + aa, shadowDistance)) * exists;
+                albedo *= 1.0h - shadow * _LitterShadow;
+
+                half bladeDistance = (half)length(delta - direction * along);
+                half blade = (1.0h - smoothstep((half)halfWidth - aa, (half)halfWidth + aa, bladeDistance)) * exists;
+                half3 kindColor = lerp(leaf, accent.rgb, isAccent);
+                half3 bladeColor = saturate(kindColor * lerp(_LitterDarkShade, _LitterLightShade, (half)shade));
+                return lerp(albedo, bladeColor, blade);
+            }
+
+            half3 ApplyLitter(half3 albedo, float2 positionXZ, out half coverage)
+            {
+                GrassLitter sample = SampleGrassLitterSmooth(positionXZ);
+                half litter = sample.amount;
+                half3 leaf = sample.leaf;
+                half4 accent = sample.accent;
+
+                half patch = (half)GrassValueNoise(positionXZ * _LitterMatScale + 5.3);
+                half mat = smoothstep(0.2h, 0.9h, litter) * _LitterMatAmount * lerp(0.55h, 1.0h, patch);
+                albedo = lerp(albedo, saturate(leaf * _LitterMatShade * lerp(0.9h, 1.1h, patch)), mat);
+
+                float2 coord = positionXZ * _LitterScale;
+                albedo = ApplyLitterLayer(albedo, coord, 0.0, litter, leaf, accent);
+                albedo = ApplyLitterLayer(albedo, coord * 1.37 + float2(0.31, 0.67), 11.0, litter, leaf, accent);
+                albedo = ApplyLitterLayer(albedo, coord * 0.83 + float2(0.59, 0.13), 23.0, litter, leaf, accent);
+
+                // Mower stripes: passes cut one way read lighter than passes cut the other way. The stripe axis is the
+                // diagonal between the camera's forward and right, so both horizontal and vertical passes alternate.
+                coverage = smoothstep(0.05h, 0.6h, litter);
+                float2 viewForward = GetViewForwardDir().xz;
+                float2 stripeAxis = viewForward + float2(viewForward.y, -viewForward.x);
+                stripeAxis *= rsqrt(max(dot(stripeAxis, stripeAxis), 1e-6));
+                half stripe = dot(sample.heading, (half2)stripeAxis);
+                albedo *= 1.0h + stripe * _LitterStripeStrength * coverage;
+
+                half fresh = sample.fresh * sample.fresh * coverage;
+                return saturate(albedo * (1.0h + fresh * _LitterFreshBoost));
+            }
+
+            half SweepGlow(float2 positionXZ)
+            {
+                float age = _Time.y - _GrassSweep.z;
+                float front = age * _SweepSpeed;
+                float offset = (distance(positionXZ, _GrassSweep.xy) - front) / max(_SweepWidth, 1e-3);
+                float fade = saturate(1.0 - age / max(_SweepDuration, 1e-3)) * step(0.0, age);
+                return (half)(exp(-offset * offset) * fade * _GrassSweep.w);
+            }
+
             GroundVaryings GroundVertex(GroundAttributes input)
             {
                 GroundVaryings output = (GroundVaryings)0;
@@ -229,6 +352,9 @@ Shader "GrassSimulation/Ground"
                 albedo *= SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, baseUV).rgb;
                 albedo *= 1.0h + ((half)GrassValueNoise(positionXZ * _NoiseScale) - 0.5h) * 2.0h * _NoiseStrength;
                 albedo = ApplySoilPattern(albedo, positionXZ);
+                half coverage;
+                albedo = ApplyLitter(albedo, positionXZ, coverage);
+                albedo *= 1.0h - (1.0h - smoothstep(0.5h, 1.0h, clearance)) * cutMask * _CutEdgeShadow;
 
                 half3 normalWS = NormalizeNormalPerPixel(input.normalWS);
                 Light mainLight = GetMainLight(TransformWorldToShadowCoord(input.positionWS));
@@ -240,6 +366,7 @@ Shader "GrassSimulation/Ground"
                 half3 lightColor = lerp(_ShadeColor.rgb, mainLight.color, lit);
                 half3 color = albedo * (lightColor + SampleSH(normalWS) * _AmbientStrength);
 
+                color += _SweepColor.rgb * (SweepGlow(positionXZ) * coverage * _SweepColor.a);
                 color = MixFog(color, input.fogFactor);
                 return half4(color, 1.0h);
             }

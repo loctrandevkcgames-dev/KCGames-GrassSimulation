@@ -35,8 +35,23 @@ Material:
     - _BlotchScale: 0.9
     - _CutEdge: 0.5
     - _CutEdgeDarkening: 0
+    - _CutEdgeShadow: 0.35
     - _CutEdgeSoftness: 0.2
     - _LightWrap: 0.3
+    - _LitterAccentLength: 0.4
+    - _LitterAccentWidth: 1.8
+    - _LitterDarkShade: 0.65
+    - _LitterDensity: 0.85
+    - _LitterFreshBoost: 0.15
+    - _LitterLength: 0.75
+    - _LitterLightShade: 1.12
+    - _LitterMatAmount: 0.88
+    - _LitterMatScale: 2.5
+    - _LitterMatShade: 0.92
+    - _LitterScale: 4.5
+    - _LitterShadow: 0.3
+    - _LitterStripeStrength: 0.28
+    - _LitterWidth: 0.17
     - _NoiseScale: 0.8
     - _NoiseStrength: 0.1
     - _PebbleDensity: 0.35
@@ -50,12 +65,16 @@ Material:
     - _StripeAngle: 0
     - _StripeStrength: 0
     - _StripeWidth: 1
+    - _SweepDuration: 1.6
+    - _SweepSpeed: 9
+    - _SweepWidth: 0.9
     m_Colors:
     - _BlotchColor: {r: 0.78, g: 0.65999997, b: 0.6, a: 0.5}
     - _CutColor: {r: 0.62, g: 0.46, b: 0.3, a: 1}
     - _PebbleColor: {r: 0.86, g: 0.76, b: 0.62, a: 1}
     - _ShadeColor: {r: 0.52, g: 0.56, b: 0.68, a: 1}
     - _SpeckColor: {r: 0.62, g: 0.47999996, b: 0.37999994, a: 0.6}
+    - _SweepColor: {r: 1, g: 0.95, b: 0.7, a: 0.45}
     - _UncutColor: {r: 0.62, g: 0.46, b: 0.3, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using EncosyTower.Pooling;
+using EncosyTower.PubSub;
 using EncosyTower.UnityExtensions;
 using UnityEngine;
 
@@ -91,6 +92,8 @@ namespace GrassSimulation.Gameplay
         private GameObject _halfTemplate;
         private GameObjectPool _halfPool;
         private float _chipTimer;
+        private MessagePublisher.Publisher<GameplayScope> _publisher;
+        private bool _hasPublisher;
 
         public IReadOnlyList<CuttableProp> Props => _props;
 
@@ -137,6 +140,12 @@ namespace GrassSimulation.Gameplay
             {
                 _layout.GetComponentsInChildren(includeInactive: true, results: _props);
             }
+        }
+
+        public void Bind(MessagePublisher.Publisher<GameplayScope> publisher)
+        {
+            _publisher = publisher;
+            _hasPublisher = true;
         }
 
         public int Broken(PropKind kind)
@@ -376,6 +385,12 @@ namespace GrassSimulation.Gameplay
             }
 
             SpawnDrops(prop);
+
+            if (_hasPublisher)
+            {
+                PropBrokenMsg.Publish(in _publisher, new PropBrokenMsg(prop.Kind, prop.SplitOnBreak));
+            }
+
             return prop.Xp;
         }
 

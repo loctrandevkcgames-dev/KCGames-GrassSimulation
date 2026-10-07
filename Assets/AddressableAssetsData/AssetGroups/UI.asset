@@ -40,6 +40,11 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: aea5fe96eae123243b5337714adeb9ad
+    m_Address: ui/loadout-screen
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: b3d3647a3856b8b44bb97c252deb6ce3
     m_Address: ui/upgrade-popup
     m_ReadOnly: 0

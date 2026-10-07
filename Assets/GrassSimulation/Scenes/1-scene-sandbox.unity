@@ -174,7 +174,7 @@ MonoBehaviour:
   _plantObjects: {fileID: 1161807236}
   _obstacleView: {fileID: 2006252707}
   _contactIcons: {fileID: 1529119770}
-  _machine: {fileID: 11400000, guid: ebc40e11f7bfca245aa82bc9c2f13402, type: 2}
+  _machines: {fileID: 11400000, guid: e2ada462474a3d549b86390864dafb67, type: 2}
   _catalog: {fileID: 11400000, guid: a17d35073a536bc41b91ad47a7736194, type: 2}
   _rules: {fileID: 11400000, guid: 271f5bb9b5ac6a44bb55a4e66d7ed50a, type: 2}
   _cameraShake: 0.12

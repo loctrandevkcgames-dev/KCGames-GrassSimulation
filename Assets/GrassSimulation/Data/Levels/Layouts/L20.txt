@@ -1,0 +1,25 @@
+; Level 20: two giant fruits visible from the start in the north corners.
+........................
+.GGGGGGmmmmmmmmmmGGGGGG.
+.GGGGGGmmmmmmmmmmGGGGGG.
+.GGGGGGmmmmmmmmmmGGGGGG.
+.GGGGGGmmmmmmmmmmGGGGGG.
+.GGGGGGmmmmmmmmmmGGGGGG.
+.GGGGGGmmmmmmmmmmGGGGGG.
+.......mmmmmmmmmm.......
+.tttttttttttttttttttttt.
+.tttttRtttttttttttRtttt.
+........................
+.BBBBBBBBBB..bbbbbbbbbb.
+.BBBBBBBBBB.Rbbbbbbbbbb.
+.BBBBBBBBBB..bbbbbbbbbb.
+.BBBBBBBBBB..bbbbbbbbbb.
+.BBBBBBBBBB.Rbbbbbbbbbb.
+.BBBBBBBBBB..bbbbbbbbbb.
+.BBBBBBBBBB..bbbbbbbbbb.
+.BBBBBBBBBB.R...........
+............S...........
+.gggggggggggggggggggggg.
+.gggggggggggggggggggggg.
+.gggggggggggggggggggggg.
+........................

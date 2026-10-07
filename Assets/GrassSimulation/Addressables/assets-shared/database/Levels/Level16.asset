@@ -1,0 +1,293 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 037467e03dc5f154c961ee37e972c7fd, type: 3}
+  m_Name: Level16
+  m_EditorClassIdentifier: GrassSimulation.Gameplay::GrassSimulation.Gameplay.LevelDefinition
+  _id: level-16
+  _cellsX: 40
+  _cellsZ: 40
+  _cellSize: 0.5
+  _seed: 16
+  _baseKind: 0
+  _zones: []
+  _spawn: {x: 9.5, y: 3.5}
+  _spawnClearing: 1
+  _bakedKinds: 00000000000000000101010101010101010101010101010101010101010101010100000000000000000000000000000001010101010101010101010101010101010101010101010101000000000000000000000000000000010101010101010101010101010101010101010101010101010000000000000000000000000000000101010101010101010101010101010101010101010101010101000000000000000000000000000001010101010101010101010101010101010101010101010101010000000000000000000000000000010101010101010101010000010101010101010101010101010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000202020202020200000000000000000000000000000000000000000000000000000000000000000002020202020202000000000000000000000000000000000000000000000000000000000000000000020202020202020000000000000000000000000000000000000000000000000000000000000000000202020202020200000000000000000000000000000000000000000000000000000000000000000002020202020202000000000000000000000000000000000000000000000000000000000000000000000202020202000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+  _plants:
+  - <Kind>k__BackingField: 10
+    <Position>k__BackingField: {x: 10.0161495, y: 17.706942}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 201.89471
+    <Scale>k__BackingField: 0.92481554
+  - <Kind>k__BackingField: 7
+    <Position>k__BackingField: {x: 14.051155, y: 3.6355507}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 158.4689
+    <Scale>k__BackingField: 1.0607884
+  - <Kind>k__BackingField: 10
+    <Position>k__BackingField: {x: 8.355849, y: 18.5936}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 352.67422
+    <Scale>k__BackingField: 0.98332345
+  - <Kind>k__BackingField: 8
+    <Position>k__BackingField: {x: 7.2938643, y: 8.792474}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 46.216694
+    <Scale>k__BackingField: 0.9871322
+  - <Kind>k__BackingField: 10
+    <Position>k__BackingField: {x: 9.84463, y: 15.268732}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 241.91551
+    <Scale>k__BackingField: 0.9616826
+  - <Kind>k__BackingField: 8
+    <Position>k__BackingField: {x: 1.3095309, y: 5.6674733}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 128.16776
+    <Scale>k__BackingField: 0.97056293
+  - <Kind>k__BackingField: 8
+    <Position>k__BackingField: {x: 5.660781, y: 11.344653}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 321.6805
+    <Scale>k__BackingField: 1.0629354
+  - <Kind>k__BackingField: 8
+    <Position>k__BackingField: {x: 8.617043, y: 8.985189}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 83.32752
+    <Scale>k__BackingField: 0.9572012
+  - <Kind>k__BackingField: 7
+    <Position>k__BackingField: {x: 12.321905, y: 7.537923}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 267.24222
+    <Scale>k__BackingField: 1.0160071
+  - <Kind>k__BackingField: 7
+    <Position>k__BackingField: {x: 15.9061985, y: 4.064561}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 78.087944
+    <Scale>k__BackingField: 1.0435174
+  - <Kind>k__BackingField: 10
+    <Position>k__BackingField: {x: 7.293206, y: 14.5475645}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 75.846565
+    <Scale>k__BackingField: 1.027737
+  - <Kind>k__BackingField: 8
+    <Position>k__BackingField: {x: 1.8961955, y: 8.634712}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 227.63612
+    <Scale>k__BackingField: 1.0729054
+  - <Kind>k__BackingField: 7
+    <Position>k__BackingField: {x: 17.161116, y: 3.7495131}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 44.458496
+    <Scale>k__BackingField: 1.0700754
+  - <Kind>k__BackingField: 10
+    <Position>k__BackingField: {x: 11.974535, y: 15.874756}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 16.255775
+    <Scale>k__BackingField: 1.0082443
+  - <Kind>k__BackingField: 8
+    <Position>k__BackingField: {x: 8.0115, y: 11.772706}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 123.44191
+    <Scale>k__BackingField: 1.0791879
+  - <Kind>k__BackingField: 10
+    <Position>k__BackingField: {x: 13.044673, y: 18.343945}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 284.03375
+    <Scale>k__BackingField: 1.0392483
+  - <Kind>k__BackingField: 10
+    <Position>k__BackingField: {x: 13.851973, y: 14.326433}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 94.40256
+    <Scale>k__BackingField: 1.0525347
+  - <Kind>k__BackingField: 7
+    <Position>k__BackingField: {x: 14.380323, y: 8.371328}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 258.56985
+    <Scale>k__BackingField: 0.9987605
+  - <Kind>k__BackingField: 10
+    <Position>k__BackingField: {x: 7.596601, y: 16.7396}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 311.68396
+    <Scale>k__BackingField: 1.0379866
+  - <Kind>k__BackingField: 7
+    <Position>k__BackingField: {x: 17.83738, y: 5.7878227}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 269.8458
+    <Scale>k__BackingField: 1.0018703
+  - <Kind>k__BackingField: 7
+    <Position>k__BackingField: {x: 11.368699, y: 4.699005}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 57.078568
+    <Scale>k__BackingField: 1.0373778
+  - <Kind>k__BackingField: 7
+    <Position>k__BackingField: {x: 12.3349695, y: 5.6901655}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 208.23778
+    <Scale>k__BackingField: 1.0228355
+  - <Kind>k__BackingField: 7
+    <Position>k__BackingField: {x: 13.318071, y: 8.675075}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 239.73872
+    <Scale>k__BackingField: 1.0681319
+  - <Kind>k__BackingField: 8
+    <Position>k__BackingField: {x: 4.201326, y: 8.403027}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 20.026875
+    <Scale>k__BackingField: 0.970369
+  - <Kind>k__BackingField: 8
+    <Position>k__BackingField: {x: 4.4773483, y: 5.648157}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 83.24594
+    <Scale>k__BackingField: 1.0469408
+  - <Kind>k__BackingField: 8
+    <Position>k__BackingField: {x: 2.7099047, y: 5.7839613}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 69.552986
+    <Scale>k__BackingField: 0.9753634
+  - <Kind>k__BackingField: 8
+    <Position>k__BackingField: {x: 7.1193037, y: 6.1386194}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 56.64263
+    <Scale>k__BackingField: 0.94029564
+  - <Kind>k__BackingField: 7
+    <Position>k__BackingField: {x: 17.714306, y: 7.030561}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 85.69735
+    <Scale>k__BackingField: 0.97697425
+  - <Kind>k__BackingField: 7
+    <Position>k__BackingField: {x: 18.7257, y: 8.431016}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 152.83905
+    <Scale>k__BackingField: 0.92503065
+  - <Kind>k__BackingField: 8
+    <Position>k__BackingField: {x: 3.8309007, y: 12.312824}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 31.508919
+    <Scale>k__BackingField: 1.041755
+  - <Kind>k__BackingField: 7
+    <Position>k__BackingField: {x: 19.234446, y: 3.403897}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 274.57242
+    <Scale>k__BackingField: 0.9483564
+  - <Kind>k__BackingField: 7
+    <Position>k__BackingField: {x: 10.914715, y: 6.9069223}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 167.08498
+    <Scale>k__BackingField: 0.9434991
+  - <Kind>k__BackingField: 7
+    <Position>k__BackingField: {x: 15.818645, y: 6.4707932}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 205.7753
+    <Scale>k__BackingField: 0.971297
+  - <Kind>k__BackingField: 7
+    <Position>k__BackingField: {x: 19.535484, y: 7.214572}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 331.66827
+    <Scale>k__BackingField: 1.0206289
+  - <Kind>k__BackingField: 7
+    <Position>k__BackingField: {x: 19.225657, y: 5.143919}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 298.98776
+    <Scale>k__BackingField: 1.023451
+  - <Kind>k__BackingField: 7
+    <Position>k__BackingField: {x: 13.728487, y: 6.628389}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 241.16965
+    <Scale>k__BackingField: 0.9730357
+  - <Kind>k__BackingField: 8
+    <Position>k__BackingField: {x: 1.6333653, y: 11.55587}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 13.288865
+    <Scale>k__BackingField: 1.0660013
+  - <Kind>k__BackingField: 7
+    <Position>k__BackingField: {x: 15.640592, y: 8.358432}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 83.30023
+    <Scale>k__BackingField: 1.034474
+  - <Kind>k__BackingField: 7
+    <Position>k__BackingField: {x: 13.751331, y: 4.859422}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 45.972206
+    <Scale>k__BackingField: 1.0593247
+  - <Kind>k__BackingField: 7
+    <Position>k__BackingField: {x: 15.1102, y: 5.0814147}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 302.37753
+    <Scale>k__BackingField: 0.9860807
+  - <Kind>k__BackingField: 7
+    <Position>k__BackingField: {x: 12.169634, y: 3.5139432}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 322.1498
+    <Scale>k__BackingField: 1.0261793
+  - <Kind>k__BackingField: 10
+    <Position>k__BackingField: {x: 11.351545, y: 18.141201}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 197.05263
+    <Scale>k__BackingField: 0.97875184
+  - <Kind>k__BackingField: 7
+    <Position>k__BackingField: {x: 10.942542, y: 8.2513485}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 319.21463
+    <Scale>k__BackingField: 0.9710237
+  - <Kind>k__BackingField: 7
+    <Position>k__BackingField: {x: 10.679493, y: 5.4474745}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 202.46193
+    <Scale>k__BackingField: 0.935752
+  - <Kind>k__BackingField: 8
+    <Position>k__BackingField: {x: 8.459611, y: 6.689043}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 24.379692
+    <Scale>k__BackingField: 0.9590099
+  - <Kind>k__BackingField: 7
+    <Position>k__BackingField: {x: 16.688738, y: 4.7615395}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 287.24188
+    <Scale>k__BackingField: 0.95241034
+  - <Kind>k__BackingField: 7
+    <Position>k__BackingField: {x: 16.957655, y: 7.9591117}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 323.67804
+    <Scale>k__BackingField: 0.99318033
+  - <Kind>k__BackingField: 8
+    <Position>k__BackingField: {x: 4.831213, y: 9.557833}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 268.21927
+    <Scale>k__BackingField: 0.9635117
+  - <Kind>k__BackingField: 10
+    <Position>k__BackingField: {x: 5.6708784, y: 17.745878}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 161.0721
+    <Scale>k__BackingField: 0.96857107
+  - <Kind>k__BackingField: 8
+    <Position>k__BackingField: {x: 3.253429, y: 9.632862}
+    <FruitCount>k__BackingField: 0
+    <Yaw>k__BackingField: 347.3638
+    <Scale>k__BackingField: 1.0778047
+  _obstacles: []
+  _timeLimit: 110
+  _quotas:
+  - <Kind>k__BackingField: 10
+    <Amount>k__BackingField: 8
+    <IsBonus>k__BackingField: 0
+  - <Kind>k__BackingField: 2
+    <Amount>k__BackingField: 35
+    <IsBonus>k__BackingField: 0
+  _type: 1
+  _maxTier: 3
+  _displayName: "D\u01B0a h\u1EA5u"
+  _decision: "D\u01B0a h\u1EA5u \u1EDF cu\u1ED1i s\xE2n; chu\u1EA9n b\u1ECB XP tr\xEAn
+    \u0111\u01B0\u1EDDng"
+  _unlock:
+    <Kind>k__BackingField: 0
+    <Amount>k__BackingField: 0
+  _bakedBeds: []

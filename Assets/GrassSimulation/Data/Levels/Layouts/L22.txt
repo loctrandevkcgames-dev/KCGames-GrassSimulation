@@ -1,0 +1,25 @@
+; Level 22: three giant fruits and melons, Wide or Engine.
+..........................
+.GGGGGG.mmmmmmmm...GGGGGG.
+.GGGGGG.mmmmmmmm...GGGGGG.
+.GGGGGG.mmmmmmmm.P.GGGGGG.
+.GGGGGG.mmmmmmmm.P.GGGGGG.
+.GGGGGG.mmmmmmmm.P.GGGGGG.
+........mmmmmmmm...GGGGGG.
+...PPP..mmmmmmmm..........
+..........................
+.ffffffff..........GGGGGG.
+.fffffffftttttttt..GGGGGG.
+.fffffffftttttttt..GGGGGG.
+.ffffffff...bbbbbbbGGGGGG.
+............bbbbbbbGGGGGG.
+...PPP....P.bbbbbbbGGGGGG.
+..........P.bbbbbbb.......
+.BBBBBBBB.P.bbbbbbb..PP...
+.BBBBBBBB...bbbbbbb.......
+.BBBBBBBB...bbbbbbb.......
+.BBBBBBBB..ggggggggggggggg
+.BBBBBBBB..ggggggggggggggg
+.BBBBBBBB..ggggggggggggggg
+.BBBBBBBB..gggSggggggggggg
+...........ggggggggggggggg

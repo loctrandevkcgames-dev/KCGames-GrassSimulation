@@ -1,0 +1,19 @@
+; Level 12: three zones, flowers northwest, vegetable rows northeast, bushes south.
+..................
+.fffff...vvvvvvv..
+.fffff...vvvvvvv..
+.fffff............
+.fff.....vvvvvvv..
+.fff..PP.vvvvvvv..
+.fff..PP..........
+.........vvvvvvv..
+...PP....vvvvvvv..
+..................
+.ggggggg.PP...PP..
+.ggggggg.PP...PP..
+.ggggggg..........
+.ggggggg..bbbbbbb.
+.ggggggg..bbbbbbb.
+..........bbbbbbb.
+.....S....bbbbbbb.
+..................

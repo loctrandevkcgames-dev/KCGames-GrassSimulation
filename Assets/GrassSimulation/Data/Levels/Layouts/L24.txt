@@ -1,0 +1,27 @@
+; Level 24: ring of beds around the giant fruits, the final target at the heart of the garden.
+............................
+.TTTT.bbbbbbbbbbb.BBBBBBBBB.
+.TTTT.bbbbbbbbbbb.BBBBBBBBB.
+.TTTT.bbbbbbbbbbb.BBBBBBBBB.
+.TTTT.bbbbbbbbbbb.BBBBBBBBB.
+......bbbbbbbbbbb.BBBBBBBBB.
+......bbbbbbbbbbb.BBBBBBBBB.
+......bbbbbbbbbbb.BBBBBBBBB.
+......................mmmmmm
+.fffff..PPPP....PPPP..mmmmmm
+.fffff................mmmmmm
+.fffff.P...GGGGGG...P.mmmmmm
+.fffff.P...GGGGGG...P.mmmmmm
+.fffff.P...GGGGGG...P.mmmmmm
+.fffff.P...GGGGGG...P.mmmmmm
+.fffff.P...GGGGGG...P.mmmmmm
+.fffff................mmmmmm
+.tttttt.....R..R......mmmmmm
+.tttttt.PPPP....PPPP..mmmmmm
+.tttttt...............mmmmmm
+.gggggggggggggggggggg.......
+.gggggggggggggggggggg..TTTT.
+.gggggggggggggggggggg..TTTT.
+.gggggggggSgggggggggg..TTTT.
+.gggggggggggggggggggg..TTTT.
+............................

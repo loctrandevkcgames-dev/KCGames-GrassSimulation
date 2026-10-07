@@ -1,0 +1,23 @@
+; Level 25: four long vegetable rows, wide blades clear a whole row in one pass.
+......................
+................mmmmmm
+................mmmmmm
+..vvvvvvvvvvvv..mmmmmm
+..vvvvvvvvvvvv..mmmmmm
+..............R.mmmmmm
+................mmmmmm
+..vvvvvvvvvvvv........
+..vvvvvvvvvvvv.bbbbbb.
+...............bbbbbb.
+..............Rbbbbbb.
+..vvvvvvvvvvvv.bbbbbb.
+..vvvvvvvvvvvv.bbbbbb.
+..............Rbbbbbb.
+...............bbbbbb.
+..vvvvvvvvvvvv........
+..vvvvvvvvvvvvttttttt.
+..............ttttttt.
+.gggggggggggggttttttt.
+.ggggggggggggg........
+.ggggggggSgggg........
+.ggggggggggggg........

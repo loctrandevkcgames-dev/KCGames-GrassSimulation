@@ -1,0 +1,23 @@
+; Level 31: two vegetable gardens at the two ends of the field.
+........................
+.########.ffff.########.
+.#......#.ffff.#......#.
+.#.vvvvv#.ffff.#vvvvv.#.
+.#.vvvvv#.ffff.#vvvvv.#.
+.#.vvvvv#.ffff..vvvvv.#.
+.#.vvvvv#.ffff..vvvvv.#.
+.#.vvvvv#.ffff..vvvvv.#.
+.#.vvvvv#.ffff.#vvvvv.#.
+.#......#......#......#.
+.###...##......########.
+...........PP...........
+P.bbbbbbbb.PP.mmmmmmmm.P
+P.bbbbbbbb....mmmmmmmm.P
+P.bbbbbbbb....mmmmmmmm.P
+P.bbbbbbbb.PP.mmmmmmmm.P
+P.bbbbbbbb.PP.mmmmmmmm.P
+........................
+.gggggggggggggggggggggg.
+.gggggggggggggggggggggg.
+.ggggggggggSggggggggggg.
+.gggggggggggggggggggggg.

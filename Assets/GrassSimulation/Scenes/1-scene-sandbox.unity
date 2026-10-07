@@ -177,6 +177,8 @@ MonoBehaviour:
   _machines: {fileID: 11400000, guid: e2ada462474a3d549b86390864dafb67, type: 2}
   _catalog: {fileID: 11400000, guid: a17d35073a536bc41b91ad47a7736194, type: 2}
   _rules: {fileID: 11400000, guid: 271f5bb9b5ac6a44bb55a4e66d7ed50a, type: 2}
+  _boosters: {fileID: 11400000, guid: b8fb93e5dcc1c6040a1761f556d01439, type: 2}
+  _progressFolder: Progress
   _cameraShake: 0.12
   _clippingsPerCell: 10
   _petalsPerFlower: 5
@@ -21794,6 +21796,9 @@ MonoBehaviour:
   _hitWobbleImpulse: 420
   _wobbleStiffness: 260
   _wobbleDamping: 7
+  _boostTint: {r: 1, g: 0.55, b: 0.2, a: 1}
+  _boostTintShare: 0.55
+  _boostShake: 0.012
   _hopHeight: 0.35
   _hopPeriod: 0.9
   _sputterDuration: 1.2

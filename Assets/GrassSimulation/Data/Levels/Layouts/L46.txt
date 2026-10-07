@@ -1,0 +1,27 @@
+; Level 46: a straight lawn corridor to the apple trees, a flower detour on the west.
+..........................
+..........T..T..T.mmmmmmm.
+..................mmmmmmm.
+......ff..........mmmmmmm.
+......ff..tttttt..mmmmmmm.
+.....fff..tttttt..mmmmmmm.
+....fff..PttttttP.mmmmmmm.
+....ff...P......P.mmmmmmm.
+....ff...PggggggP.mmmmmmm.
+...fff...PggggggP.........
+...ff.....gggggg..BBBBBBB.
+...ff.....gggggg..BBBBBBB.
+...ff....PggggggP.BBBBBBB.
+...ff....PggggggP.BBBBBBB.
+...ff....PggggggP.BBBBBBB.
+...ff....PggggggP.BBBBBBB.
+...ff.....gggggg..BBBBBBB.
+...ff.....gggggg..BBBBBBB.
+...ff....PggggggP.........
+...ff....PggggggP.bbbbbbb.
+...ff....PggggggP.bbbbbbb.
+...ff....PggggggP.bbbbbbb.
+...ff.............bbbbbbb.
+.bbbbbbbb...S.....bbbbbbb.
+.bbbbbbbb.........bbbbbbb.
+..........................

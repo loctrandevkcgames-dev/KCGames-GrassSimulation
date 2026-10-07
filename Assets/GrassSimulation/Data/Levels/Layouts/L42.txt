@@ -1,0 +1,27 @@
+; Level 42: four apple trees in a row at the far end, reach tier 4 before the row.
+..........................
+..........................
+.....T....T....T....T.....
+..........................
+..tttttttttttttttttttttt..
+..tttttttttttttttttttttt..
+..........................
+..........................
+.mmmmmmmmmm....BBBBBBBBBB.
+.mmmmmmmmmm....BBBBBBBBBB.
+.mmmmmmmmmm....BBBBBBBBBB.
+.mmmmmmmmmm....BBBBBBBBBB.
+.mmmmmmmmmm.RR.BBBBBBBBBB.
+.mmmmmmmmmm....BBBBBBBBBB.
+.mmmmmmmmmm....BBBBBBBBBB.
+..........................
+.bbbbbbbbbbb..ggggggggggg.
+.bbbbbbbbbbb..ggggggggggg.
+.bbbbbbbbbbb..ggggggggggg.
+.bbbbbbbbbbb..ggggggggggg.
+.bbbbbbbbbbb..ggggggggggg.
+.bbbbbbbbbbb..ggggggggggg.
+..............ggggggggggg.
+............S.ggggggggggg.
+..............ggggggggggg.
+..........................

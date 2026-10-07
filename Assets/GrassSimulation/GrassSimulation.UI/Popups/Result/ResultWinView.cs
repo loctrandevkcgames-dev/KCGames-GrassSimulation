@@ -35,6 +35,12 @@ namespace GrassSimulation.UI
         private ResultRow _sideRow;
 
         [SerializeField]
+        private GameObject _assistedCard;
+
+        [SerializeField]
+        private TMP_Text _assistedText;
+
+        [SerializeField]
         private GameObject _unlockCard;
 
         [SerializeField]
@@ -75,6 +81,7 @@ namespace GrassSimulation.UI
             _commands = commands;
 
             _titleText.text = UiText.RESULT_TITLE;
+            _assistedText.text = UiText.RESULT_ASSISTED;
             _retrySaveLabel.text = UiText.BUTTON_RETRY_SAVE;
             _nextLabel.text = UiText.BUTTON_NEXT;
             _replayLabel.text = UiText.BUTTON_REPLAY;
@@ -107,6 +114,7 @@ namespace GrassSimulation.UI
             _flawlessRow.Apply(ResultPopupFormat.CreateCleanRow(in result, in snapshot));
             _sideRow.Apply(ResultPopupFormat.CreateSideRow(in result, in snapshot, in bonus));
 
+            _assistedCard.SetActive(result.IsAssisted);
             _nextButton.gameObject.SetActive(ResultPopupFormat.HasNextLevel(snapshot.LevelIndex, snapshot.LevelCount));
 
             ShowSaveStatus(in settlement);

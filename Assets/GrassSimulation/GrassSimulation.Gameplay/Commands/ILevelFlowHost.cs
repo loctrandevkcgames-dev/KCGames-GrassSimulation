@@ -23,5 +23,7 @@ namespace GrassSimulation.Gameplay
         void BackToPreview();
 
         void ChangeMachine();
+
+        void SetBoosterEquipped(BoosterKind kind, bool isEquipped);
     }
 }

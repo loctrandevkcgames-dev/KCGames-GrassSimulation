@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using EncosyTower.Logging;
+using GrassSimulation.Gameplay;
 using UnityEngine;
 
 namespace GrassSimulation.Progression
@@ -66,6 +67,14 @@ namespace GrassSimulation.Progression
         internal static void LogWarning_SettleStoreUnavailable(string levelId)
         {
             StaticLogger.LogWarning($"Level '{levelId}' was not settled: the progress store is read-only.");
+        }
+
+        [HideInCallstack, StackTraceHidden, MethodImpl(MethodImplOptions.NoInlining)]
+        internal static void LogError_BoosterNotConsumed(BoosterKind kind, BoosterStockError error)
+        {
+            StaticLogger.LogError(
+                $"The booster '{kind}' was activated but its stock was not saved: {error.ToMessage()}"
+            );
         }
     }
 }

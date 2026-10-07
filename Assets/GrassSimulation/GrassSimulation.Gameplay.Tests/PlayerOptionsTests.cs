@@ -41,6 +41,24 @@ public sealed class PlayerOptionsTests
     }
 
     [Test]
+    public void BoosterLeft_DefaultsToTheRightAndRoundTrips()
+    {
+        PlayerPrefs.DeleteKey(PlayerOptions.BoosterLeft.Value);
+
+        try
+        {
+            Assert.That(PlayerOptions.GetBoosterLeft(), Is.False);
+
+            PlayerOptions.Set(PlayerOptions.BoosterLeft, value: true);
+            Assert.That(PlayerOptions.GetBoosterLeft(), Is.True);
+        }
+        finally
+        {
+            PlayerPrefs.DeleteKey(PlayerOptions.BoosterLeft.Value);
+        }
+    }
+
+    [Test]
     public void GetVolume_ReturnsTheDefaultWhenUnset()
     {
         Assert.That(PlayerOptions.Get(s_volumeKey, defaultValue: 0.6f), Is.EqualTo(0.6f));

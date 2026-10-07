@@ -19,6 +19,25 @@ public sealed class LoadoutScreenFormatTests
         , new MachineStats(CutRadius: 0.78f, CuttingPower: 1f, Speed: 3.6f)
     );
 
+    [Test]
+    public void FormatEquip_DistinguishesTheStateWithWordsNotColor()
+    {
+        Assert.That(LoadoutScreenFormat.FormatEquip(isEquipped: false), Is.EqualTo("Mang theo"));
+        Assert.That(LoadoutScreenFormat.FormatEquip(isEquipped: true), Is.EqualTo("Đang mang"));
+    }
+
+    [Test]
+    public void IsBoosterListed_NeedsStockAndAnAllowedLevel()
+    {
+        var listed = new BoosterSlot(BoosterSlotState.NotEquipped, false, IsAllowed: true, Stock: 3, 0f, 8f);
+        var empty = listed with { Stock = 0 };
+        var blocked = listed with { IsAllowed = false };
+
+        Assert.That(LoadoutScreenFormat.IsBoosterListed(in listed), Is.True);
+        Assert.That(LoadoutScreenFormat.IsBoosterListed(in empty), Is.False);
+        Assert.That(LoadoutScreenFormat.IsBoosterListed(in blocked), Is.False);
+    }
+
     [TestCase(0.65f, 0.78f, 0.8333f)]
     [TestCase(0.78f, 0.78f, 1f)]
     [TestCase(3.6f, 4f, 0.9f)]

@@ -17,7 +17,13 @@ namespace GrassSimulation.Progression
                 MigrateFromV2(save);
             }
 
+            if (save.Version == 3)
+            {
+                MigrateFromV3(save);
+            }
+
             save.EnsureMachines();
+            save.EnsureBoosters();
             return save.Version == ProgressSave.CURRENT_VERSION;
         }
 
@@ -67,7 +73,38 @@ namespace GrassSimulation.Progression
         private static void MigrateFromV2(ProgressSave save)
         {
             save.EnsureMachines();
+            save.Version = 3;
+        }
+
+        // Version 3 recorded booster unlocks as granted without any stock. Grant the D1 default gifts once.
+        private static void MigrateFromV3(ProgressSave save)
+        {
+            save.EnsureBoosters();
+
+            var gifts = GameRulesValues.Default;
+
+            GrantMissingGift(save, UnlockKind.TurboBooster, BoosterKind.Turbo, gifts.BoosterGiftTurbo);
+            GrantMissingGift(save, UnlockKind.ExtraTimeBooster, BoosterKind.ExtraTime, gifts.BoosterGiftExtraTime);
             save.Version = ProgressSave.CURRENT_VERSION;
+        }
+
+        private static void GrantMissingGift(ProgressSave save, UnlockKind unlock, BoosterKind booster, int gift)
+        {
+            var suffix = $":{unlock}";
+            var grantCount = 0;
+
+            foreach (var id in save.GrantedUnlocks)
+            {
+                if (id.EndsWith(suffix, StringComparison.Ordinal))
+                {
+                    grantCount++;
+                }
+            }
+
+            if (grantCount > 0)
+            {
+                save.BoosterStock[booster.ToStringFast()] = gift * grantCount;
+            }
         }
     }
 }

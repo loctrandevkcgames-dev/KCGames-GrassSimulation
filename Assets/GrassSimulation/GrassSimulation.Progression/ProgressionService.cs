@@ -8,14 +8,21 @@ namespace GrassSimulation.Progression
     public sealed class ProgressionService : IInitializable
     {
         private readonly IProgressStore _store;
+        private readonly GameRulesValues _rules;
 
         private ProgressSave _save = ProgressSave.CreateNew();
         private LoadError _loadFailure;
         private bool _isReadOnly;
 
         public ProgressionService(IProgressStore store)
+            : this(store, GameRulesValues.Default)
+        {
+        }
+
+        public ProgressionService(IProgressStore store, GameRulesValues rules)
         {
             _store = store;
+            _rules = rules;
         }
 
         public bool IsReadOnly => _isReadOnly;
@@ -45,6 +52,28 @@ namespace GrassSimulation.Progression
 
         public bool IsUnlockGranted(LevelId level, UnlockKind kind)
             => _save.GrantedUnlocks.Contains(CreateUnlockId(level, kind));
+
+        public int GetBoosterStock(BoosterKind kind)
+            => _save.BoosterStock.TryGetValue(kind.ToStringFast(), out var stock) ? stock : 0;
+
+        public bool HasBoosterStock
+        {
+            get
+            {
+                for (var i = 0; i < BoosterKindExtensions.Length; i++)
+                {
+                    if (GetBoosterStock((BoosterKind)i) > 0)
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+        }
+
+        public bool IsBoosterEquipped(BoosterKind kind)
+            => _save.EquippedBoosters.Contains(kind.ToStringFast()) && GetBoosterStock(kind) > 0;
 
         public int GetAttempts(LevelId level)
             => _save.Levels.TryGetValue(level.Value, out var record) ? record.Attempts : 0;
@@ -140,6 +169,75 @@ namespace GrassSimulation.Progression
             return Success.Yes;
         }
 
+        public Success<BoosterStockError> SetBoosterEquipped(BoosterKind kind, bool isEquipped)
+        {
+            if (_isReadOnly)
+            {
+                return Success.No<BoosterStockError>(new BoosterStockError.StoreUnavailable(_loadFailure));
+            }
+
+            if (isEquipped && GetBoosterStock(kind) <= 0)
+            {
+                return Success.No<BoosterStockError>(new BoosterStockError.NotInStock(kind));
+            }
+
+            if (_save.EquippedBoosters.Contains(kind.ToStringFast()) == isEquipped)
+            {
+                return Success.Yes;
+            }
+
+            var snapshot = _save.Clone();
+
+            _save.Revision++;
+            SetEquippedFlag(kind, isEquipped);
+
+            var saved = SaveSafely(_save);
+
+            if (saved.TryGetFailure(out var failure))
+            {
+                _save = snapshot;
+                return Success.No<BoosterStockError>(new BoosterStockError.NotSaved(failure));
+            }
+
+            return Success.Yes;
+        }
+
+        /// <summary>
+        /// Spends one booster and saves at once. An activated booster is never refunded, so a failed save keeps the
+        /// stock spent in memory and reports the failure; the next successful save persists it.
+        /// </summary>
+        public Success<BoosterStockError> ConsumeBooster(BoosterKind kind)
+        {
+            if (_isReadOnly)
+            {
+                return Success.No<BoosterStockError>(new BoosterStockError.StoreUnavailable(_loadFailure));
+            }
+
+            var stock = GetBoosterStock(kind);
+
+            if (stock <= 0)
+            {
+                return Success.No<BoosterStockError>(new BoosterStockError.NotInStock(kind));
+            }
+
+            _save.Revision++;
+            _save.BoosterStock[kind.ToStringFast()] = stock - 1;
+
+            if (stock == 1)
+            {
+                SetEquippedFlag(kind, isEquipped: false);
+            }
+
+            var saved = SaveSafely(_save);
+
+            if (saved.TryGetFailure(out var failure))
+            {
+                return Success.No<BoosterStockError>(new BoosterStockError.NotSaved(failure));
+            }
+
+            return Success.Yes;
+        }
+
         public Success<SaveError> Wipe()
         {
             Success<SaveError> deleted;
@@ -211,7 +309,54 @@ namespace GrassSimulation.Progression
                 _save.OwnedMachines.Add(machine.Value);
             }
 
+            if (TryGetGiftedBooster(unlock.Kind, out var booster, out var gift))
+            {
+                _save.BoosterStock[booster.ToStringFast()] = GetBoosterStock(booster) + gift;
+                unlock.Amount = gift;
+            }
+
             return new[] { unlock };
+        }
+
+        private bool TryGetGiftedBooster(UnlockKind kind, out BoosterKind booster, out int gift)
+        {
+            switch (kind)
+            {
+                case UnlockKind.TurboBooster:
+                {
+                    booster = BoosterKind.Turbo;
+                    gift = _rules.BoosterGiftTurbo;
+                    return true;
+                }
+
+                case UnlockKind.ExtraTimeBooster:
+                {
+                    booster = BoosterKind.ExtraTime;
+                    gift = _rules.BoosterGiftExtraTime;
+                    return true;
+                }
+
+                default:
+                {
+                    booster = default;
+                    gift = 0;
+                    return false;
+                }
+            }
+        }
+
+        private void SetEquippedFlag(BoosterKind kind, bool isEquipped)
+        {
+            var key = kind.ToStringFast();
+
+            if (isEquipped)
+            {
+                _save.EquippedBoosters.Add(key);
+            }
+            else
+            {
+                _save.EquippedBoosters.Remove(key);
+            }
         }
 
         private Success<SaveError> SaveSafely(ProgressSave save)

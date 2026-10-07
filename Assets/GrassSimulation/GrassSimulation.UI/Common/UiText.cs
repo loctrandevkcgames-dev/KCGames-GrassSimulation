@@ -41,6 +41,7 @@ namespace GrassSimulation.UI
         public const string CLEANUP_TOAST = "Dọn tiếp tới cấp {0}. Cây cao hơn vẫn bị khóa.";
 
         public const string RESULT_TITLE = "Hoàn thành!";
+        public const string RESULT_ASSISTED = "Có dùng trợ giúp: chỉ nhận 1 sao";
         public const string RESULT_GOAL = "Đạt mục tiêu";
         public const string RESULT_CLEAN = "Không lỗi";
         public const string RESULT_CLEAN_TIME = "Không lỗi, còn {0} (≥ {1})";
@@ -64,6 +65,14 @@ namespace GrassSimulation.UI
         public const string LOADOUT_SELECTED = "Đang dùng";
         public const string LOADOUT_BOOSTERS = "Booster";
         public const string LOADOUT_BOOSTERS_EMPTY = "Chưa có booster nào trong kho";
+        public const string LOADOUT_EQUIP = "Mang theo";
+        public const string LOADOUT_EQUIPPED = "Đang mang";
+
+        public const string BOOSTER_TURBO = "Turbo";
+        public const string BOOSTER_EXTRA_TIME = "Thêm giờ";
+        public const string BOOSTER_STOCK = "×{0}";
+        public const string BOOSTER_RUNNING = "{0}s";
+        public const string BOOSTER_EXTRA_TIME_FLOAT = "+{0}s";
 
         public const string UNLOCK_CARD = "Mở khóa: {0}";
         public const string UNLOCK_WIDE_MACHINE = "Máy Wide";
@@ -78,6 +87,7 @@ namespace GrassSimulation.UI
         public const string OPTION_SOUND = "Âm thanh";
         public const string OPTION_HAPTICS = "Rung";
         public const string OPTION_REDUCE_EFFECTS = "Giảm hiệu ứng";
+        public const string OPTION_BOOSTERS_LEFT = "Booster bên trái";
         public const string OPTION_MUSIC = "Nhạc nền";
         public const string OPTION_SFX = "Âm hiệu ứng";
 

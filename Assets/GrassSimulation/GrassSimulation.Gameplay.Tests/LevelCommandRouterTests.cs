@@ -160,6 +160,29 @@ public sealed class LevelCommandRouterTests
     }
 
     [Test]
+    public void SetBoosterEquippedRequested_ReachesTheHost()
+    {
+        SetBoosterEquippedRequestedMsg.Publish(
+              in _commands
+            , new SetBoosterEquippedRequestedMsg(BoosterKind.Turbo, IsEquipped: true)
+        );
+
+        Assert.That(_host.Calls, Is.EqualTo(new[] { "SetBoosterEquipped:Turbo:True" }));
+    }
+
+    [Test]
+    public void ActivateBoosterRequested_ActivatesAnEquippedBoosterOnTheSession()
+    {
+        _host.Session.TryEquipBooster(BoosterKind.Turbo, isEquipped: true);
+        StartRequestedMsg.Publish(in _commands, new StartRequestedMsg());
+
+        ActivateBoosterRequestedMsg.Publish(in _commands, new ActivateBoosterRequestedMsg(BoosterKind.Turbo));
+
+        Assert.That(_host.Session.Boosters.IsRunning(BoosterKind.Turbo), Is.True);
+        Assert.That(_host.Session.IsAssisted, Is.True);
+    }
+
+    [Test]
     public void Dispose_StopsRoutingCommands()
     {
         _router.Dispose();
@@ -216,5 +239,8 @@ public sealed class LevelCommandRouterTests
         public void BackToPreview() => Calls.Add(nameof(BackToPreview));
 
         public void ChangeMachine() => Calls.Add(nameof(ChangeMachine));
+
+        public void SetBoosterEquipped(BoosterKind kind, bool isEquipped)
+            => Calls.Add($"{nameof(SetBoosterEquipped)}:{kind}:{isEquipped}");
     }
 }

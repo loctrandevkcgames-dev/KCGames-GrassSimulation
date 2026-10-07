@@ -107,6 +107,16 @@ namespace GrassSimulation.Gameplay
         [SerializeField]
         private float _wobbleDamping = 7f;
 
+        [Header("Turbo")]
+        [SerializeField]
+        private Color _boostTint = new(1f, 0.55f, 0.2f);
+
+        [SerializeField]
+        private float _boostTintShare = 0.55f;
+
+        [SerializeField]
+        private float _boostShake = 0.012f;
+
         [Header("Celebrating")]
         [SerializeField]
         private float _hopHeight = 0.35f;
@@ -131,7 +141,10 @@ namespace GrassSimulation.Gameplay
         private float _slumpRoll = 4f;
 
         private readonly List<ISubscription> _subscriptions = new();
-        private readonly MaterialPropertyBlock _tintBlock = new();
+        private MaterialPropertyBlock _tintBlock;
+
+        private Color _baseTint = Color.white;
+        private bool _isBoosting;
 
         private LawnMowerController _controller;
         private Vector3 _bodyPosition;
@@ -182,6 +195,8 @@ namespace GrassSimulation.Gameplay
             _subscriptions.Add(LevelStartedMsg.Subscribe(in subscriber, OnLevelStarted));
             _subscriptions.Add(TierUpMsg.Subscribe(in subscriber, OnTierUp));
             _subscriptions.Add(ProtectedHitMsg.Subscribe(in subscriber, OnProtectedHit));
+            _subscriptions.Add(BoosterActivatedMsg.Subscribe(in subscriber, OnBoosterActivated));
+            _subscriptions.Add(BoosterEndedMsg.Subscribe(in subscriber, OnBoosterEnded));
         }
 
         public void NotifyCut(int cells)
@@ -192,10 +207,29 @@ namespace GrassSimulation.Gameplay
 
         public void SetTint(Color tint)
         {
+            _baseTint = tint;
+            ApplyTint(_isBoosting ? Color.Lerp(tint, _boostTint, _boostTintShare) : tint);
+        }
+
+        public void SetBoost(bool isBoosting)
+        {
+            if (_isBoosting == isBoosting)
+            {
+                return;
+            }
+
+            _isBoosting = isBoosting;
+            SetTint(_baseTint);
+        }
+
+        private void ApplyTint(Color tint)
+        {
             if (_body.IsInvalid())
             {
                 return;
             }
+
+            _tintBlock ??= new MaterialPropertyBlock();
 
             var renderers = _body.GetComponentsInChildren<Renderer>(includeInactive: true);
 
@@ -312,7 +346,8 @@ namespace GrassSimulation.Gameplay
             ReturnSpin(deltaTime);
 
             var driveShake = Mathf.Lerp(_idleShake, _driveShake, speed01);
-            var engine = driveShake + _cutShake * _cutLevel + _startShake * _startKick;
+            var boostShake = _isBoosting ? _boostShake : 0f;
+            var engine = driveShake + _cutShake * _cutLevel + _startShake * _startKick + boostShake;
             var bob = Mathf.Abs(Mathf.Sin(_clock * _bobFrequency)) * _bobHeight * speed01;
             var shake = EngineShake(engine, _shakeFrequency);
             var shakeDegrees = _shakeDegrees * engine / Mathf.Max(_driveShake, EPSILON);
@@ -423,6 +458,23 @@ namespace GrassSimulation.Gameplay
         {
             _wobble.Velocity += _hitWobbleImpulse * _wobbleSign;
             _wobbleSign = -_wobbleSign;
+        }
+
+        private void OnBoosterActivated(BoosterActivatedMsg message)
+        {
+            if (message.Kind == BoosterKind.Turbo)
+            {
+                SetBoost(isBoosting: true);
+                _scale.Velocity += _startPopImpulse;
+            }
+        }
+
+        private void OnBoosterEnded(BoosterEndedMsg message)
+        {
+            if (message.Kind == BoosterKind.Turbo)
+            {
+                SetBoost(isBoosting: false);
+            }
         }
 
         private readonly record struct MowerPose(Vector3 Offset, float Pitch, float Yaw, float Roll);

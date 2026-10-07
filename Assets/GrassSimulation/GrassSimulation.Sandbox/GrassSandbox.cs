@@ -66,6 +66,9 @@ namespace GrassSimulation.Sandbox
         private GameRules _rules;
 
         [SerializeField]
+        private BoosterConfig _boosters;
+
+        [SerializeField]
         private string _progressFolder = "Progress";
 
         [SerializeField]
@@ -147,6 +150,8 @@ namespace GrassSimulation.Sandbox
         private LevelSession _session;
         private ProgressionService _progression;
         private LevelSettlementHandler _settlementHandler;
+        private BoosterConsumptionHandler _boosterHandler;
+        private Func<BoosterKind, int> _getBoosterStock;
         private LevelCommandRouter _commandRouter;
         private Func<MachineId, bool> _isMachineOwned;
         private GameHaptics _haptics;
@@ -188,6 +193,8 @@ namespace GrassSimulation.Sandbox
         public LevelSession Session => _session;
 
         private GameRulesValues RulesValues => _rules.IsValid() ? _rules.Values : GameRulesValues.Default;
+
+        private BoosterValues BoosterSettings => _boosters.IsValid() ? _boosters.Values : BoosterValues.Default;
 
         private bool IsTouchingLocked => _contacts.Locked.Count > 0;
 
@@ -285,6 +292,23 @@ namespace GrassSimulation.Sandbox
             _pendingFlow = FlowRequest.ChangeMachine;
         }
 
+        public void SetBoosterEquipped(BoosterKind kind, bool isEquipped)
+        {
+            if (_session == null || _session.State != LevelState.Loadout)
+            {
+                return;
+            }
+
+            var changed = _progression.SetBoosterEquipped(kind, isEquipped);
+
+            if (changed.TryGetFailure(out var failure))
+            {
+                ThrowHelper.LogError_EquipBoosterFailed(failure);
+            }
+
+            SyncBoosterLoadout();
+        }
+
         private static bool IsNewPress(bool isHeld, ref bool wasHeld)
         {
             var isNewPress = isHeld && wasHeld == false;
@@ -302,15 +326,21 @@ namespace GrassSimulation.Sandbox
 
             var directory = Path.Combine(Application.persistentDataPath, _progressFolder);
 
-            _progression = new ProgressionService(new FileProgressStore(directory));
+            _progression = new ProgressionService(new FileProgressStore(directory), RulesValues);
             _progression.Initialize();
             _isMachineOwned = _progression.IsMachineOwned;
+            _getBoosterStock = _progression.GetBoosterStock;
 
             _settlementHandler = new LevelSettlementHandler(
                   _progression
                 , _catalog
                 , GlobalMessenger.Subscriber.Scope<GameplayScope>()
                 , GlobalMessenger.Publisher.Scope<ProgressionScope>()
+            );
+
+            _boosterHandler = new BoosterConsumptionHandler(
+                  _progression
+                , GlobalMessenger.Subscriber.Scope<GameplayScope>()
             );
 
             _mower.IsPointerBlocked = _uiProbe.IsOverUi;
@@ -342,6 +372,7 @@ namespace GrassSimulation.Sandbox
             _mower.IsPointerBlocked = null;
             _commandRouter?.Dispose();
             _settlementHandler?.Dispose();
+            _boosterHandler?.Dispose();
             _haptics?.Dispose();
         }
 
@@ -432,6 +463,7 @@ namespace GrassSimulation.Sandbox
             GetLevelSnapshotRequest.Register(in gameplayHub, ProvideLevelSnapshot);
             GetLevelPreviewRequest.Register(in gameplayHub, ProvideLevelPreview);
             GetLoadoutRequest.Register(in gameplayHub, ProvideLoadout);
+            GetBoosterStateRequest.Register(in gameplayHub, ProvideBoosterState);
             GetJoystickStateRequest.Register(in gameplayHub, ProvideJoystickState);
             GetProgressSnapshotRequest.Register(in progressionHub, ProvideProgressSnapshot);
         }
@@ -469,6 +501,11 @@ namespace GrassSimulation.Sandbox
             return LoadoutSnapshot.From(_machines, _isMachineOwned, _progression.SelectedMachine);
         }
 
+        private BoosterSnapshot ProvideBoosterState(GetBoosterStateRequest request)
+        {
+            return BoosterSnapshot.From(_session, _getBoosterStock);
+        }
+
         private ProgressSnapshot ProvideProgressSnapshot(GetProgressSnapshotRequest request)
         {
             return ProgressSnapshot.From(_progression, _catalog, _settlementHandler.HasPending);
@@ -493,6 +530,8 @@ namespace GrassSimulation.Sandbox
 
                 var machine = ResolveSelectedMachine();
 
+                SyncBoosterLoadout();
+
                 if (_session.TryBegin(machine))
                 {
                     ApplyMachine(machine);
@@ -502,7 +541,32 @@ namespace GrassSimulation.Sandbox
 
         private bool ShouldShowLoadout()
         {
-            return LoadoutRules.ShouldShow(_progression.OwnedMachineCount, hasBoosterStock: false);
+            return LoadoutRules.ShouldShow(_progression.OwnedMachineCount, HasUsableBoosterStock());
+        }
+
+        private bool HasUsableBoosterStock()
+        {
+            for (var i = 0; i < BoosterKindExtensions.Length; i++)
+            {
+                var kind = (BoosterKind)i;
+
+                if (_progression.GetBoosterStock(kind) > 0 && BoosterRules.IsAllowed(kind, _session.Rules))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private void SyncBoosterLoadout()
+        {
+            for (var i = 0; i < BoosterKindExtensions.Length; i++)
+            {
+                var kind = (BoosterKind)i;
+
+                _session.TryEquipBooster(kind, _progression.IsBoosterEquipped(kind));
+            }
         }
 
         private MachineConfig ResolveSelectedMachine()
@@ -551,6 +615,7 @@ namespace GrassSimulation.Sandbox
                 , _cutter.CountCuttableCells() + _plantField.Count
                 , GlobalMessenger.Publisher.Scope<GameplayScope>()
                 , RulesValues
+                , BoosterSettings
             );
             _field.Build(_grid, _plantCatalog.Plants, _level.Seed);
             _mower.Bounds = _grid.Bounds;
@@ -579,7 +644,7 @@ namespace GrassSimulation.Sandbox
 
             if (isSimulating)
             {
-                var stats = _session.Growth.Stats;
+                var stats = _session.Stats;
 
                 _mower.MaxSpeed = Mathf.Min(stats.Speed, _speedLimit);
                 _mower.Step(deltaTime, _camera);
@@ -628,7 +693,7 @@ namespace GrassSimulation.Sandbox
             }
 
             var mowerPosition = _mower.transform.position;
-            var lookAhead = _mower.Velocity / Mathf.Max(_session.Growth.Stats.Speed, MIN_SEGMENT) * _cameraLookAhead;
+            var lookAhead = _mower.Velocity / Mathf.Max(_session.Stats.Speed, MIN_SEGMENT) * _cameraLookAhead;
             var blend = 1f - Mathf.Exp(-_cameraSmoothing * Time.deltaTime);
 
             _cameraFocus = Vector3.Lerp(_cameraFocus, mowerPosition + lookAhead, blend);
@@ -661,7 +726,7 @@ namespace GrassSimulation.Sandbox
             _hudStyle.fontSize = Mathf.RoundToInt(lineHeight * 0.7f);
 
             var growth = _session.Growth;
-            var stats = growth.Stats;
+            var stats = _session.Stats;
 
             GUILayout.BeginArea(new Rect(new Vector2(margin, margin), size), GUI.skin.box);
             HudLine($"Level {_levelIndex + 1} / {_catalog.Count}   {_level.Id.Value}");
@@ -887,7 +952,7 @@ namespace GrassSimulation.Sandbox
 
             var speed = _session.IsSimulating ? _mower.Velocity.magnitude : 0f;
 
-            _audio.MowerSpeed01 = speed / Mathf.Max(_session.Growth.Stats.Speed, MIN_SEGMENT);
+            _audio.MowerSpeed01 = speed / Mathf.Max(_session.Stats.Speed, MIN_SEGMENT);
             _audio.RemainingTime = _session.RemainingTime;
             _audio.IsTimed = _session.Rules.IsTimed;
             _audio.TimerWarningSeconds = _session.Rules.TimerWarning;
@@ -1143,6 +1208,7 @@ namespace GrassSimulation.Sandbox
 
             PlaceCamera();
             _session.Reset();
+            SyncBoosterLoadout();
         }
 
         private bool TryFitPreview(out CameraPose pose)

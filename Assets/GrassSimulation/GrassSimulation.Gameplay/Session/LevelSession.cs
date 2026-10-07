@@ -1,3 +1,4 @@
+using EncosyTower.Common;
 using EncosyTower.PubSub;
 using UnityEngine;
 
@@ -34,6 +35,18 @@ namespace GrassSimulation.Gameplay
             , MessagePublisher.Publisher<GameplayScope> publisher
             , GameRulesValues rules
         )
+            : this(level, machine, cuttableCells, publisher, rules, BoosterValues.Default)
+        {
+        }
+
+        public LevelSession(
+              LevelDefinition level
+            , MachineConfig machine
+            , int cuttableCells
+            , MessagePublisher.Publisher<GameplayScope> publisher
+            , GameRulesValues rules
+            , BoosterValues boosters
+        )
         {
             ThrowHelper.ThrowIfTooManyQuotas(
                   level.Quotas.Length <= LevelSnapshot.MAX_QUOTAS
@@ -49,6 +62,7 @@ namespace GrassSimulation.Gameplay
             Growth = new MowerGrowth(machine);
             Objectives = new LevelObjectives(level.Quotas);
             Protection = new ProtectedRule(_rules.Retrigger, level.Beds.Length);
+            Boosters = new BoosterRuntime(in boosters);
             ResetState();
         }
 
@@ -59,6 +73,8 @@ namespace GrassSimulation.Gameplay
         public LevelObjectives Objectives { get; }
 
         public ProtectedRule Protection { get; }
+
+        public BoosterRuntime Boosters { get; }
 
         public LevelState State { get; private set; }
 
@@ -72,6 +88,21 @@ namespace GrassSimulation.Gameplay
 
         public LevelResult Result { get; private set; }
 
+        /// <summary>The machine stats with running booster multipliers applied; the cut tier never changes.</summary>
+        public MachineStats Stats
+        {
+            get
+            {
+                var stats = Growth.Stats;
+
+                return new MachineStats(
+                      stats.CutRadius
+                    , stats.CuttingPower * Boosters.PowerMultiplier
+                    , stats.Speed * Boosters.SpeedMultiplier
+                );
+            }
+        }
+
         public bool IsSimulating => IsPaused == false && (State == LevelState.Playing || State == LevelState.Cleanup);
 
         public LevelRules Rules => _rules;
@@ -84,6 +115,7 @@ namespace GrassSimulation.Gameplay
 
         public void Reset()
         {
+            EndBoosterEffects();
             ResetState();
             PublishState();
         }
@@ -110,6 +142,46 @@ namespace GrassSimulation.Gameplay
             State = LevelState.Preview;
             PublishState();
             return true;
+        }
+
+        public bool TryEquipBooster(BoosterKind kind, bool isEquipped)
+        {
+            if (State != LevelState.Preview && State != LevelState.Loadout)
+            {
+                return false;
+            }
+
+            Boosters.SetEquipped(kind, isEquipped);
+            return true;
+        }
+
+        public Success<BoosterError> TryActivateBooster(BoosterKind kind)
+        {
+            var isPlayable = State == LevelState.Playing && IsPaused == false;
+
+            if (isPlayable == false || BoosterRules.IsAllowed(kind, _rules) == false)
+            {
+                return Success.No<BoosterError>(new BoosterError.Unavailable(kind));
+            }
+
+            var activated = Boosters.TryActivate(kind);
+
+            if (activated.IsSuccess == false)
+            {
+                return activated;
+            }
+
+            var seconds = Boosters.GetDuration(kind);
+
+            if (kind == BoosterKind.ExtraTime)
+            {
+                seconds = Boosters.ExtraTimeSeconds;
+                RemainingTime += seconds;
+            }
+
+            IsAssisted = true;
+            BoosterActivatedMsg.Publish(in _publisher, new BoosterActivatedMsg(kind, seconds));
+            return Success.Yes;
         }
 
         public bool TryBegin()
@@ -253,6 +325,8 @@ namespace GrassSimulation.Gameplay
                 return;
             }
 
+            PublishEndedBoosters(Boosters.Tick(deltaTime));
+
             if (_rules.IsTimed)
             {
                 RemainingTime = Mathf.Max(RemainingTime - deltaTime, 0f);
@@ -317,6 +391,7 @@ namespace GrassSimulation.Gameplay
                 return false;
             }
 
+            EndBoosterEffects();
             State = LevelState.Cleanup;
             PublishState();
             return true;
@@ -326,6 +401,7 @@ namespace GrassSimulation.Gameplay
         {
             var isSuccess = outcome.IsSuccess;
 
+            EndBoosterEffects();
             State = isSuccess ? LevelState.Success : LevelState.Failure;
             Result = new LevelResult(outcome, RemainingTime, Protection.Hits, IsAssisted);
 
@@ -334,6 +410,19 @@ namespace GrassSimulation.Gameplay
             FlushHarvestBatch(force: true);
             LevelFinishedMsg.Publish(in _publisher, finished);
             PublishState();
+        }
+
+        private void EndBoosterEffects()
+        {
+            PublishEndedBoosters(Boosters.ClearEffects());
+        }
+
+        private void PublishEndedBoosters(int endedCount)
+        {
+            for (var i = 0; i < endedCount; i++)
+            {
+                BoosterEndedMsg.Publish(in _publisher, new BoosterEndedMsg(Boosters.GetEnded(i)));
+            }
         }
 
         private void PublishState()
@@ -424,6 +513,7 @@ namespace GrassSimulation.Gameplay
             Growth.Reset();
             Objectives.Reset();
             Protection.Reset();
+            Boosters.Reset();
             State = LevelState.Preview;
             IsPaused = false;
             IsAssisted = false;

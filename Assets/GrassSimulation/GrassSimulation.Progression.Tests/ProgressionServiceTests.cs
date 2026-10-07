@@ -388,6 +388,166 @@ public sealed class ProgressionServiceTests
         }
     }
 
+    [Test]
+    public void BoosterUnlock_GrantsTheGiftOnceAndReportsTheGrantedAmount()
+    {
+        var first = _service.Settle(s_level, LevelResults.Win(StarFlags.Goal), BoosterUnlock(UnlockKind.TurboBooster));
+
+        Assert.That(first.TryGetValue(out var settlement), Is.True);
+        Assert.That(settlement.Unlocks, Has.Length.EqualTo(1));
+        Assert.That(settlement.Unlocks[0].Amount, Is.EqualTo(3));
+        Assert.That(_service.GetBoosterStock(BoosterKind.Turbo), Is.EqualTo(3));
+        Assert.That(_service.HasBoosterStock, Is.True);
+
+        var second = _service.Settle(s_level, LevelResults.Win(StarFlags.Goal), BoosterUnlock(UnlockKind.TurboBooster));
+
+        Assert.That(second.TryGetValue(out var again), Is.True);
+        Assert.That(again.Unlocks, Is.Empty);
+        Assert.That(_service.GetBoosterStock(BoosterKind.Turbo), Is.EqualTo(3));
+    }
+
+    [Test]
+    public void BoosterGift_FollowsTheConfiguredRules()
+    {
+        var rules = GameRulesValues.Default with { BoosterGiftTurbo = 5, BoosterGiftExtraTime = 2 };
+        var service = new ProgressionService(new FakeProgressStore(), rules);
+        var second = new LevelId("level-02");
+
+        service.Initialize();
+        service.Settle(s_level, LevelResults.Win(StarFlags.Goal), BoosterUnlock(UnlockKind.TurboBooster));
+        service.Settle(second, LevelResults.Win(StarFlags.Goal), BoosterUnlock(UnlockKind.ExtraTimeBooster));
+
+        Assert.That(service.GetBoosterStock(BoosterKind.Turbo), Is.EqualTo(5));
+        Assert.That(service.GetBoosterStock(BoosterKind.ExtraTime), Is.EqualTo(2));
+    }
+
+    [Test]
+    public void LosingTheBoosterLevel_GrantsNoGift()
+    {
+        _service.Settle(s_level, LevelResults.Loss(), BoosterUnlock(UnlockKind.TurboBooster));
+
+        Assert.That(_service.GetBoosterStock(BoosterKind.Turbo), Is.Zero);
+        Assert.That(_service.HasBoosterStock, Is.False);
+    }
+
+    [Test]
+    public void FailedSettle_RollsTheGiftBack()
+    {
+        _store.FailSaves = true;
+        LogAssert.Expect(LogType.Error, new Regex("was not saved"));
+
+        _service.Settle(s_level, LevelResults.Win(StarFlags.Goal), BoosterUnlock(UnlockKind.TurboBooster));
+
+        Assert.That(_service.GetBoosterStock(BoosterKind.Turbo), Is.Zero);
+        Assert.That(_service.IsUnlockGranted(s_level, UnlockKind.TurboBooster), Is.False);
+    }
+
+    [Test]
+    public void ConsumeBooster_SpendsOneAndSavesAtOnce()
+    {
+        GrantTurbo();
+
+        var saves = _store.SaveCount;
+        var consumed = _service.ConsumeBooster(BoosterKind.Turbo);
+
+        Assert.That(consumed.IsSuccess, Is.True);
+        Assert.That(_service.GetBoosterStock(BoosterKind.Turbo), Is.EqualTo(2));
+        Assert.That(_store.SaveCount, Is.EqualTo(saves + 1));
+        Assert.That(_store.Saved.BoosterStock["Turbo"], Is.EqualTo(2));
+    }
+
+    [Test]
+    public void ConsumeBooster_WithoutStock_ChangesNothing()
+    {
+        var saves = _store.SaveCount;
+        var consumed = _service.ConsumeBooster(BoosterKind.ExtraTime);
+
+        Assert.That(consumed.TryGetFailure(out var failure), Is.True);
+        Assert.That(failure.TryGetValue(out BoosterStockError.NotInStock _), Is.True);
+        Assert.That(_store.SaveCount, Is.EqualTo(saves));
+    }
+
+    [Test]
+    public void ConsumeBooster_WhenTheSaveFails_StaysSpentAndReportsIt()
+    {
+        GrantTurbo();
+        _store.FailSaves = true;
+
+        var consumed = _service.ConsumeBooster(BoosterKind.Turbo);
+
+        Assert.That(consumed.TryGetFailure(out var failure), Is.True);
+        Assert.That(failure.TryGetValue(out BoosterStockError.NotSaved _), Is.True);
+        Assert.That(_service.GetBoosterStock(BoosterKind.Turbo), Is.EqualTo(2));
+    }
+
+    [Test]
+    public void ConsumingTheLastBooster_UnequipsItSoItIsNotAutoEquippedAgain()
+    {
+        GrantTurbo();
+        _service.SetBoosterEquipped(BoosterKind.Turbo, isEquipped: true);
+
+        _service.ConsumeBooster(BoosterKind.Turbo);
+        _service.ConsumeBooster(BoosterKind.Turbo);
+
+        Assert.That(_service.IsBoosterEquipped(BoosterKind.Turbo), Is.True);
+
+        _service.ConsumeBooster(BoosterKind.Turbo);
+
+        Assert.That(_service.GetBoosterStock(BoosterKind.Turbo), Is.Zero);
+        Assert.That(_service.IsBoosterEquipped(BoosterKind.Turbo), Is.False);
+        Assert.That(_store.Saved.EquippedBoosters, Is.Empty);
+    }
+
+    [Test]
+    public void Equipping_NeedsStockAndDoesNotConsumeIt()
+    {
+        var withoutStock = _service.SetBoosterEquipped(BoosterKind.Turbo, isEquipped: true);
+
+        Assert.That(withoutStock.TryGetFailure(out var failure), Is.True);
+        Assert.That(failure.TryGetValue(out BoosterStockError.NotInStock _), Is.True);
+
+        GrantTurbo();
+
+        Assert.That(_service.SetBoosterEquipped(BoosterKind.Turbo, isEquipped: true).IsSuccess, Is.True);
+        Assert.That(_service.IsBoosterEquipped(BoosterKind.Turbo), Is.True);
+        Assert.That(_service.GetBoosterStock(BoosterKind.Turbo), Is.EqualTo(3));
+
+        Assert.That(_service.SetBoosterEquipped(BoosterKind.Turbo, isEquipped: false).IsSuccess, Is.True);
+        Assert.That(_service.IsBoosterEquipped(BoosterKind.Turbo), Is.False);
+    }
+
+    [Test]
+    public void Equipping_WhenTheSaveFails_RollsBack()
+    {
+        GrantTurbo();
+        _store.FailSaves = true;
+
+        var equipped = _service.SetBoosterEquipped(BoosterKind.Turbo, isEquipped: true);
+
+        Assert.That(equipped.TryGetFailure(out var failure), Is.True);
+        Assert.That(failure.TryGetValue(out BoosterStockError.NotSaved _), Is.True);
+        Assert.That(_service.IsBoosterEquipped(BoosterKind.Turbo), Is.False);
+    }
+
+    [Test]
+    public void ConsumeBooster_AfterAStoreLoadFailure_IsRejected()
+    {
+        var store = new FakeProgressStore { LoadFailure = new LoadError.Unreadable("fake", "locked") };
+        var service = new ProgressionService(store);
+
+        service.Initialize();
+
+        var consumed = service.ConsumeBooster(BoosterKind.Turbo);
+
+        Assert.That(consumed.TryGetFailure(out var failure), Is.True);
+        Assert.That(failure.TryGetValue(out BoosterStockError.StoreUnavailable _), Is.True);
+    }
+
+    private void GrantTurbo()
+    {
+        _service.Settle(s_level, LevelResults.Win(StarFlags.Goal), BoosterUnlock(UnlockKind.TurboBooster));
+    }
+
     private LevelSettlement Settle(StarFlags stars)
     {
         var outcome = _service.Settle(s_level, LevelResults.Win(stars));
@@ -402,6 +562,9 @@ public sealed class ProgressionServiceTests
         Assert.That(_service.GetAttempts(s_level), Is.Zero);
         Assert.That(_service.IsCompleted(s_level), Is.False);
     }
+
+    private static UnlockSettings BoosterUnlock(UnlockKind kind)
+        => new() { Kind = kind, Amount = 0 };
 
     private static UnlockSettings WideUnlock()
         => new() { Kind = UnlockKind.WideMachine, Amount = 0 };

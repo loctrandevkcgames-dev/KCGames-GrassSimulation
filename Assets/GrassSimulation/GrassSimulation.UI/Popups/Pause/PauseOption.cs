@@ -5,5 +5,6 @@ namespace GrassSimulation.UI
         Sound,
         Haptics,
         ReduceEffects,
+        BoostersLeft,
     }
 }

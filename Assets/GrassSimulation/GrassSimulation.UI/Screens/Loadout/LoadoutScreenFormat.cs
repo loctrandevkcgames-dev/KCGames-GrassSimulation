@@ -29,6 +29,16 @@ namespace GrassSimulation.UI
             return best;
         }
 
+        public static bool IsBoosterListed(in BoosterSlot slot)
+        {
+            return slot.IsAllowed && slot.Stock > 0;
+        }
+
+        public static string FormatEquip(bool isEquipped)
+        {
+            return isEquipped ? UiText.LOADOUT_EQUIPPED : UiText.LOADOUT_EQUIP;
+        }
+
         public static string FormatUnlockCard(UnlockSettings unlock)
         {
             return string.Format(UiText.UNLOCK_CARD, FormatUnlockName(unlock));

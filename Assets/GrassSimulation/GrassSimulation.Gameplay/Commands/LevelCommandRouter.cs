@@ -26,6 +26,8 @@ namespace GrassSimulation.Gameplay
             _subscriptions.Add(SelectMachineRequestedMsg.Subscribe(in subscriber, OnSelectMachine));
             _subscriptions.Add(BackToPreviewRequestedMsg.Subscribe(in subscriber, OnBackToPreview));
             _subscriptions.Add(ChangeMachineRequestedMsg.Subscribe(in subscriber, OnChangeMachine));
+            _subscriptions.Add(ActivateBoosterRequestedMsg.Subscribe(in subscriber, OnActivateBooster));
+            _subscriptions.Add(SetBoosterEquippedRequestedMsg.Subscribe(in subscriber, OnSetBoosterEquipped));
         }
 
         public void Dispose()
@@ -110,6 +112,16 @@ namespace GrassSimulation.Gameplay
         private void OnChangeMachine(ChangeMachineRequestedMsg message)
         {
             _host.ChangeMachine();
+        }
+
+        private void OnActivateBooster(ActivateBoosterRequestedMsg message)
+        {
+            _host.Session?.TryActivateBooster(message.Kind);
+        }
+
+        private void OnSetBoosterEquipped(SetBoosterEquippedRequestedMsg message)
+        {
+            _host.SetBoosterEquipped(message.Kind, message.IsEquipped);
         }
     }
 }

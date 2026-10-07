@@ -15,6 +15,12 @@ namespace GrassSimulation.Sandbox
         }
 
         [HideInCallstack, StackTraceHidden, MethodImpl(MethodImplOptions.NoInlining)]
+        internal static void LogError_EquipBoosterFailed(BoosterStockError error)
+        {
+            StaticLogger.LogError($"Cannot change the equipped booster: {error.ToMessage()}");
+        }
+
+        [HideInCallstack, StackTraceHidden, MethodImpl(MethodImplOptions.NoInlining)]
         internal static void LogError_SelectMachineFailed(SelectMachineError error)
         {
             StaticLogger.LogError($"Cannot select the machine: {error.ToMessage()}");

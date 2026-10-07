@@ -21,6 +21,15 @@ public sealed class FileProgressStoreTests
         + "\"BestStars\":{\"level-01\":3,\"level-02\":2,\"level-04\":0},"
         + "\"GrantedRewards\":[\"first-win:level-01\"],\"OwnedSkins\":[\"skin-a\"]}";
 
+    private const string V3_BOOSTER_JSON = "{\"Version\":3,\"Revision\":5,"
+        + "\"Levels\":{\"level-04\":{\"Attempts\":1,\"Completed\":true,\"Stars\":1}},"
+        + "\"OwnedMachines\":[\"standard\"],\"SelectedMachine\":\"standard\","
+        + "\"GrantedUnlocks\":[\"level-04:ExtraTimeBooster\",\"level-06:TurboBooster\"]}";
+
+    private const string V3_NO_BOOSTER_JSON = "{\"Version\":3,\"Revision\":1,"
+        + "\"Levels\":{\"level-01\":{\"Attempts\":1}},"
+        + "\"OwnedMachines\":[\"standard\"],\"SelectedMachine\":\"standard\",\"GrantedUnlocks\":[]}";
+
     private static readonly LevelId s_level = new("level-01");
 
     private string _directory;
@@ -102,10 +111,52 @@ public sealed class FileProgressStoreTests
 
         var json = File.ReadAllText(Path.Combine(_directory, "progress.json"));
 
-        Assert.That(json, Does.Contain("\"Version\":3"));
+        Assert.That(json, Does.Contain("\"Version\":4"));
         Assert.That(json, Does.Not.Contain("BestStars"));
         Assert.That(json, Does.Not.Contain("CompletedLevels"));
         Assert.That(json, Does.Not.Contain("Coins"));
+    }
+
+    [Test]
+    public void VersionThreeSave_GrantsTheGiftForBoosterUnlocksAlreadyGranted()
+    {
+        Write("progress.json", V3_BOOSTER_JSON);
+
+        var store = new FileProgressStore(_directory);
+
+        Assert.That(store.Load().TryGetValue(out var loaded), Is.True);
+        Assert.That(loaded.Version, Is.EqualTo(ProgressSave.CURRENT_VERSION));
+        Assert.That(loaded.BoosterStock["ExtraTime"], Is.EqualTo(3));
+        Assert.That(loaded.BoosterStock["Turbo"], Is.EqualTo(3));
+        Assert.That(loaded.EquippedBoosters, Is.Empty);
+    }
+
+    [Test]
+    public void VersionThreeSave_WithoutBoosterUnlocks_StartsWithNoStock()
+    {
+        Write("progress.json", V3_NO_BOOSTER_JSON);
+
+        var store = new FileProgressStore(_directory);
+
+        Assert.That(store.Load().TryGetValue(out var loaded), Is.True);
+        Assert.That(loaded.Version, Is.EqualTo(ProgressSave.CURRENT_VERSION));
+        Assert.That(loaded.BoosterStock, Is.Empty);
+    }
+
+    [Test]
+    public void BoosterStockAndEquipment_SurviveSaveAndReload()
+    {
+        var service = CreateService();
+        var unlock = new UnlockSettings { Kind = UnlockKind.TurboBooster };
+
+        service.Settle(new LevelId("level-06"), LevelResults.Win(StarFlags.Goal), unlock);
+        service.SetBoosterEquipped(BoosterKind.Turbo, isEquipped: true);
+
+        var reloaded = CreateService();
+
+        Assert.That(reloaded.GetBoosterStock(BoosterKind.Turbo), Is.EqualTo(3));
+        Assert.That(reloaded.IsBoosterEquipped(BoosterKind.Turbo), Is.True);
+        Assert.That(reloaded.GetBoosterStock(BoosterKind.ExtraTime), Is.Zero);
     }
 
     [Test]

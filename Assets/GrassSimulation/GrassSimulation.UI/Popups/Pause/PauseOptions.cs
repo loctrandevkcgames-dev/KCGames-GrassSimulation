@@ -10,6 +10,7 @@ namespace GrassSimulation.UI
             return option switch {
                 PauseOption.Sound => PlayerOptions.Sound,
                 PauseOption.Haptics => PlayerOptions.Haptics,
+                PauseOption.BoostersLeft => PlayerOptions.BoosterLeft,
                 _ => PlayerOptions.ReduceEffects,
             };
         }
@@ -19,6 +20,7 @@ namespace GrassSimulation.UI
             return option switch {
                 PauseOption.Sound => UiText.OPTION_SOUND,
                 PauseOption.Haptics => UiText.OPTION_HAPTICS,
+                PauseOption.BoostersLeft => UiText.OPTION_BOOSTERS_LEFT,
                 _ => UiText.OPTION_REDUCE_EFFECTS,
             };
         }
@@ -28,6 +30,7 @@ namespace GrassSimulation.UI
             return option switch {
                 PauseOption.Sound => PlayerOptions.GetSound(),
                 PauseOption.Haptics => PlayerOptions.GetHaptics(),
+                PauseOption.BoostersLeft => PlayerOptions.GetBoosterLeft(),
                 _ => PlayerOptions.GetReduceEffects(),
             };
         }

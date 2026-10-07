@@ -6,10 +6,15 @@ namespace GrassSimulation.UI.Tests;
 
 public sealed class PauseOptionsTests
 {
-    private readonly PauseOption[] _options = { PauseOption.Sound, PauseOption.Haptics, PauseOption.ReduceEffects };
+    private readonly PauseOption[] _options = {
+        PauseOption.Sound,
+        PauseOption.Haptics,
+        PauseOption.ReduceEffects,
+        PauseOption.BoostersLeft,
+    };
 
-    private readonly bool[] _hadKey = new bool[3];
-    private readonly int[] _stored = new int[3];
+    private readonly bool[] _hadKey = new bool[4];
+    private readonly int[] _stored = new int[4];
 
     [SetUp]
     public void SetUp()
@@ -48,6 +53,19 @@ public sealed class PauseOptionsTests
         Assert.That(PauseOptions.GetKey(PauseOption.Sound).Value, Is.EqualTo(PlayerOptions.Sound.Value));
         Assert.That(PauseOptions.GetKey(PauseOption.Haptics).Value, Is.EqualTo(PlayerOptions.Haptics.Value));
         Assert.That(reduceEffects.Value, Is.EqualTo(PlayerOptions.ReduceEffects.Value));
+        Assert.That(PauseOptions.GetKey(PauseOption.BoostersLeft).Value, Is.EqualTo(PlayerOptions.BoosterLeft.Value));
+    }
+
+    [Test]
+    public void BoostersLeft_DefaultsToTheRightAndPersistsTheSwitch()
+    {
+        Assert.That(PauseOptions.Read(PauseOption.BoostersLeft), Is.EqualTo(PlayerOptions.DEFAULT_BOOSTER_LEFT));
+
+        PauseOptions.Write(option: PauseOption.BoostersLeft, value: true);
+
+        Assert.That(PlayerOptions.GetBoosterLeft(), Is.True);
+        Assert.That(PauseOptions.Read(PauseOption.BoostersLeft), Is.True);
+        Assert.That(PauseOptions.GetLabel(PauseOption.BoostersLeft), Is.EqualTo("Booster bên trái"));
     }
 
     [Test]

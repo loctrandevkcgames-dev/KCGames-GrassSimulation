@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using EncosyTower.PageFlows.MonoPages;
 using EncosyTower.Processing;
 using EncosyTower.PubSub;
@@ -12,6 +13,8 @@ namespace GrassSimulation.UI
     {
         private const float POLL_INTERVAL = 0.1f;
         private const float TOAST_SECONDS = 4f;
+        private const float EXTRA_TIME_FLOAT_SECONDS = 1.6f;
+        private const float EXTRA_TIME_FLOAT_RISE = 36f;
 
         [SerializeField]
         private GameplayViewModel _viewModel;
@@ -83,6 +86,24 @@ namespace GrassSimulation.UI
         private TMP_Text _hintText;
 
         [SerializeField]
+        private RectTransform _boosterCluster;
+
+        [SerializeField]
+        private HorizontalLayoutGroup _boosterLayout;
+
+        [SerializeField]
+        private GameplayBoosterButton[] _boosterButtons;
+
+        [SerializeField]
+        private RectTransform _extraTimeFloat;
+
+        [SerializeField]
+        private CanvasGroup _extraTimeGroup;
+
+        [SerializeField]
+        private TMP_Text _extraTimeText;
+
+        [SerializeField]
         private Sprite _grassIcon;
 
         [SerializeField]
@@ -95,6 +116,7 @@ namespace GrassSimulation.UI
         private Processor.Hub<GameplayScope> _hub;
         private ProcessingContext _processingContext;
         private readonly OnboardingHintModel _hintModel = new();
+        private readonly List<ISubscription> _subscriptions = new();
 
         private float _pollTimer;
         private int _levelIndex;
@@ -122,6 +144,11 @@ namespace GrassSimulation.UI
         private bool _hasMode;
         private float _timerWarningSeconds;
         private float _toastSeconds;
+        private float _floatSeconds;
+        private Vector2 _floatOrigin;
+        private bool _hasFloatOrigin;
+        private bool _hasBoosterSide;
+        private bool _isBoosterLeft;
         private int _clearedPercent;
         private bool _hasClearedPercent;
 
@@ -134,6 +161,11 @@ namespace GrassSimulation.UI
             _finishLabel.text = UiText.FINISH_CLEANUP;
             _hintText.text = UiText.DRAG_HINT;
 
+            for (var i = 0; i < _boosterButtons.Length; i++)
+            {
+                _boosterButtons[i].Init(in _commands);
+            }
+
             _pauseButton.onClick.AddListener(OnPauseClicked);
             _finishButton.onClick.AddListener(OnFinishClicked);
         }
@@ -144,14 +176,28 @@ namespace GrassSimulation.UI
             _hintModel.Reset();
             _hint.SetActive(false);
             HideJoystick();
+            HideExtraTimeFloat();
+
+            var subscriber = GlobalMessenger.Subscriber.Scope<GameplayScope>();
+
+            _subscriptions.Add(BoosterActivatedMsg.Subscribe(in subscriber, OnBoosterActivated));
+            _subscriptions.Add(PlayerOptionsChangedMsg.Subscribe(in subscriber, OnPlayerOptionsChanged));
+
+            ApplyBoosterSide();
             Refresh();
 
             _pollTimer = 0f;
         }
 
+        private void OnDisable()
+        {
+            _subscriptions.Unsubscribe();
+        }
+
         private void Update()
         {
             ShowJoystickAndHint();
+            StepExtraTimeFloat();
 
             _pollTimer += Time.unscaledDeltaTime;
 
@@ -195,6 +241,11 @@ namespace GrassSimulation.UI
             _hasClearedPercent = false;
             _toastSeconds = 0f;
 
+            for (var i = 0; i < _boosterButtons.Length; i++)
+            {
+                _boosterButtons[i].ResetCache();
+            }
+
             for (var i = 0; i < _quotaChips.Length; i++)
             {
                 _quotaChips[i].ResetCache();
@@ -219,6 +270,122 @@ namespace GrassSimulation.UI
             ShowQuotas(snapshot);
             ShowGrowth(snapshot);
             ShowProtectedHits(snapshot);
+            ShowBoosters();
+        }
+
+        private void OnBoosterActivated(BoosterActivatedMsg message)
+        {
+            if (message.Kind != BoosterKind.ExtraTime)
+            {
+                return;
+            }
+
+            if (_hasFloatOrigin == false)
+            {
+                _hasFloatOrigin = true;
+                _floatOrigin = _extraTimeFloat.anchoredPosition;
+            }
+
+            _floatSeconds = EXTRA_TIME_FLOAT_SECONDS;
+            _extraTimeText.text = GameplayBoosterFormat.FormatExtraTime(message.Seconds);
+            _extraTimeFloat.gameObject.SetActive(true);
+            StepExtraTimeFloat();
+        }
+
+        private void OnPlayerOptionsChanged(PlayerOptionsChangedMsg message)
+        {
+            ApplyBoosterSide();
+        }
+
+        private void StepExtraTimeFloat()
+        {
+            if (_floatSeconds <= 0f)
+            {
+                return;
+            }
+
+            _floatSeconds -= Time.unscaledDeltaTime;
+
+            if (_floatSeconds <= 0f)
+            {
+                HideExtraTimeFloat();
+                return;
+            }
+
+            var progress = 1f - _floatSeconds / EXTRA_TIME_FLOAT_SECONDS;
+            var rise = EXTRA_TIME_FLOAT_RISE * progress;
+
+            _extraTimeGroup.alpha = 1f - progress * progress;
+            _extraTimeFloat.anchoredPosition = _floatOrigin + Vector2.up * rise;
+        }
+
+        private void HideExtraTimeFloat()
+        {
+            _floatSeconds = 0f;
+
+            if (_hasFloatOrigin)
+            {
+                _extraTimeFloat.anchoredPosition = _floatOrigin;
+            }
+
+            _extraTimeFloat.gameObject.SetActive(false);
+        }
+
+        private void ApplyBoosterSide()
+        {
+            var isLeft = PlayerOptions.GetBoosterLeft();
+
+            if (_hasBoosterSide && isLeft == _isBoosterLeft)
+            {
+                return;
+            }
+
+            _hasBoosterSide = true;
+            _isBoosterLeft = isLeft;
+
+            var edge = isLeft ? 0f : 1f;
+            var position = _boosterCluster.anchoredPosition;
+
+            _boosterCluster.anchorMin = new Vector2(x: edge, y: 0f);
+            _boosterCluster.anchorMax = new Vector2(x: edge, y: 0f);
+            _boosterCluster.pivot = new Vector2(x: edge, y: 0f);
+            _boosterCluster.anchoredPosition = new Vector2(
+                  x: Mathf.Abs(position.x) * (isLeft ? 1f : -1f)
+                , y: position.y
+            );
+            _boosterLayout.childAlignment = isLeft ? TextAnchor.LowerLeft : TextAnchor.LowerRight;
+        }
+
+        private void ShowBoosters()
+        {
+            var result = GetBoosterStateRequest.TryProcess(in _hub, new GetBoosterStateRequest(), _processingContext);
+
+            if (result.TryGetValue(out var snapshot) == false)
+            {
+                return;
+            }
+
+            var hasEquipped = GameplayBoosterFormat.IsShown(snapshot.Turbo.State)
+                || GameplayBoosterFormat.IsShown(snapshot.ExtraTime.State);
+            var isShown = snapshot.IsHudShown && hasEquipped;
+
+            if (_boosterCluster.gameObject.activeSelf != isShown)
+            {
+                _boosterCluster.gameObject.SetActive(isShown);
+            }
+
+            if (isShown == false)
+            {
+                return;
+            }
+
+            for (var i = 0; i < _boosterButtons.Length; i++)
+            {
+                var button = _boosterButtons[i];
+                var slot = snapshot.GetSlot(button.Kind);
+
+                button.Apply(in slot);
+            }
         }
 
         private void ShowJoystickAndHint()

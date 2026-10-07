@@ -7,7 +7,7 @@ namespace GrassSimulation.Progression
     [Preserve]
     public sealed class ProgressSave
     {
-        public const int CURRENT_VERSION = 3;
+        public const int CURRENT_VERSION = 4;
 
         [Preserve]
         public ProgressSave()
@@ -26,6 +26,10 @@ namespace GrassSimulation.Progression
 
         public HashSet<string> GrantedUnlocks { get; set; } = new();
 
+        public Dictionary<string, int> BoosterStock { get; set; } = new();
+
+        public HashSet<string> EquippedBoosters { get; set; } = new();
+
         // Version 1 fields. They are read only to migrate a version 1 save and are null afterwards.
         public List<string> CompletedLevels { get; set; }
 
@@ -36,6 +40,7 @@ namespace GrassSimulation.Progression
             var save = new ProgressSave { Version = CURRENT_VERSION };
 
             save.EnsureMachines();
+            save.EnsureBoosters();
             return save;
         }
 
@@ -55,9 +60,17 @@ namespace GrassSimulation.Progression
                 OwnedMachines = OwnedMachines == null ? null : new HashSet<string>(OwnedMachines),
                 SelectedMachine = SelectedMachine,
                 GrantedUnlocks = GrantedUnlocks == null ? null : new HashSet<string>(GrantedUnlocks),
+                BoosterStock = BoosterStock == null ? null : new Dictionary<string, int>(BoosterStock),
+                EquippedBoosters = EquippedBoosters == null ? null : new HashSet<string>(EquippedBoosters),
                 CompletedLevels = CompletedLevels == null ? null : new List<string>(CompletedLevels),
                 BestStars = BestStars == null ? null : new Dictionary<string, int>(BestStars),
             };
+        }
+
+        internal void EnsureBoosters()
+        {
+            BoosterStock ??= new Dictionary<string, int>();
+            EquippedBoosters ??= new HashSet<string>();
         }
 
         internal void EnsureMachines()

@@ -28,6 +28,9 @@ namespace GrassSimulation.UI
         private TMP_Text _boosterEmptyText;
 
         [SerializeField]
+        private LoadoutBoosterRow[] _boosterRows;
+
+        [SerializeField]
         private Button _startButton;
 
         [SerializeField]
@@ -37,8 +40,10 @@ namespace GrassSimulation.UI
         private Processor.Hub<GameplayScope> _hub;
         private ProcessingContext _processingContext;
         private LoadoutSnapshot _applied;
+        private BoosterSnapshot _appliedBoosters;
         private float _pollTimer;
         private bool _hasApplied;
+        private bool _hasAppliedBoosters;
 
         private void Awake()
         {
@@ -56,6 +61,11 @@ namespace GrassSimulation.UI
                 _cards[i].Init(in _commands);
             }
 
+            for (var i = 0; i < _boosterRows.Length; i++)
+            {
+                _boosterRows[i].Init(in _commands);
+            }
+
             _backButton.onClick.AddListener(OnBackClicked);
             _startButton.onClick.AddListener(OnStartClicked);
         }
@@ -63,6 +73,7 @@ namespace GrassSimulation.UI
         private void OnEnable()
         {
             _hasApplied = false;
+            _hasAppliedBoosters = false;
             _pollTimer = 0f;
 
             Refresh();
@@ -100,6 +111,44 @@ namespace GrassSimulation.UI
         }
 
         private void Refresh()
+        {
+            RefreshMachines();
+            RefreshBoosters();
+        }
+
+        private void RefreshBoosters()
+        {
+            var result = GetBoosterStateRequest.TryProcess(in _hub, new GetBoosterStateRequest(), _processingContext);
+
+            if (result.TryGetValue(out var snapshot) == false || (_hasAppliedBoosters && snapshot == _appliedBoosters))
+            {
+                return;
+            }
+
+            _hasAppliedBoosters = true;
+            _appliedBoosters = snapshot;
+
+            var shownCount = 0;
+
+            for (var i = 0; i < _boosterRows.Length; i++)
+            {
+                var row = _boosterRows[i];
+                var slot = snapshot.GetSlot(row.Kind);
+                var isShown = LoadoutScreenFormat.IsBoosterListed(in slot);
+
+                row.gameObject.SetActive(isShown);
+
+                if (isShown)
+                {
+                    shownCount++;
+                    row.Apply(in slot);
+                }
+            }
+
+            _boosterEmptyText.gameObject.SetActive(shownCount == 0);
+        }
+
+        private void RefreshMachines()
         {
             var result = GetLoadoutRequest.TryProcess(in _hub, new GetLoadoutRequest(), _processingContext);
 

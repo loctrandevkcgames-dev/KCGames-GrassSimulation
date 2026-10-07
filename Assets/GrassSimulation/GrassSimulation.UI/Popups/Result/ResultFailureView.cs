@@ -36,6 +36,12 @@ namespace GrassSimulation.UI
         private TMP_Text _retryLabel;
 
         [SerializeField]
+        private Button _changeMachineButton;
+
+        [SerializeField]
+        private TMP_Text _changeMachineLabel;
+
+        [SerializeField]
         private Button _homeButton;
 
         [SerializeField]
@@ -48,14 +54,18 @@ namespace GrassSimulation.UI
             _commands = commands;
 
             _retryLabel.text = UiText.BUTTON_REPLAY;
+            _changeMachineLabel.text = UiText.BUTTON_CHANGE_MACHINE;
             _homeLabel.text = UiText.BUTTON_HOME;
 
             _retryButton.onClick.AddListener(OnRetryClicked);
+            _changeMachineButton.onClick.AddListener(OnChangeMachineClicked);
             _homeButton.onClick.AddListener(OnHomeClicked);
         }
 
-        public void Apply(in LevelResult result, in LevelSnapshot snapshot)
+        public void Apply(in LevelResult result, in LevelSnapshot snapshot, bool canChangeMachine)
         {
+            _changeMachineButton.gameObject.SetActive(canChangeMachine);
+
             var visual = ResultFailureVisuals.Get(result.Outcome);
 
             _tile.color = visual.Tile;
@@ -97,6 +107,12 @@ namespace GrassSimulation.UI
         {
             UiAudio.Tap();
             RetryRequestedMsg.Publish(in _commands, new RetryRequestedMsg());
+        }
+
+        private void OnChangeMachineClicked()
+        {
+            UiAudio.Tap();
+            ChangeMachineRequestedMsg.Publish(in _commands, new ChangeMachineRequestedMsg());
         }
 
         private void OnHomeClicked()

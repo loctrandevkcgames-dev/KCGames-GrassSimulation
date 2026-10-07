@@ -22,6 +22,36 @@ internal sealed class TestAssets : IDisposable
         return machine;
     }
 
+    public MachineConfig CreateMachine(string id, float cutRadius, float speed)
+    {
+        var machine = CreateMachine();
+        var serialized = new SerializedObject(machine);
+
+        serialized.FindProperty("_id").stringValue = id;
+        serialized.FindProperty("_displayName").stringValue = id;
+        serialized.FindProperty("_baseCutRadius").floatValue = cutRadius;
+        serialized.FindProperty("_baseSpeed").floatValue = speed;
+        serialized.ApplyModifiedPropertiesWithoutUndo();
+        return machine;
+    }
+
+    public MachineCatalog CreateMachineCatalog(params MachineConfig[] machines)
+    {
+        var catalog = Track(ScriptableObject.CreateInstance<MachineCatalog>());
+        var serialized = new SerializedObject(catalog);
+        var array = serialized.FindProperty("_machines");
+
+        array.arraySize = machines.Length;
+
+        for (var i = 0; i < machines.Length; i++)
+        {
+            array.GetArrayElementAtIndex(i).objectReferenceValue = machines[i];
+        }
+
+        serialized.ApplyModifiedPropertiesWithoutUndo();
+        return catalog;
+    }
+
     public static GameRulesValues CreateRules(bool failOnProtectedHits)
     {
         var mode = failOnProtectedHits ? ProtectedMode.Fail : ProtectedMode.Warn;

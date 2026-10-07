@@ -50,6 +50,121 @@ public sealed class ProgressionServiceTests
     }
 
     [Test]
+    public void NewSave_OwnsOnlyTheStandardMachine()
+    {
+        Assert.That(_service.OwnedMachineCount, Is.EqualTo(1));
+        Assert.That(_service.IsMachineOwned(MachineIds.Standard), Is.True);
+        Assert.That(_service.IsMachineOwned(MachineIds.Wide), Is.False);
+        Assert.That(_service.SelectedMachine, Is.EqualTo(MachineIds.Standard));
+    }
+
+    [Test]
+    public void WinningTheWideLevel_UnlocksTheWideMachineOnce()
+    {
+        var first = _service.Settle(s_level, LevelResults.Win(StarFlags.Goal), WideUnlock());
+
+        Assert.That(first.TryGetValue(out var settlement), Is.True);
+        Assert.That(settlement.Unlocks, Has.Length.EqualTo(1));
+        Assert.That(settlement.Unlocks[0].Kind, Is.EqualTo(UnlockKind.WideMachine));
+        Assert.That(_service.IsMachineOwned(MachineIds.Wide), Is.True);
+        Assert.That(_service.OwnedMachineCount, Is.EqualTo(2));
+        Assert.That(_service.IsUnlockGranted(s_level, UnlockKind.WideMachine), Is.True);
+
+        var second = _service.Settle(s_level, LevelResults.Win(StarFlags.Goal), WideUnlock());
+
+        Assert.That(second.TryGetValue(out var again), Is.True);
+        Assert.That(again.Unlocks, Is.Empty);
+        Assert.That(_service.OwnedMachineCount, Is.EqualTo(2));
+    }
+
+    [Test]
+    public void LosingTheWideLevel_GrantsNothing()
+    {
+        var outcome = _service.Settle(s_level, LevelResults.Loss(), WideUnlock());
+
+        Assert.That(outcome.TryGetValue(out var settlement), Is.True);
+        Assert.That(settlement.Unlocks, Is.Empty);
+        Assert.That(_service.IsMachineOwned(MachineIds.Wide), Is.False);
+        Assert.That(_service.IsUnlockGranted(s_level, UnlockKind.WideMachine), Is.False);
+    }
+
+    [Test]
+    public void BoosterUnlock_IsRecordedAsGrantedWithoutOwningAMachine()
+    {
+        var unlock = new UnlockSettings { Kind = UnlockKind.TurboBooster, Amount = 3 };
+
+        var outcome = _service.Settle(s_level, LevelResults.Win(StarFlags.Goal), unlock);
+
+        Assert.That(outcome.TryGetValue(out var settlement), Is.True);
+        Assert.That(settlement.Unlocks, Has.Length.EqualTo(1));
+        Assert.That(_service.IsUnlockGranted(s_level, UnlockKind.TurboBooster), Is.True);
+        Assert.That(_service.OwnedMachineCount, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void FailedSave_RollsBackTheUnlock()
+    {
+        _store.FailSaves = true;
+
+        LogAssert.Expect(LogType.Error, new Regex("rolled back"));
+
+        var outcome = _service.Settle(s_level, LevelResults.Win(StarFlags.Goal), WideUnlock());
+
+        Assert.That(outcome.IsError, Is.True);
+        Assert.That(_service.IsMachineOwned(MachineIds.Wide), Is.False);
+        Assert.That(_service.IsUnlockGranted(s_level, UnlockKind.WideMachine), Is.False);
+    }
+
+    [Test]
+    public void SelectMachine_ChoosesAnOwnedMachineAndPersistsIt()
+    {
+        _service.Settle(s_level, LevelResults.Win(StarFlags.Goal), WideUnlock());
+
+        var selected = _service.SelectMachine(MachineIds.Wide);
+
+        Assert.That(selected.IsSuccess, Is.True);
+        Assert.That(_service.SelectedMachine, Is.EqualTo(MachineIds.Wide));
+        Assert.That(_store.Saved.SelectedMachine, Is.EqualTo(MachineIds.Wide.Value));
+    }
+
+    [Test]
+    public void SelectMachine_RejectsAMachineThatIsNotOwned()
+    {
+        var selected = _service.SelectMachine(MachineIds.Wide);
+
+        Assert.That(selected.IsSuccess, Is.False);
+        Assert.That(selected.TryGetFailure(out var failure), Is.True);
+        Assert.That(failure.ToMessage(), Does.Contain("not owned"));
+        Assert.That(_service.SelectedMachine, Is.EqualTo(MachineIds.Standard));
+    }
+
+    [Test]
+    public void SelectMachine_FailedSaveKeepsTheOldSelection()
+    {
+        _service.Settle(s_level, LevelResults.Win(StarFlags.Goal), WideUnlock());
+        _store.FailSaves = true;
+
+        var selected = _service.SelectMachine(MachineIds.Wide);
+
+        Assert.That(selected.IsSuccess, Is.False);
+        Assert.That(_service.SelectedMachine, Is.EqualTo(MachineIds.Standard));
+    }
+
+    [Test]
+    public void SelectedMachine_SurvivesAReload()
+    {
+        _service.Settle(s_level, LevelResults.Win(StarFlags.Goal), WideUnlock());
+        _service.SelectMachine(MachineIds.Wide);
+
+        var reloaded = new ProgressionService(_store);
+
+        reloaded.Initialize();
+
+        Assert.That(reloaded.SelectedMachine, Is.EqualTo(MachineIds.Wide));
+        Assert.That(reloaded.IsMachineOwned(MachineIds.Wide), Is.True);
+    }
+
+    [Test]
     public void Win_MarksTheLevelCompleted()
     {
         Assert.That(_service.IsCompleted(s_level), Is.False);
@@ -287,4 +402,7 @@ public sealed class ProgressionServiceTests
         Assert.That(_service.GetAttempts(s_level), Is.Zero);
         Assert.That(_service.IsCompleted(s_level), Is.False);
     }
+
+    private static UnlockSettings WideUnlock()
+        => new() { Kind = UnlockKind.WideMachine, Amount = 0 };
 }

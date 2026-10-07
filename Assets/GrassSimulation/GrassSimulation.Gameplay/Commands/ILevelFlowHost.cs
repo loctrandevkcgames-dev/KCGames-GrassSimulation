@@ -17,5 +17,11 @@ namespace GrassSimulation.Gameplay
         void FinishCleanup();
 
         void RetrySave();
+
+        void SelectMachine(MachineId machine);
+
+        void BackToPreview();
+
+        void ChangeMachine();
     }
 }

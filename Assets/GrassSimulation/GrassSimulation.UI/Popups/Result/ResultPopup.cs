@@ -100,6 +100,13 @@ namespace GrassSimulation.UI
             Show(in finished, in snapshot, in last);
         }
 
+        private bool CanChangeMachine()
+        {
+            var result = GetLoadoutRequest.TryProcess(in _gameplayHub, new GetLoadoutRequest(), _processingContext);
+
+            return result.TryGetValue(out var loadout) && loadout.MachineCount > 1;
+        }
+
         private void Show(in LevelResult finished, in LevelSnapshot snapshot, in LastLevelResult last)
         {
             var isSuccess = finished.Outcome.IsSuccess;
@@ -113,7 +120,7 @@ namespace GrassSimulation.UI
             }
             else
             {
-                _failureView.Apply(in finished, in snapshot);
+                _failureView.Apply(in finished, in snapshot, CanChangeMachine());
             }
         }
     }

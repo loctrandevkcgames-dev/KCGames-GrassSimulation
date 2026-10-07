@@ -15,6 +15,23 @@ namespace GrassSimulation.Gameplay
         public LevelDefinition Get(int index)
             => _levels[index];
 
+        public bool TryFind(LevelId id, out LevelDefinition level)
+        {
+            var count = _levels.Length;
+
+            for (var i = 0; i < count; i++)
+            {
+                if (_levels[i].Id == id)
+                {
+                    level = _levels[i];
+                    return true;
+                }
+            }
+
+            level = null;
+            return false;
+        }
+
         public int GetIntroducedTier(int levelIndex)
         {
             var last = Mathf.Min(levelIndex, _levels.Length - 1);

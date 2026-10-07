@@ -36,6 +36,16 @@ namespace GrassSimulation.Progression
         public int GetStarCount(LevelId level)
             => StarRules.Count(GetStars(level));
 
+        public MachineId SelectedMachine => new(_save.SelectedMachine);
+
+        public int OwnedMachineCount => _save.OwnedMachines.Count;
+
+        public bool IsMachineOwned(MachineId machine)
+            => _save.OwnedMachines.Contains(machine.Value);
+
+        public bool IsUnlockGranted(LevelId level, UnlockKind kind)
+            => _save.GrantedUnlocks.Contains(CreateUnlockId(level, kind));
+
         public int GetAttempts(LevelId level)
             => _save.Levels.TryGetValue(level.Value, out var record) ? record.Attempts : 0;
 
@@ -55,6 +65,9 @@ namespace GrassSimulation.Progression
         }
 
         public Result<LevelSettlement, SettleError> Settle(LevelId level, in LevelResult result)
+            => Settle(level, in result, unlock: default);
+
+        public Result<LevelSettlement, SettleError> Settle(LevelId level, in LevelResult result, UnlockSettings unlock)
         {
             if (_isReadOnly)
             {
@@ -66,7 +79,6 @@ namespace GrassSimulation.Progression
             var earned = isWin ? result.Stars : StarFlags.None;
             var isFirstCompletion = isWin && IsCompleted(level) == false;
             var newStars = earned & ~GetStars(level);
-            var settlement = new LevelSettlement(earned, newStars, isFirstCompletion);
             var snapshot = _save.Clone();
 
             if (_save.Levels.TryGetValue(level.Value, out var record) == false)
@@ -80,6 +92,9 @@ namespace GrassSimulation.Progression
             record.Stars |= earned;
             record.Completed |= isWin;
 
+            var unlocks = isWin ? GrantUnlock(level, unlock) : Array.Empty<UnlockSettings>();
+            var settlement = new LevelSettlement(earned, newStars, isFirstCompletion, unlocks);
+
             var saved = SaveSafely(_save);
 
             if (saved.TryGetFailure(out var failure))
@@ -90,6 +105,39 @@ namespace GrassSimulation.Progression
             }
 
             return Result<LevelSettlement, SettleError>.Succeed(settlement);
+        }
+
+        public Success<SelectMachineError> SelectMachine(MachineId machine)
+        {
+            if (_isReadOnly)
+            {
+                return Success.No<SelectMachineError>(new SelectMachineError.StoreUnavailable(_loadFailure));
+            }
+
+            if (IsMachineOwned(machine) == false)
+            {
+                return Success.No<SelectMachineError>(new SelectMachineError.NotOwned(machine));
+            }
+
+            if (_save.SelectedMachine == machine.Value)
+            {
+                return Success.Yes;
+            }
+
+            var snapshot = _save.Clone();
+
+            _save.Revision++;
+            _save.SelectedMachine = machine.Value;
+
+            var saved = SaveSafely(_save);
+
+            if (saved.TryGetFailure(out var failure))
+            {
+                _save = snapshot;
+                return Success.No<SelectMachineError>(new SelectMachineError.NotSaved(failure));
+            }
+
+            return Success.Yes;
         }
 
         public Success<SaveError> Wipe()
@@ -146,6 +194,24 @@ namespace GrassSimulation.Progression
                 _isReadOnly = error.BlocksWrites;
                 _loadFailure = error;
             }
+        }
+
+        private static string CreateUnlockId(LevelId level, UnlockKind kind)
+            => $"{level.Value}:{kind}";
+
+        private UnlockSettings[] GrantUnlock(LevelId level, UnlockSettings unlock)
+        {
+            if (unlock.Kind == UnlockKind.None || _save.GrantedUnlocks.Add(CreateUnlockId(level, unlock.Kind)) == false)
+            {
+                return Array.Empty<UnlockSettings>();
+            }
+
+            if (MachineIds.TryFromUnlock(unlock.Kind, out var machine))
+            {
+                _save.OwnedMachines.Add(machine.Value);
+            }
+
+            return new[] { unlock };
         }
 
         private Success<SaveError> SaveSafely(ProgressSave save)

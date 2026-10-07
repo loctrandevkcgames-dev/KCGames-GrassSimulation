@@ -6,6 +6,7 @@ namespace GrassSimulation.Gameplay
     public enum LevelState : byte
     {
         Preview,
+        Loadout,
         Playing,
         UpgradeChoice,
         Success,

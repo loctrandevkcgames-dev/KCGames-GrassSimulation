@@ -12,6 +12,12 @@ namespace GrassSimulation.Progression
                 MigrateFromV1(save);
             }
 
+            if (save.Version == 2)
+            {
+                MigrateFromV2(save);
+            }
+
+            save.EnsureMachines();
             return save.Version == ProgressSave.CURRENT_VERSION;
         }
 
@@ -55,6 +61,12 @@ namespace GrassSimulation.Progression
 
             save.CompletedLevels = null;
             save.BestStars = null;
+            save.Version = 2;
+        }
+
+        private static void MigrateFromV2(ProgressSave save)
+        {
+            save.EnsureMachines();
             save.Version = ProgressSave.CURRENT_VERSION;
         }
     }

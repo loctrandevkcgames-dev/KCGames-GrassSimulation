@@ -21,6 +21,12 @@ namespace GrassSimulation.UI
                     return true;
                 }
 
+                case LevelState.Loadout:
+                {
+                    key = UiPageKeys.LOADOUT_SCREEN;
+                    return true;
+                }
+
                 case LevelState.Playing:
                 case LevelState.Cleanup:
                 {

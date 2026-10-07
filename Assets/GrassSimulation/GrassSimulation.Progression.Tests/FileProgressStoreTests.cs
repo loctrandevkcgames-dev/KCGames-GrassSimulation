@@ -92,7 +92,7 @@ public sealed class FileProgressStoreTests
     }
 
     [Test]
-    public void MigratedSave_IsWrittenAsVersionTwoWithoutLegacyFields()
+    public void MigratedSave_IsWrittenAsTheCurrentVersionWithoutLegacyFields()
     {
         Write("progress.json", V1_JSON);
 
@@ -102,10 +102,54 @@ public sealed class FileProgressStoreTests
 
         var json = File.ReadAllText(Path.Combine(_directory, "progress.json"));
 
-        Assert.That(json, Does.Contain("\"Version\":2"));
+        Assert.That(json, Does.Contain("\"Version\":3"));
         Assert.That(json, Does.Not.Contain("BestStars"));
         Assert.That(json, Does.Not.Contain("CompletedLevels"));
         Assert.That(json, Does.Not.Contain("Coins"));
+    }
+
+    [Test]
+    public void VersionTwoSave_MigratesToOwnTheStandardMachine()
+    {
+        Write("progress.json", VALID_JSON);
+
+        var store = new FileProgressStore(_directory);
+
+        Assert.That(store.Load().TryGetValue(out var loaded), Is.True);
+        Assert.That(loaded.Version, Is.EqualTo(ProgressSave.CURRENT_VERSION));
+        Assert.That(loaded.OwnedMachines, Is.EquivalentTo(new[] { MachineIds.Standard.Value }));
+        Assert.That(loaded.SelectedMachine, Is.EqualTo(MachineIds.Standard.Value));
+        Assert.That(loaded.GrantedUnlocks, Is.Empty);
+        Assert.That(loaded.Levels["level-01"].Attempts, Is.EqualTo(40));
+    }
+
+    [Test]
+    public void VersionOneSave_MigratesToOwnTheStandardMachine()
+    {
+        Write("progress.json", V1_JSON);
+
+        var store = new FileProgressStore(_directory);
+
+        Assert.That(store.Load().TryGetValue(out var loaded), Is.True);
+        Assert.That(loaded.OwnedMachines, Is.EquivalentTo(new[] { MachineIds.Standard.Value }));
+        Assert.That(loaded.SelectedMachine, Is.EqualTo(MachineIds.Standard.Value));
+    }
+
+    [Test]
+    public void MachinesAndUnlocks_RoundTrip()
+    {
+        var store = new FileProgressStore(_directory);
+        var save = ProgressSave.CreateNew();
+
+        save.OwnedMachines.Add(MachineIds.Wide.Value);
+        save.SelectedMachine = MachineIds.Wide.Value;
+        save.GrantedUnlocks.Add("level-10:WideMachine");
+
+        Assert.That(store.Save(save).IsSuccess, Is.True);
+        Assert.That(store.Load().TryGetValue(out var loaded), Is.True);
+        Assert.That(loaded.OwnedMachines, Is.EquivalentTo(new[] { MachineIds.Standard.Value, MachineIds.Wide.Value }));
+        Assert.That(loaded.SelectedMachine, Is.EqualTo(MachineIds.Wide.Value));
+        Assert.That(loaded.GrantedUnlocks, Is.EquivalentTo(new[] { "level-10:WideMachine" }));
     }
 
     [Test]

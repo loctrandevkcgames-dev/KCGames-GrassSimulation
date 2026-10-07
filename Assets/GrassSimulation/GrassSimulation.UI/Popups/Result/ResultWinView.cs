@@ -35,6 +35,12 @@ namespace GrassSimulation.UI
         private ResultRow _sideRow;
 
         [SerializeField]
+        private GameObject _unlockCard;
+
+        [SerializeField]
+        private TMP_Text _unlockText;
+
+        [SerializeField]
         [FormerlySerializedAs("_coinLinesText")]
         private TMP_Text _saveStatusText;
 
@@ -104,6 +110,25 @@ namespace GrassSimulation.UI
             _nextButton.gameObject.SetActive(ResultPopupFormat.HasNextLevel(snapshot.LevelIndex, snapshot.LevelCount));
 
             ShowSaveStatus(in settlement);
+            ShowUnlocks(in settlement);
+        }
+
+        private void ShowUnlocks(in Option<Result<LevelSettlement, SettleError>> settlement)
+        {
+            var hasUnlocks = false;
+            var text = string.Empty;
+
+            if (settlement.TryGetValue(out var outcome) && outcome.TryGetValue(out var value))
+            {
+                hasUnlocks = LoadoutScreenFormat.TryFormatUnlocks(value.Unlocks, out text);
+            }
+
+            _unlockCard.SetActive(hasUnlocks);
+
+            if (hasUnlocks)
+            {
+                _unlockText.text = text;
+            }
         }
 
         private void ShowSaveStatus(in Option<Result<LevelSettlement, SettleError>> settlement)

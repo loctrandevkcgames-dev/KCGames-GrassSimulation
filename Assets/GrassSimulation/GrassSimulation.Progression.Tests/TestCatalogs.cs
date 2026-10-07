@@ -40,6 +40,16 @@ internal static class TestCatalogs
         return catalog;
     }
 
+    public static void SetUnlock(LevelCatalog catalog, int index, UnlockKind kind, int amount)
+    {
+        var serialized = new SerializedObject(catalog.Get(index));
+        var unlock = serialized.FindProperty("_unlock");
+
+        unlock.FindPropertyRelative("<Kind>k__BackingField").enumValueIndex = (int)kind;
+        unlock.FindPropertyRelative("<Amount>k__BackingField").intValue = amount;
+        serialized.ApplyModifiedPropertiesWithoutUndo();
+    }
+
     public static void DestroyAll(Object[] objects)
     {
         var count = objects.Length;

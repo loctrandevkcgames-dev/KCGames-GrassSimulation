@@ -7,6 +7,21 @@ namespace GrassSimulation.Gameplay
     public sealed class MachineConfig : ScriptableObject
     {
         [SerializeField]
+        private string _id = "standard";
+
+        [SerializeField]
+        private string _displayName = string.Empty;
+
+        [SerializeField]
+        private string _tradeOff = string.Empty;
+
+        [SerializeField]
+        private Sprite _icon;
+
+        [SerializeField]
+        private Color _tint = Color.white;
+
+        [SerializeField]
         private float _bodyRadius = 0.3f;
 
         [SerializeField]
@@ -26,6 +41,18 @@ namespace GrassSimulation.Gameplay
 
         [SerializeField]
         private UpgradeSettings[] _upgrades = Array.Empty<UpgradeSettings>();
+
+        public MachineId Id => new(_id);
+
+        public string DisplayName => _displayName;
+
+        public string TradeOff => _tradeOff;
+
+        public Sprite Icon => _icon;
+
+        public Color Tint => _tint;
+
+        public MachineStats BaseStats => new(_baseCutRadius, _baseCuttingPower, _baseSpeed);
 
         public float BodyRadius => _bodyRadius;
 

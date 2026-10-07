@@ -45,13 +45,16 @@ namespace GrassSimulation.Gameplay
             _rules = LevelRules.Resolve(level, in rules);
             _cuttableCells = cuttableCells;
             _publisher = publisher;
+            Machine = machine;
             Growth = new MowerGrowth(machine);
             Objectives = new LevelObjectives(level.Quotas);
             Protection = new ProtectedRule(_rules.Retrigger, level.Beds.Length);
             ResetState();
         }
 
-        public MowerGrowth Growth { get; }
+        public MachineConfig Machine { get; private set; }
+
+        public MowerGrowth Growth { get; private set; }
 
         public LevelObjectives Objectives { get; }
 
@@ -85,15 +88,48 @@ namespace GrassSimulation.Gameplay
             PublishState();
         }
 
-        public bool TryBegin()
+        public bool TryOpenLoadout()
         {
             if (State != LevelState.Preview)
             {
                 return false;
             }
 
+            State = LevelState.Loadout;
+            PublishState();
+            return true;
+        }
+
+        public bool BackToPreview()
+        {
+            if (State != LevelState.Loadout)
+            {
+                return false;
+            }
+
+            State = LevelState.Preview;
+            PublishState();
+            return true;
+        }
+
+        public bool TryBegin()
+            => TryBegin(Machine);
+
+        public bool TryBegin(MachineConfig machine)
+        {
+            if (State != LevelState.Preview && State != LevelState.Loadout)
+            {
+                return false;
+            }
+
+            if (machine != Machine)
+            {
+                Machine = machine;
+                Growth = new MowerGrowth(machine);
+            }
+
             State = LevelState.Playing;
-            LevelStartedMsg.Publish(in _publisher, new LevelStartedMsg(_level.Id));
+            LevelStartedMsg.Publish(in _publisher, new LevelStartedMsg(_level.Id, machine.Id));
             PublishState();
             PublishAlreadyMetQuotas();
             return true;

@@ -16,6 +16,7 @@ namespace GrassSimulation.Gameplay
         private const float SHAKE_SEED_X = 11.3f;
         private const float SHAKE_SEED_Y = 47.9f;
         private const float SHAKE_SEED_Z = 83.1f;
+        private static readonly int s_baseColorId = Shader.PropertyToID("_BaseColor");
 
         [SerializeField]
         private Transform _body;
@@ -130,6 +131,7 @@ namespace GrassSimulation.Gameplay
         private float _slumpRoll = 4f;
 
         private readonly List<ISubscription> _subscriptions = new();
+        private readonly MaterialPropertyBlock _tintBlock = new();
 
         private LawnMowerController _controller;
         private Vector3 _bodyPosition;
@@ -186,6 +188,25 @@ namespace GrassSimulation.Gameplay
         {
             _cutLevel = Mathf.Min(a: _cutLevel + cells * _cutPerCell, b: 1f);
             _bagFill = Mathf.Min(a: _bagFill + cells * _bagFillPerCell, b: 1f);
+        }
+
+        public void SetTint(Color tint)
+        {
+            if (_body.IsInvalid())
+            {
+                return;
+            }
+
+            var renderers = _body.GetComponentsInChildren<Renderer>(includeInactive: true);
+
+            for (var i = 0; i < renderers.Length; i++)
+            {
+                var renderer = renderers[i];
+
+                renderer.GetPropertyBlock(_tintBlock);
+                _tintBlock.SetColor(s_baseColorId, tint);
+                renderer.SetPropertyBlock(_tintBlock);
+            }
         }
 
         public void ResetPose()

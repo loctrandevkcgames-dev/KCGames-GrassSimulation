@@ -4,5 +4,5 @@ using EncosyTower.PubSub;
 namespace GrassSimulation.Gameplay
 {
     [PubSub(ApiMode.Sync, State = StateMode.Stateless, Scope = typeof(GameplayScope))]
-    public readonly partial record struct LevelStartedMsg(LevelId Level);
+    public readonly partial record struct LevelStartedMsg(LevelId Level, MachineId Machine);
 }

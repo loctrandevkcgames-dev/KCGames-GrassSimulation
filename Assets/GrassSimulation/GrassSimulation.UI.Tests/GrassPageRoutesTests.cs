@@ -23,6 +23,21 @@ public sealed class GrassPageRoutesTests
     }
 
     [Test]
+    public void TryGetScreenKey_MapsLoadoutToLoadoutScreen()
+    {
+        Assert.That(TryScreen(state: LevelState.Loadout, isHome: false, key: out var key), Is.True);
+        Assert.That(key, Is.EqualTo(UiPageKeys.LOADOUT_SCREEN));
+        Assert.That(key, Is.EqualTo("ui/loadout-screen"));
+    }
+
+    [Test]
+    public void TryGetPopupKey_HasNoPopupDuringLoadout()
+    {
+        Assert.That(TryPopup(state: LevelState.Loadout, isPaused: false, isHome: false, key: out var key), Is.False);
+        Assert.That(key, Is.Null);
+    }
+
+    [Test]
     public void TryGetScreenKey_MapsEveryStateToMainMenuScreenWhileHome()
     {
         foreach (LevelState state in System.Enum.GetValues(typeof(LevelState)))
@@ -39,7 +54,10 @@ public sealed class GrassPageRoutesTests
     {
         foreach (LevelState state in System.Enum.GetValues(typeof(LevelState)))
         {
-            var hasScreen = state == LevelState.Preview || state == LevelState.Playing || state == LevelState.Cleanup;
+            var hasScreen = state == LevelState.Preview
+                || state == LevelState.Loadout
+                || state == LevelState.Playing
+                || state == LevelState.Cleanup;
 
             if (hasScreen)
             {

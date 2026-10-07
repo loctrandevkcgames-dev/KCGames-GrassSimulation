@@ -150,6 +150,16 @@ public sealed class LevelCommandRouterTests
     }
 
     [Test]
+    public void MachineCommands_ReachTheHost()
+    {
+        SelectMachineRequestedMsg.Publish(in _commands, new SelectMachineRequestedMsg(MachineIds.Wide));
+        BackToPreviewRequestedMsg.Publish(in _commands, new BackToPreviewRequestedMsg());
+        ChangeMachineRequestedMsg.Publish(in _commands, new ChangeMachineRequestedMsg());
+
+        Assert.That(_host.Calls, Is.EqualTo(new[] { "SelectMachine:wide", "BackToPreview", "ChangeMachine" }));
+    }
+
+    [Test]
     public void Dispose_StopsRoutingCommands()
     {
         _router.Dispose();
@@ -200,5 +210,11 @@ public sealed class LevelCommandRouterTests
         public void FinishCleanup() => Calls.Add(nameof(FinishCleanup));
 
         public void RetrySave() => Calls.Add(nameof(RetrySave));
+
+        public void SelectMachine(MachineId machine) => Calls.Add($"{nameof(SelectMachine)}:{machine.Value}");
+
+        public void BackToPreview() => Calls.Add(nameof(BackToPreview));
+
+        public void ChangeMachine() => Calls.Add(nameof(ChangeMachine));
     }
 }

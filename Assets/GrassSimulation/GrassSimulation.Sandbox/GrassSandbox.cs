@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using EncosyTower.Common;
@@ -56,13 +57,16 @@ namespace GrassSimulation.Sandbox
         private PlantContactIcons _contactIcons;
 
         [SerializeField]
-        private MachineConfig _machine;
+        private MachineCatalog _machines;
 
         [SerializeField]
         private LevelCatalog _catalog;
 
         [SerializeField]
         private GameRules _rules;
+
+        [SerializeField]
+        private string _progressFolder = "Progress";
 
         [SerializeField]
         private float _cameraShake = 0.12f;
@@ -144,6 +148,7 @@ namespace GrassSimulation.Sandbox
         private ProgressionService _progression;
         private LevelSettlementHandler _settlementHandler;
         private LevelCommandRouter _commandRouter;
+        private Func<MachineId, bool> _isMachineOwned;
         private GameHaptics _haptics;
         private MessagePublisher.Publisher<LevelCommandScope> _commands;
         private MessagePublisher.Publisher<GameplayScope> _gameplayEvents;
@@ -175,6 +180,7 @@ namespace GrassSimulation.Sandbox
         private bool _showDebugHud;
         private bool _isHome;
         private bool _isStarting;
+        private bool _keepMachine;
         private bool _wasSimulating;
         private FlowRequest _pendingFlow;
         private GUIStyle _hudStyle;
@@ -199,7 +205,20 @@ namespace GrassSimulation.Sandbox
 
         public void Begin()
         {
-            if (_isHome == false && _session != null && _session.State == LevelState.Preview)
+            if (_isHome || _session == null)
+            {
+                return;
+            }
+
+            var state = _session.State;
+
+            if (state == LevelState.Preview && _keepMachine == false && ShouldShowLoadout())
+            {
+                _session.TryOpenLoadout();
+                return;
+            }
+
+            if (state == LevelState.Preview || state == LevelState.Loadout)
             {
                 _isStarting = true;
             }
@@ -235,6 +254,37 @@ namespace GrassSimulation.Sandbox
             _settlementHandler.RetryPending();
         }
 
+        public void SelectMachine(MachineId machine)
+        {
+            if (_session == null || _session.State != LevelState.Loadout)
+            {
+                return;
+            }
+
+            var selected = _progression.SelectMachine(machine);
+
+            if (selected.TryGetFailure(out var failure))
+            {
+                ThrowHelper.LogError_SelectMachineFailed(failure);
+                return;
+            }
+
+            if (_mowerAnimator.IsValid())
+            {
+                _mowerAnimator.SetTint(ResolveSelectedMachine().Tint);
+            }
+        }
+
+        public void BackToPreview()
+        {
+            _session?.BackToPreview();
+        }
+
+        public void ChangeMachine()
+        {
+            _pendingFlow = FlowRequest.ChangeMachine;
+        }
+
         private static bool IsNewPress(bool isHeld, ref bool wasHeld)
         {
             var isNewPress = isHeld && wasHeld == false;
@@ -250,13 +300,15 @@ namespace GrassSimulation.Sandbox
 
             IndexClippingColors();
 
-            var directory = Path.Combine(Application.persistentDataPath, "Progress");
+            var directory = Path.Combine(Application.persistentDataPath, _progressFolder);
 
             _progression = new ProgressionService(new FileProgressStore(directory));
             _progression.Initialize();
+            _isMachineOwned = _progression.IsMachineOwned;
 
             _settlementHandler = new LevelSettlementHandler(
                   _progression
+                , _catalog
                 , GlobalMessenger.Subscriber.Scope<GameplayScope>()
                 , GlobalMessenger.Publisher.Scope<ProgressionScope>()
             );
@@ -303,12 +355,27 @@ namespace GrassSimulation.Sandbox
             {
                 case FlowRequest.Retry:
                 {
+                    _keepMachine = _session.State != LevelState.Preview && _session.State != LevelState.Loadout;
                     ResetRun();
+                    break;
+                }
+
+                case FlowRequest.ChangeMachine:
+                {
+                    _keepMachine = false;
+                    ResetRun();
+
+                    if (ShouldShowLoadout())
+                    {
+                        _session.TryOpenLoadout();
+                    }
+
                     break;
                 }
 
                 case FlowRequest.GoHome:
                 {
+                    _keepMachine = false;
                     SetHome(isHome: true);
                     ResetRun();
                     _previewBlend.Snap(target: 0f);
@@ -364,6 +431,7 @@ namespace GrassSimulation.Sandbox
 
             GetLevelSnapshotRequest.Register(in gameplayHub, ProvideLevelSnapshot);
             GetLevelPreviewRequest.Register(in gameplayHub, ProvideLevelPreview);
+            GetLoadoutRequest.Register(in gameplayHub, ProvideLoadout);
             GetJoystickStateRequest.Register(in gameplayHub, ProvideJoystickState);
             GetProgressSnapshotRequest.Register(in progressionHub, ProvideProgressSnapshot);
         }
@@ -396,6 +464,11 @@ namespace GrassSimulation.Sandbox
             );
         }
 
+        private LoadoutSnapshot ProvideLoadout(GetLoadoutRequest request)
+        {
+            return LoadoutSnapshot.From(_machines, _isMachineOwned, _progression.SelectedMachine);
+        }
+
         private ProgressSnapshot ProvideProgressSnapshot(GetProgressSnapshotRequest request)
         {
             return ProgressSnapshot.From(_progression, _catalog, _settlementHandler.HasPending);
@@ -417,7 +490,34 @@ namespace GrassSimulation.Sandbox
             if (_isStarting && _previewBlend.Weight <= 0f)
             {
                 _isStarting = false;
-                _session.TryBegin();
+
+                var machine = ResolveSelectedMachine();
+
+                if (_session.TryBegin(machine))
+                {
+                    ApplyMachine(machine);
+                }
+            }
+        }
+
+        private bool ShouldShowLoadout()
+        {
+            return LoadoutRules.ShouldShow(_progression.OwnedMachineCount, hasBoosterStock: false);
+        }
+
+        private MachineConfig ResolveSelectedMachine()
+        {
+            return _machines.TryFind(_progression.SelectedMachine, out var machine) ? machine : _machines.Standard;
+        }
+
+        private void ApplyMachine(MachineConfig machine)
+        {
+            _mower.BodyRadius = machine.BodyRadius;
+            _cutRadius = machine.BaseCutRadius;
+
+            if (_mowerAnimator.IsValid())
+            {
+                _mowerAnimator.SetTint(machine.Tint);
             }
         }
 
@@ -441,9 +541,13 @@ namespace GrassSimulation.Sandbox
             BuildObjects();
             _bedOutlines.Place(_grid, _level.Beds);
 
+            _keepMachine = false;
+
+            var machine = ResolveSelectedMachine();
+
             _session = new LevelSession(
                   _level
-                , _machine
+                , machine
                 , _cutter.CountCuttableCells() + _plantField.Count
                 , GlobalMessenger.Publisher.Scope<GameplayScope>()
                 , RulesValues
@@ -451,7 +555,7 @@ namespace GrassSimulation.Sandbox
             _field.Build(_grid, _plantCatalog.Plants, _level.Seed);
             _mower.Bounds = _grid.Bounds;
             _mower.Obstacles = _obstacles;
-            _mower.BodyRadius = _machine.BodyRadius;
+            ApplyMachine(machine);
 
             ResetRun();
         }
@@ -481,7 +585,7 @@ namespace GrassSimulation.Sandbox
                 _mower.Step(deltaTime, _camera);
                 StepTireTracks(deltaTime);
 
-                var radiusDelta = _machine.CutRadiusTweenSpeed * deltaTime;
+                var radiusDelta = _session.Machine.CutRadiusTweenSpeed * deltaTime;
                 _cutRadius = Mathf.MoveTowards(_cutRadius, stats.CutRadius, radiusDelta);
 
                 var blade = _mower.transform.position;
@@ -529,7 +633,8 @@ namespace GrassSimulation.Sandbox
 
             _cameraFocus = Vector3.Lerp(_cameraFocus, mowerPosition + lookAhead, blend);
 
-            var wantsPreview = _isHome == false && _session.State == LevelState.Preview && _isStarting == false;
+            var isOverview = _session.State == LevelState.Preview || _session.State == LevelState.Loadout;
+            var wantsPreview = _isHome == false && isOverview && _isStarting == false;
             var blendSeconds = wantsPreview ? _previewEnterSeconds : _previewExitSeconds;
 
             _previewBlend.Step(
@@ -652,6 +757,7 @@ namespace GrassSimulation.Sandbox
         {
             return _session.State switch {
                 LevelState.Preview => "Enter: start   R: reset",
+                LevelState.Loadout => "Enter: start",
                 LevelState.Success => "Enter: cleanup   N: next level   R: retry",
                 LevelState.Failure => "R: retry",
                 LevelState.Cleanup => "N: next level   P: pause   R: retry",
@@ -1024,7 +1130,8 @@ namespace GrassSimulation.Sandbox
             _contacts.Clear();
             _speedLimit = float.PositiveInfinity;
             _hasLastSettlement = false;
-            _cutRadius = _machine.BaseCutRadius;
+            _cutRadius = _session.Machine.BaseCutRadius;
+            _mower.BodyRadius = _session.Machine.BodyRadius;
 
             var spawn = _grid.ToWorld(_level.Spawn);
             _mower.ResetTo(spawn);
@@ -1202,6 +1309,12 @@ namespace GrassSimulation.Sandbox
         {
             switch (_session.State)
             {
+                case LevelState.Loadout:
+                {
+                    StartRequestedMsg.Publish(in _commands, new StartRequestedMsg());
+                    break;
+                }
+
                 case LevelState.Preview:
                 {
                     if (_isHome)
@@ -1331,6 +1444,7 @@ namespace GrassSimulation.Sandbox
             GoHome,
             Play,
             FinishCleanup,
+            ChangeMachine,
         }
     }
 }

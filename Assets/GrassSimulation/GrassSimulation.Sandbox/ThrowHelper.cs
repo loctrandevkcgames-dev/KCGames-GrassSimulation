@@ -13,5 +13,11 @@ namespace GrassSimulation.Sandbox
         {
             StaticLogger.LogError($"Cannot wipe the progress: {error.ToMessage()}");
         }
+
+        [HideInCallstack, StackTraceHidden, MethodImpl(MethodImplOptions.NoInlining)]
+        internal static void LogError_SelectMachineFailed(SelectMachineError error)
+        {
+            StaticLogger.LogError($"Cannot select the machine: {error.ToMessage()}");
+        }
     }
 }

@@ -23,6 +23,9 @@ namespace GrassSimulation.Gameplay
             _subscriptions.Add(QuitRequestedMsg.Subscribe(in subscriber, OnQuit));
             _subscriptions.Add(PlayRequestedMsg.Subscribe(in subscriber, OnPlay));
             _subscriptions.Add(RetrySaveRequestedMsg.Subscribe(in subscriber, OnRetrySave));
+            _subscriptions.Add(SelectMachineRequestedMsg.Subscribe(in subscriber, OnSelectMachine));
+            _subscriptions.Add(BackToPreviewRequestedMsg.Subscribe(in subscriber, OnBackToPreview));
+            _subscriptions.Add(ChangeMachineRequestedMsg.Subscribe(in subscriber, OnChangeMachine));
         }
 
         public void Dispose()
@@ -92,6 +95,21 @@ namespace GrassSimulation.Gameplay
         private void OnRetrySave(RetrySaveRequestedMsg message)
         {
             _host.RetrySave();
+        }
+
+        private void OnSelectMachine(SelectMachineRequestedMsg message)
+        {
+            _host.SelectMachine(message.Machine);
+        }
+
+        private void OnBackToPreview(BackToPreviewRequestedMsg message)
+        {
+            _host.BackToPreview();
+        }
+
+        private void OnChangeMachine(ChangeMachineRequestedMsg message)
+        {
+            _host.ChangeMachine();
         }
     }
 }

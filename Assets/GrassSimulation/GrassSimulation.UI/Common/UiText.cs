@@ -58,6 +58,17 @@ namespace GrassSimulation.UI
         public const string BUTTON_RESUME = "Tiếp tục";
         public const string BUTTON_QUIT = "Thoát";
         public const string BUTTON_CLOSE = "Đóng";
+        public const string BUTTON_CHANGE_MACHINE = "Đổi máy";
+
+        public const string LOADOUT_TITLE = "Chọn máy";
+        public const string LOADOUT_SELECTED = "Đang dùng";
+        public const string LOADOUT_BOOSTERS = "Booster";
+        public const string LOADOUT_BOOSTERS_EMPTY = "Chưa có booster nào trong kho";
+
+        public const string UNLOCK_CARD = "Mở khóa: {0}";
+        public const string UNLOCK_WIDE_MACHINE = "Máy Wide";
+        public const string UNLOCK_EXTRA_TIME = "Thêm giờ ×{0}";
+        public const string UNLOCK_TURBO = "Turbo ×{0}";
 
         public const string FAIL_TIME_UP_TITLE = "Hết giờ";
         public const string FAIL_TIME_UP_REASON = "Chưa đủ mục tiêu khi hết thời gian.";

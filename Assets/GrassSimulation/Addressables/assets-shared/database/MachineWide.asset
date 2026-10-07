@@ -10,15 +10,19 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 83afc3e1bd3b6bc4f975ebf6fb0fab9d, type: 3}
-  m_Name: DefaultMachine
+  m_Name: MachineWide
   m_EditorClassIdentifier: GrassSimulation.Gameplay::GrassSimulation.Gameplay.MachineConfig
+  _id: wide
+  _displayName: Wide
+  _tradeOff: "Ph\u1EE7 r\u1ED9ng, chuy\u1EC3n v\xF9ng ch\u1EADm, d\u1EC5 ch\u1EA1m
+    lu\u1ED1ng hoa."
+  _icon: {fileID: 0}
+  _tint: {r: 1, g: 0.78, b: 0.45, a: 1}
   _bodyRadius: 0.3
-  _baseCutRadius: 0.65
-  _maxCutRadius: 1.1
+  _baseCutRadius: 0.78
   _cutRadiusTweenSpeed: 0.6
   _baseCuttingPower: 1
-  _baseSpeed: 4
-  _maxSpeed: 4.75
+  _baseSpeed: 3.6
   _xpThresholds: 6400000004010000e0010000
   _upgrades:
   - <Id>k__BackingField: WideBlade

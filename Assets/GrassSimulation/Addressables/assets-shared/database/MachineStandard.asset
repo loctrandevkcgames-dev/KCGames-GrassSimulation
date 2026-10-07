@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 83afc3e1bd3b6bc4f975ebf6fb0fab9d, type: 3}
+  m_Name: MachineStandard
+  m_EditorClassIdentifier: GrassSimulation.Gameplay::GrassSimulation.Gameplay.MachineConfig
+  _id: standard
+  _displayName: Standard
+  _tradeOff: "C\xE2n b\u1EB1ng, \u0111i nhanh v\xE0 d\u1EC5 l\xE1i."
+  _icon: {fileID: 0}
+  _tint: {r: 1, g: 1, b: 1, a: 1}
+  _bodyRadius: 0.3
+  _baseCutRadius: 0.65
+  _cutRadiusTweenSpeed: 0.6
+  _baseCuttingPower: 1
+  _baseSpeed: 4
+  _xpThresholds: 6400000004010000e0010000
+  _upgrades:
+  - <Id>k__BackingField: WideBlade
+    <CutRadiusDelta>k__BackingField: 0.15
+    <CuttingPowerDelta>k__BackingField: 0
+    <SpeedDelta>k__BackingField: 0
+  - <Id>k__BackingField: StrongEngine
+    <CutRadiusDelta>k__BackingField: 0
+    <CuttingPowerDelta>k__BackingField: 0.3
+    <SpeedDelta>k__BackingField: 0.25

@@ -1,0 +1,19 @@
+; Level 38: relax, a diagonal band of thick grass through the lawn, no timer.
+....................
+.gggggggggggggggttt.
+.ggggggggggggggtttt.
+.gggggggggggggttttt.
+.ggggggggggggtttttg.
+.gggggggggggtttttgg.
+.ggggggggggtttttggg.
+.ggggggggttttttgggg.
+.gggggggttttttggggg.
+.ggggggttttttgggggg.
+.ggggttttttgggggggg.
+.gggttttttggggggggg.
+.gtttttttgggggggggg.
+.ttttttgggggggggggg.
+.tttttggggggggggggg.
+.tttggggggggggggggg.
+.ggSggggggggggggggg.
+....................

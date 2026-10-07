@@ -1,0 +1,25 @@
+; Level 35: hard, a flower maze, a winding path between ten beds.
+.........P.........P....
+.ggg..ff.P.........P....
+.ggg..ff.P.........PBBBB
+.ggg..ff.P.tt......PBBBB
+.ggg..ff.P.tt......PBBBB
+.ggg..ff...tt......PBBBB
+.ggg..ff.P.tt......PBBBB
+.ggg..ff.P.tt.......BBBB
+.gggP.ff.P.tt.P....PBBBB
+.gggP.ff.P.tt.P.ff.PBBBB
+.gggP.ff.P.tt.P.ff.PBBBB
+.gggP.ff...tt.P.ff.PBBBB
+.gggP.ff.P.tt.P.ff.PBBBB
+.ggg..ff.P.tt.P.ff.PBBBB
+.gggP.ff.P.tt.P.ff.PBBBB
+.gggP....P.tt...ff.PBBBB
+.gggP......tt.P.ff..BBBB
+.gggP.........P.ff..BBBB
+.ggg..........P.ff..BBBB
+.gggP.........P.ff..BBBB
+.gggP.........P.ff..BBBB
+.gggP.........P.ff..BBBB
+..S.P.........P.ff..BBBB
+....P.........P.........

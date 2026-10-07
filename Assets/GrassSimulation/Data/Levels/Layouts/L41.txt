@@ -1,0 +1,23 @@
+; Level 41: vegetables and melons in two fenced plots, beds flank each entrance.
+........................
+.#########tttt#########.
+.#vvvvvvv#tttt#mmmmmmm#.
+.#vvvvvvv#tttt#mmmmmmm#.
+.#vvvvvvv#....#mmmmmmm#.
+.#vvvvvvv#.PP.#mmmmmmm#.
+.#vvvvvvv#.PP.#mmmmmmm#.
+.#vvvvvvv#....#mmmmmmm#.
+.#vvvvvvv#....#mmmmmmm#.
+.###....##....###....##.
+........................
+........................
+..PP....PP.PP.PP.....PP.
+..PP....PP.PP.PP.....PP.
+........................
+....ffffffffffffffff....
+.PP.ffffffffffffffff.PP.
+.PP.ffffffffffffffff.PP.
+........................
+.gggggggggggggggggggggg.
+.ggggggggggSggggggggggg.
+.gggggggggggggggggggggg.

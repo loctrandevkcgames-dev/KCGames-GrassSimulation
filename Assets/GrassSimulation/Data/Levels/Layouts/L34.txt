@@ -1,0 +1,21 @@
+; Level 34: two columns of narrow beds, flower lanes on both sides, bushes at the bottom.
+....................
+..ff.PP......PP.ff..
+..ff.PP.gggg.PP.ff..
+..ff....gggg....ff..
+..ff....gggg....ff..
+..ff....gggg....ff..
+..ff.PP.gggg.PP.ff..
+..ff.PP.gggg.PP.ff..
+..ff....gggg....ff..
+..ff....gggg....ff..
+..ff....gggg....ff..
+..ff.PP......PP.ff..
+..ff.PPbbbbbbPP.ff..
+..ff...bbbbbb...ff..
+..ff...bbbbbb...ff..
+..ff...bbbbbb...ff..
+..ff.PPbbbbbbPP.ff..
+..ff.PPbbbbbbPP.ff..
+..........S.........
+....................

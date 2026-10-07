@@ -1,0 +1,23 @@
+; Level 39: narrow beds with wide lanes, choose the machine at the Loadout.
+........................
+......P..ffffff..P.gggg.
+.ttt..P..ffffff..P.gggg.
+.ttt..P..ffffff..P.gggg.
+.ttt..P..ffffff..P.gggg.
+.ttt.....ffffff....gggg.
+.ttt...............gggg.
+.ttt......PPPP.....gggg.
+......P..........P.gggg.
+......P.BBBBBBBB.P.gggg.
+......P.BBBBBBBB.P.gggg.
+......P.BBBBBBBB.P.gggg.
+........BBBBBBBB...gggg.
+.bbbb...BBBBBBBB...gggg.
+.bbbb...BBBBBBBB...gggg.
+.bbbb.P..........P.gggg.
+.bbbb.P...PPPP...P.gggg.
+.bbbb.P..........P.gggg.
+.bbbb.P.bbbbbbbb.P.gggg.
+........bbbbbbbb........
+........bbbbbbbb.....S..
+........bbbbbbbb........
